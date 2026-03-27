@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import type { SessionService } from "../sessions/session-service.js";
 import type { WorkerRegistry } from "../workers/worker-registry.js";
 
 export interface InternalRecoverySession {
@@ -20,6 +21,7 @@ export interface InternalRecoverySession {
 export interface InternalRecoveryRouterOptions {
   workerRegistry: WorkerRegistry;
   recoverySessions: Map<string, InternalRecoverySession>;
+  sessionService: SessionService;
 }
 
 function createInternalRecoverySession(workerId: string): InternalRecoverySession {
@@ -69,6 +71,7 @@ export function createInternalRecoveryRouter(
       reason: "manual operator reauth requested",
       recoverySessionId: session.sessionId
     });
+    options.sessionService.handleWorkerStatusChange(worker.workerId);
 
     response.status(202).json({
       workerId: worker.workerId,
@@ -122,10 +125,12 @@ export function createInternalRecoveryRouter(
       reason: "operator finished manual reauth",
       recoverySessionId: null
     });
+    options.sessionService.handleWorkerReady();
 
     response.status(202).json({
       workerId: request.params.id,
-      reauth: updatedSession
+      reauth: updatedSession,
+      worker: options.workerRegistry.getWorker(request.params.id)
     });
   });
 

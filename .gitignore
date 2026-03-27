@@ -1,0 +1,5 @@
+**/node_modules/
+services/control-api/dist/
+apps/session-client/dist/
+infra/data/
+*.sqlite

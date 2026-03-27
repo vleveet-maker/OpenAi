@@ -11,6 +11,9 @@ services:
     environment:
       CONTROL_API_HOST: 0.0.0.0
       CONTROL_API_PORT: "4010"
+      SESSION_DB_PATH: /srv/chatgpt-workers/control-api/session-routing.sqlite
+      SESSION_DURATION_MINUTES: "60"
+      SESSION_SWEEP_INTERVAL_MS: "5000"
       WORKER_DEFINITIONS: >-
         [
           {"workerId":"dad","displayName":"Dad","containerName":"worker-dad","profilePath":"/srv/chatgpt-workers/profiles/dad","agentBaseUrl":"http://worker-dad:4020","defaultStatus":"starting"},
@@ -21,10 +24,29 @@ services:
       - "4010:4010"
     volumes:
       - ../:/app
+      - ./data/control-api:/srv/chatgpt-workers/control-api
     depends_on:
       - worker-dad
       - worker-wife
       - worker-shared-1
+    networks:
+      - worker-net
+
+  session-client:
+    image: node:22-bookworm
+    container_name: session-client
+    working_dir: /app
+    command: >
+      sh -c "npm install --prefix apps/session-client &&
+      npm run dev --prefix apps/session-client -- --host 0.0.0.0 --port 4173"
+    environment:
+      VITE_PROXY_TARGET: http://control-api:4010
+    ports:
+      - "4173:4173"
+    volumes:
+      - ../:/app
+    depends_on:
+      - control-api
     networks:
       - worker-net
 

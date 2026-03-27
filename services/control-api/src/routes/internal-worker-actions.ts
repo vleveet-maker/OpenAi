@@ -1,9 +1,11 @@
 import { Router } from "express";
 
+import type { SessionService } from "../sessions/session-service.js";
 import type { WorkerRegistry } from "../workers/worker-registry.js";
 
 export interface InternalWorkerActionsRouterOptions {
   workerRegistry: WorkerRegistry;
+  sessionService: SessionService;
 }
 
 export function createInternalWorkerActionsRouter(
@@ -26,13 +28,18 @@ export function createInternalWorkerActionsRouter(
       status: "starting",
       reason: "internal restart requested",
       assignedSessionId: null,
-      assignedUserId: null,
+      assignedUserLabel: null,
       recoverySessionId: null
     });
+    options.sessionService.endActiveSessionForWorker(
+      worker.workerId,
+      "worker_unavailable"
+    );
 
     response.status(202).json({
       action: "restart_requested",
-      worker: updatedWorker
+      worker:
+        options.workerRegistry.getWorker(worker.workerId) ?? updatedWorker
     });
   });
 
@@ -47,14 +54,24 @@ export function createInternalWorkerActionsRouter(
       return;
     }
 
-    const updatedWorker = options.workerRegistry.updateWorker(worker.workerId, {
+    if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
+      response.status(409).json({
+        error: "worker_has_active_session",
+        workerId: worker.workerId
+      });
+      return;
+    }
+
+    options.workerRegistry.updateWorker(worker.workerId, {
       status: "ready",
-      reason: "internal operator marked worker ready"
+      reason: "internal operator marked worker ready",
+      recoverySessionId: null
     });
+    options.sessionService.handleWorkerReady();
 
     response.status(202).json({
       action: "mark_ready",
-      worker: updatedWorker
+      worker: options.workerRegistry.getWorker(worker.workerId)
     });
   });
 

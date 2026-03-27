@@ -1,0 +1,283 @@
+:root {
+  color: #f4eee3;
+  background:
+    radial-gradient(circle at top left, rgba(242, 180, 112, 0.28), transparent 30%),
+    radial-gradient(circle at top right, rgba(71, 113, 103, 0.32), transparent 24%),
+    linear-gradient(145deg, #0f1b23 0%, #132631 42%, #26333a 100%);
+  font-family: "IBM Plex Sans", "Trebuchet MS", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.layout-grid,
+.state-stack {
+  display: grid;
+  gap: 1.5rem;
+  margin: 0 auto;
+  max-width: 1100px;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.layout-grid {
+  align-items: center;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+}
+
+.hero-panel,
+.form-card,
+.state-card,
+.shell-card {
+  backdrop-filter: blur(18px);
+  background: rgba(9, 17, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(3, 8, 12, 0.35);
+}
+
+.hero-panel {
+  padding: 2.5rem;
+}
+
+.hero-panel h1,
+.state-card h1 {
+  font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 0.96;
+  margin: 0 0 1rem;
+}
+
+.hero-copy,
+.helper-copy,
+.state-card p,
+.shell-card p {
+  color: rgba(244, 238, 227, 0.82);
+}
+
+.eyebrow {
+  color: #f2d3a4;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.form-card,
+.state-card {
+  display: grid;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.form-card label,
+.composer-panel label {
+  font-weight: 700;
+}
+
+.form-card input,
+.composer-panel textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  color: inherit;
+  padding: 0.95rem 1rem;
+}
+
+.composer-panel textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.form-card button,
+.ghost-button,
+.danger-button,
+.composer-panel button {
+  background: linear-gradient(120deg, #e5ac69 0%, #df8550 100%);
+  border: 0;
+  border-radius: 999px;
+  color: #132028;
+  font-weight: 800;
+  padding: 0.95rem 1.2rem;
+}
+
+.ghost-button,
+.ghost-link {
+  background: transparent;
+  border: 1px solid rgba(242, 211, 164, 0.35);
+  color: #f4eee3;
+  display: inline-flex;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.danger-button {
+  justify-self: start;
+}
+
+.button-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.status-banner {
+  align-items: center;
+  border-radius: 20px;
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.2rem;
+}
+
+.status-banner span {
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.status-banner.active {
+  background: rgba(90, 164, 146, 0.16);
+  border: 1px solid rgba(90, 164, 146, 0.28);
+}
+
+.status-banner.ended {
+  background: rgba(229, 172, 105, 0.14);
+  border: 1px solid rgba(229, 172, 105, 0.28);
+}
+
+.shell-card {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.7rem;
+}
+
+.shell-header {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.shell-header h2 {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1.02;
+  margin: 0;
+}
+
+.countdown-panel {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  display: grid;
+  gap: 0.15rem;
+  min-width: 126px;
+  padding: 0.85rem 1rem;
+  text-align: right;
+}
+
+.countdown-panel span {
+  color: rgba(244, 238, 227, 0.72);
+  font-size: 0.8rem;
+}
+
+.countdown-panel strong {
+  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-size: 1.8rem;
+}
+
+.shell-metadata {
+  color: rgba(244, 238, 227, 0.78);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.history-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.history-bubble {
+  border-radius: 20px;
+  max-width: 46rem;
+  padding: 1rem 1.1rem;
+}
+
+.history-bubble.system {
+  background: rgba(242, 211, 164, 0.1);
+}
+
+.history-bubble.assistant {
+  background: rgba(86, 118, 187, 0.15);
+}
+
+.bubble-role {
+  color: rgba(244, 238, 227, 0.66);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.composer-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.composer-panel textarea:disabled,
+.composer-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.error-text {
+  color: #ffb8a6;
+  margin: 0;
+}
+
+.error-text.inline {
+  margin-top: -0.5rem;
+}
+
+@media (max-width: 900px) {
+  .layout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shell-header {
+    flex-direction: column;
+  }
+
+  .countdown-panel {
+    text-align: left;
+  }
+}

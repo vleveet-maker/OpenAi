@@ -1,4 +1,6 @@
 import type { AddressInfo } from "node:net";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import express from "express";
@@ -11,6 +13,12 @@ import {
 } from "./routes/internal-recovery.js";
 import { createInternalWorkerActionsRouter } from "./routes/internal-worker-actions.js";
 import { createInternalWorkersRouter } from "./routes/internal-workers.js";
+import { createPublicSessionsRouter } from "./routes/public-sessions.js";
+import {
+  createSessionService,
+  type SessionService
+} from "./sessions/session-service.js";
+import { SessionStore } from "./sessions/session-store.js";
 import { requireInternalAdmin } from "./security/internal-admin-guard.js";
 import {
   createWorkerRegistry,
@@ -21,22 +29,60 @@ export interface ControlApiRuntime {
   config: ControlApiConfig;
   workerRegistry: WorkerRegistry;
   recoverySessions: Map<string, InternalRecoverySession>;
+  sessionStore: SessionStore;
+  sessionService: SessionService;
+  dispose(): void;
 }
 
 export function createControlApiRuntime(
   config: ControlApiConfig = loadConfig()
 ): ControlApiRuntime {
+  const workerRegistry = createWorkerRegistry(config.workerDefinitions);
+  const sessionStore = new SessionStore(config.sessionDatabasePath);
+  const sessionService = createSessionService({
+    store: sessionStore,
+    workerRegistry,
+    sessionDurationMinutes: config.sessionDurationMinutes,
+    sweepIntervalMs: config.sessionSweepIntervalMs
+  });
+
+  sessionService.bootstrap();
+
   return {
     config,
-    workerRegistry: createWorkerRegistry(config.workerDefinitions),
-    recoverySessions: new Map<string, InternalRecoverySession>()
+    workerRegistry,
+    recoverySessions: new Map<string, InternalRecoverySession>(),
+    sessionStore,
+    sessionService,
+    dispose() {
+      sessionService.close();
+    }
   };
+}
+
+function registerSessionClientRoutes(
+  app: ReturnType<typeof express>,
+  runtime: ControlApiRuntime
+): void {
+  const { sessionClientDistPath } = runtime.config;
+
+  if (!existsSync(sessionClientDistPath)) {
+    return;
+  }
+
+  app.use(express.static(sessionClientDistPath, {
+    index: false
+  }));
+
+  app.get(["/", "/session/:sessionId"], (_request, response) => {
+    response.sendFile(join(sessionClientDistPath, "index.html"));
+  });
 }
 
 export function createControlApiApp(
   runtime: ControlApiRuntime = createControlApiRuntime()
 ) {
-  const { config, recoverySessions, workerRegistry } = runtime;
+  const { config, recoverySessions, sessionService, workerRegistry } = runtime;
   const app = express();
 
   app.disable("x-powered-by");
@@ -63,6 +109,12 @@ export function createControlApiApp(
     })
   );
 
+  app.use(
+    createPublicSessionsRouter({
+      sessionService
+    })
+  );
+
   const internalAdminGuard = requireInternalAdmin({
     internalAdminToken: config.internalAdminToken,
     allowPrivateNetworks: true
@@ -73,12 +125,16 @@ export function createControlApiApp(
     internalAdminGuard,
     createInternalRecoveryRouter({
       workerRegistry,
-      recoverySessions
+      recoverySessions,
+      sessionService
     }),
     createInternalWorkerActionsRouter({
-      workerRegistry
+      workerRegistry,
+      sessionService
     })
   );
+
+  registerSessionClientRoutes(app, runtime);
 
   return app;
 }
@@ -86,11 +142,17 @@ export function createControlApiApp(
 export async function startControlApi(
   config: ControlApiConfig = loadConfig()
 ) {
-  const app = createControlApiApp(createControlApiRuntime(config));
+  const runtime = createControlApiRuntime(config);
+  runtime.sessionService.startBackgroundSweep();
+  const app = createControlApiApp(runtime);
 
   return new Promise<import("node:http").Server>((resolve) => {
     const server = app.listen(config.port, config.host, () => {
       resolve(server);
+    });
+
+    server.on("close", () => {
+      runtime.dispose();
     });
   });
 }

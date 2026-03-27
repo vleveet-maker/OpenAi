@@ -13,8 +13,9 @@ export interface WorkerRecord {
   agentBaseUrl: string;
   status: WorkerStatusRecord;
   assignedSessionId?: string;
-  assignedUserId?: string;
+  assignedUserLabel?: string;
   lastSeenAt?: string;
+  lastAssignedAt?: string;
   recoverySessionId?: string;
 }
 
@@ -22,8 +23,9 @@ export interface WorkerRegistryUpdate {
   status?: WorkerStatus;
   reason?: string;
   assignedSessionId?: string | null;
-  assignedUserId?: string | null;
+  assignedUserLabel?: string | null;
   lastSeenAt?: string;
+  lastAssignedAt?: string | null;
   recoverySessionId?: string | null;
 }
 
@@ -73,6 +75,10 @@ export class WorkerRegistry {
       : undefined;
   }
 
+  listReadyWorkers(): WorkerRecord[] {
+    return this.listWorkers().filter((worker) => worker.status.status === "ready");
+  }
+
   updateWorker(workerId: string, update: WorkerRegistryUpdate): WorkerRecord {
     const existing = this.workers.get(workerId);
 
@@ -90,11 +96,15 @@ export class WorkerRegistry {
         update.assignedSessionId === null
           ? undefined
           : update.assignedSessionId ?? existing.assignedSessionId,
-      assignedUserId:
-        update.assignedUserId === null
+      assignedUserLabel:
+        update.assignedUserLabel === null
           ? undefined
-          : update.assignedUserId ?? existing.assignedUserId,
+          : update.assignedUserLabel ?? existing.assignedUserLabel,
       lastSeenAt: update.lastSeenAt ?? new Date().toISOString(),
+      lastAssignedAt:
+        update.lastAssignedAt === null
+          ? undefined
+          : update.lastAssignedAt ?? existing.lastAssignedAt,
       recoverySessionId:
         update.recoverySessionId === null
           ? undefined
