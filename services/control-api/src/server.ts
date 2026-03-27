@@ -4,10 +4,31 @@ import { pathToFileURL } from "node:url";
 import express from "express";
 
 import { loadConfig, type ControlApiConfig } from "./config.js";
+import { createInternalHealthRouter } from "./routes/internal-health.js";
+import { createInternalWorkersRouter } from "./routes/internal-workers.js";
+import {
+  createWorkerRegistry,
+  type WorkerRegistry
+} from "./workers/worker-registry.js";
+
+export interface ControlApiRuntime {
+  config: ControlApiConfig;
+  workerRegistry: WorkerRegistry;
+}
+
+export function createControlApiRuntime(
+  config: ControlApiConfig = loadConfig()
+): ControlApiRuntime {
+  return {
+    config,
+    workerRegistry: createWorkerRegistry(config.workerDefinitions)
+  };
+}
 
 export function createControlApiApp(
-  config: ControlApiConfig = loadConfig()
+  runtime: ControlApiRuntime = createControlApiRuntime()
 ) {
+  const { config, workerRegistry } = runtime;
   const app = express();
 
   app.disable("x-powered-by");
@@ -27,13 +48,26 @@ export function createControlApiApp(
     });
   });
 
+  app.use(
+    createInternalHealthRouter({
+      serviceName: config.serviceName,
+      workerRegistry
+    })
+  );
+
+  app.use(
+    createInternalWorkersRouter({
+      workerRegistry
+    })
+  );
+
   return app;
 }
 
 export async function startControlApi(
   config: ControlApiConfig = loadConfig()
 ) {
-  const app = createControlApiApp(config);
+  const app = createControlApiApp(createControlApiRuntime(config));
 
   return new Promise<import("node:http").Server>((resolve) => {
     const server = app.listen(config.port, config.host, () => {
