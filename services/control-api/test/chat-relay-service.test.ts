@@ -78,6 +78,11 @@ function createTestRuntime(relayTransport?: ChatRelayTransport) {
   };
 }
 
+async function flushQueuedRelayHandlers() {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 afterEach(() => {
   while (cleanupCallbacks.length > 0) {
     const cleanup = cleanupCallbacks.pop();
@@ -252,5 +257,70 @@ describe("ChatRelayService", () => {
       failureCode: "reply_timeout"
     });
     expect(failedSnapshot?.canSend).toBe(true);
+  });
+
+  it("completes the pending assistant message when relay delivery resolves", async () => {
+    const relayTransport = {
+      async deliver() {
+        return {
+          assistantText: "Completed from transport",
+          completedAt: "2026-03-27T10:01:00.000Z"
+        };
+      }
+    } satisfies ChatRelayTransport;
+    const runtime = createTestRuntime(relayTransport);
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    const session = runtime.sessionService.createSession(
+      "Async Success",
+      new Date("2026-03-27T10:00:00.000Z")
+    );
+
+    runtime.chatRelayService.sendMessage(session.session.sessionId, "Hello");
+    await flushQueuedRelayHandlers();
+
+    const snapshot = runtime.chatRelayService.getConversationSnapshot(
+      session.session.sessionId
+    );
+    const assistantMessage = snapshot?.messages.at(-1);
+
+    expect(assistantMessage).toMatchObject({
+      role: "assistant",
+      state: "complete",
+      body: "Completed from transport"
+    });
+  });
+
+  it("marks the pending assistant message failed when relay delivery fails", async () => {
+    const relayTransport = {
+      async deliver() {
+        throw Object.assign(new Error("worker down"), {
+          code: "worker_unreachable"
+        });
+      }
+    } satisfies ChatRelayTransport;
+    const runtime = createTestRuntime(relayTransport);
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    const session = runtime.sessionService.createSession(
+      "Async Failure",
+      new Date("2026-03-27T10:00:00.000Z")
+    );
+
+    runtime.chatRelayService.sendMessage(session.session.sessionId, "Hello");
+    await flushQueuedRelayHandlers();
+
+    const snapshot = runtime.chatRelayService.getConversationSnapshot(
+      session.session.sessionId
+    );
+    const assistantMessage = snapshot?.messages.at(-1);
+
+    expect(assistantMessage).toMatchObject({
+      role: "assistant",
+      state: "failed",
+      failureCode: "worker_unreachable"
+    });
   });
 });

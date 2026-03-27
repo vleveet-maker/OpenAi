@@ -5,6 +5,7 @@ import { join } from "node:path";
 import request from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { ChatRelayTransport } from "../src/chat/chat-types.js";
 import type { ControlApiConfig } from "../src/config.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
 
@@ -44,7 +45,14 @@ function createTestRuntime() {
     ]
   };
 
-  const runtime = createControlApiRuntime(config);
+  const relayTransport = {
+    async deliver() {
+      return undefined;
+    }
+  } satisfies ChatRelayTransport;
+  const runtime = createControlApiRuntime(config, {
+    relayTransport
+  });
   const app = createControlApiApp(runtime);
 
   return {

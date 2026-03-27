@@ -10,10 +10,10 @@ import {
 } from "./chat/chat-store.js";
 import {
   createChatRelayService,
-  createNoopChatRelayTransport,
   type ChatRelayService
 } from "./chat/chat-relay-service.js";
 import type { ChatRelayTransport } from "./chat/chat-types.js";
+import { createWorkerRelayClient } from "./chat/worker-relay-client.js";
 import { loadConfig, type ControlApiConfig } from "./config.js";
 import { createInternalHealthRouter } from "./routes/internal-health.js";
 import { createPublicChatRouter } from "./routes/public-chat.js";
@@ -53,6 +53,7 @@ export function createControlApiRuntime(
   } = {}
 ): ControlApiRuntime {
   const workerRegistry = createWorkerRegistry(config.workerDefinitions);
+  const workerRelayClient = createWorkerRelayClient();
   const sessionStore = new SessionStore(config.sessionDatabasePath);
   const sessionService = createSessionService({
     store: sessionStore,
@@ -64,7 +65,19 @@ export function createControlApiRuntime(
   const chatRelayService = createChatRelayService({
     chatStore,
     sessionService,
-    relayTransport: options.relayTransport ?? createNoopChatRelayTransport()
+    relayTransport:
+      options.relayTransport ??
+      {
+        async deliver(request) {
+          const worker = workerRegistry.getWorker(request.workerId);
+
+          if (!worker) {
+            throw new Error(`Unknown worker for relay: ${request.workerId}`);
+          }
+
+          return workerRelayClient.deliver(worker.agentBaseUrl, request);
+        }
+      }
   });
 
   sessionService.bootstrap();
