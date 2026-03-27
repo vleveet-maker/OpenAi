@@ -29,6 +29,31 @@ export interface SessionSnapshot {
   worker: WorkerSummary | null;
 }
 
+export type ChatMessageRole = "user" | "assistant";
+export type ChatMessageState = "pending" | "complete" | "failed";
+
+export interface SessionMessageRecord {
+  messageId: string;
+  sessionId: string;
+  workerId: string | null;
+  role: ChatMessageRole;
+  state: ChatMessageState;
+  body: string;
+  replyToMessageId: string | null;
+  failureCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+}
+
+export interface SessionConversationSnapshot {
+  sessionId: string;
+  worker: WorkerSummary | null;
+  canSend: boolean;
+  pendingAssistantMessageId: string | null;
+  messages: SessionMessageRecord[];
+}
+
 export function formatSessionEndReason(reason: SessionEndReason | null): string {
   switch (reason) {
     case "manual_end":
@@ -42,4 +67,14 @@ export function formatSessionEndReason(reason: SessionEndReason | null): string 
     default:
       return "Session state updated";
   }
+}
+
+export function formatFailedAssistantMessage(
+  failureCode: string | null
+): string {
+  if (!failureCode) {
+    return "The assistant reply could not be delivered";
+  }
+
+  return `Reply failed: ${failureCode.replaceAll("_", " ")}`;
 }
