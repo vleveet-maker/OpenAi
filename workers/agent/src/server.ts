@@ -14,6 +14,13 @@ import type {
   WorkerRelayResult
 } from "./chat-relay/relay-types.js";
 
+type WorkerRuntimeStatus =
+  | "starting"
+  | "ready"
+  | "busy"
+  | "disconnected"
+  | "reauth_required";
+
 export interface WorkerAgentConfig {
   workerId: string;
   displayName: string;
@@ -24,6 +31,13 @@ export interface WorkerAgentConfig {
   browserChannel?: string;
   headless: boolean;
   startUrl: string;
+}
+
+export interface WorkerHealthSnapshot {
+  runtimeStatus: WorkerRuntimeStatus;
+  browserContextReady: boolean;
+  lastRelayAt: string | null;
+  lastRelayFailureCode: string | null;
 }
 
 function parsePort(value: string | undefined, fallback: number): number {
@@ -53,6 +67,20 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   return fallback;
 }
 
+function resolveRuntimeFailureCode(error: unknown): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    error.code.trim()
+  ) {
+    return error.code;
+  }
+
+  return "worker_runtime_error";
+}
+
 export function loadWorkerAgentConfig(
   env: NodeJS.ProcessEnv = process.env
 ): WorkerAgentConfig {
@@ -76,6 +104,7 @@ export function loadWorkerAgentConfig(
 export interface WorkerAgentRuntime {
   config: WorkerAgentConfig;
   getBrowserContext(): Promise<BrowserContext>;
+  getHealthSnapshot(): WorkerHealthSnapshot;
   relayMessage(request: WorkerRelayRequest): Promise<WorkerRelayResult>;
   dispose(): Promise<void>;
 }
@@ -120,6 +149,12 @@ export function createWorkerAgentRuntime(
   config: WorkerAgentConfig = loadWorkerAgentConfig(),
   options: WorkerAgentRuntimeOptions = {}
 ): WorkerAgentRuntime {
+  const runtimeState: WorkerHealthSnapshot = {
+    runtimeStatus: "starting",
+    browserContextReady: false,
+    lastRelayAt: null,
+    lastRelayFailureCode: null
+  };
   const browserContextPromise =
     options.browserContextPromise ??
     launchWorkerBrowser({
@@ -129,27 +164,56 @@ export function createWorkerAgentRuntime(
       headless: config.headless,
       startUrl: config.startUrl
     });
+  const instrumentedBrowserContextPromise = browserContextPromise
+    .then((browserContext) => {
+      runtimeState.browserContextReady = true;
+      runtimeState.runtimeStatus = "ready";
+      return browserContext;
+    })
+    .catch((error: unknown) => {
+      runtimeState.browserContextReady = false;
+      runtimeState.runtimeStatus = "disconnected";
+      runtimeState.lastRelayFailureCode = resolveRuntimeFailureCode(error);
+      throw error;
+    });
   const relayHandler = options.relayHandler;
 
   return {
     config,
     async getBrowserContext() {
-      return browserContextPromise;
+      return instrumentedBrowserContextPromise;
+    },
+    getHealthSnapshot() {
+      return {
+        ...runtimeState
+      };
     },
     async relayMessage(request: WorkerRelayRequest) {
-      const browserContext = await browserContextPromise;
+      const browserContext = await instrumentedBrowserContextPromise;
 
-      if (relayHandler) {
-        return relayHandler(request, browserContext);
+      try {
+        const relayResult = relayHandler
+          ? await relayHandler(request, browserContext)
+          : await runRelay(toRelayBrowserContext(browserContext), request, {
+              lockKey: config.workerId,
+              startUrl: config.startUrl
+            });
+
+        runtimeState.lastRelayAt = new Date().toISOString();
+        runtimeState.lastRelayFailureCode = relayResult.failureCode;
+        runtimeState.runtimeStatus =
+          relayResult.failureClass === "auth" ? "reauth_required" : "ready";
+
+        return relayResult;
+      } catch (error: unknown) {
+        runtimeState.lastRelayAt = new Date().toISOString();
+        runtimeState.lastRelayFailureCode = resolveRuntimeFailureCode(error);
+        runtimeState.runtimeStatus = "disconnected";
+        throw error;
       }
-
-      return runRelay(toRelayBrowserContext(browserContext), request, {
-        lockKey: config.workerId,
-        startUrl: config.startUrl
-      });
     },
     async dispose() {
-      const browserContext = await browserContextPromise;
+      const browserContext = await instrumentedBrowserContextPromise;
       await browserContext.close();
     }
   };
@@ -165,12 +229,17 @@ export function createWorkerAgentApp(
   app.use(express.json());
 
   app.get("/health", (_request, response) => {
+    const healthSnapshot = runtime.getHealthSnapshot();
+
     response.json({
       service: "worker-agent",
       workerId: config.workerId,
       containerName: config.containerName,
       profilePath: config.profilePath,
-      status: "starting"
+      runtimeStatus: healthSnapshot.runtimeStatus,
+      browserContextReady: healthSnapshot.browserContextReady,
+      lastRelayAt: healthSnapshot.lastRelayAt,
+      lastRelayFailureCode: healthSnapshot.lastRelayFailureCode
     });
   });
 

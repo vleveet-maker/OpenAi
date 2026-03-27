@@ -31,7 +31,10 @@ export function createPublicChatRouter(
       return;
     }
 
-    response.json(snapshot);
+    response.json({
+      ...snapshot,
+      relay: snapshot.relay
+    });
   });
 
   router.post("/api/sessions/:sessionId/messages", (request, response) => {
@@ -42,7 +45,10 @@ export function createPublicChatRouter(
         body.bodyText
       );
 
-      response.status(202).json(snapshot);
+      response.status(202).json({
+        ...snapshot,
+        relay: snapshot.relay
+      });
     } catch (error: unknown) {
       if (error instanceof ChatRelayServiceError) {
         response.status(error.statusCode).json({

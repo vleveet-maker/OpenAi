@@ -31,6 +31,14 @@ import {
 import { SessionStore } from "./sessions/session-store.js";
 import { requireInternalAdmin } from "./security/internal-admin-guard.js";
 import {
+  createDockerEngineClient,
+  type DockerEngineClient
+} from "./workers/docker-engine-client.js";
+import {
+  createWorkerHealthMonitor,
+  type WorkerHealthMonitor
+} from "./workers/worker-health-monitor.js";
+import {
   createWorkerRegistry,
   type WorkerRegistry
 } from "./workers/worker-registry.js";
@@ -43,14 +51,20 @@ export interface ControlApiRuntime {
   sessionService: SessionService;
   chatStore: ChatStore;
   chatRelayService: ChatRelayService;
+  dockerEngineClient: DockerEngineClient;
+  healthMonitor: WorkerHealthMonitor;
   dispose(): void;
+}
+
+export interface ControlApiRuntimeOptions {
+  relayTransport?: ChatRelayTransport;
+  dockerEngineClient?: DockerEngineClient;
+  healthMonitor?: WorkerHealthMonitor;
 }
 
 export function createControlApiRuntime(
   config: ControlApiConfig = loadConfig(),
-  options: {
-    relayTransport?: ChatRelayTransport;
-  } = {}
+  options: ControlApiRuntimeOptions = {}
 ): ControlApiRuntime {
   const workerRegistry = createWorkerRegistry(config.workerDefinitions);
   const workerRelayClient = createWorkerRelayClient();
@@ -79,6 +93,17 @@ export function createControlApiRuntime(
         }
       }
   });
+  const dockerEngineClient =
+    options.dockerEngineClient ??
+    createDockerEngineClient(config.dockerSocketPath);
+  const healthMonitor =
+    options.healthMonitor ??
+    createWorkerHealthMonitor({
+      workerRegistry,
+      sessionService,
+      pollIntervalMs: config.workerHealthPollIntervalMs,
+      timeoutMs: config.workerHealthTimeoutMs
+    });
 
   sessionService.bootstrap();
 
@@ -90,7 +115,11 @@ export function createControlApiRuntime(
     sessionService,
     chatStore,
     chatRelayService,
+    dockerEngineClient,
+    healthMonitor,
     dispose() {
+      healthMonitor.stopHealthMonitor();
+      chatRelayService.stopBackgroundRetrySweep();
       sessionService.close();
       chatStore.close();
     }
@@ -124,7 +153,9 @@ export function createControlApiApp(
     recoverySessions,
     sessionService,
     workerRegistry,
-    chatRelayService
+    chatRelayService,
+    dockerEngineClient,
+    healthMonitor
   } = runtime;
   const app = express();
 
@@ -178,7 +209,9 @@ export function createControlApiApp(
     }),
     createInternalWorkerActionsRouter({
       workerRegistry,
-      sessionService
+      sessionService,
+      dockerEngineClient,
+      healthMonitor
     })
   );
 
@@ -192,6 +225,10 @@ export async function startControlApi(
 ) {
   const runtime = createControlApiRuntime(config);
   runtime.sessionService.startBackgroundSweep();
+  runtime.chatRelayService.startBackgroundRetrySweep(
+    config.sessionSweepIntervalMs
+  );
+  runtime.healthMonitor.startHealthMonitor();
   const app = createControlApiApp(runtime);
 
   return new Promise<import("node:http").Server>((resolve) => {

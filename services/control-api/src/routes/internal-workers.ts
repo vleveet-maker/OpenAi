@@ -15,7 +15,11 @@ export function createInternalWorkersRouter(
 
   router.get(INTERNAL_WORKERS_PATH, (_request, response) => {
     response.json({
-      workers: options.workerRegistry.listWorkers()
+      workers: options.workerRegistry.listWorkers().map((worker) => ({
+        ...worker,
+        lastSeenAt: worker.lastSeenAt ?? null,
+        runtimeStatus: worker.runtimeStatus ?? worker.status.status
+      }))
     });
   });
 
@@ -30,13 +34,17 @@ export function createInternalWorkersRouter(
       return;
     }
 
-    response.json(worker);
+    response.json({
+      ...worker,
+      lastSeenAt: worker.lastSeenAt ?? null,
+      runtimeStatus: worker.runtimeStatus ?? worker.status.status
+    });
   });
 
   router.get(`${INTERNAL_WORKERS_PATH}/:id/status`, (request, response) => {
-    const status = options.workerRegistry.getWorkerStatus(request.params.id);
+    const worker = options.workerRegistry.getWorker(request.params.id);
 
-    if (!status) {
+    if (!worker) {
       response.status(404).json({
         error: "worker_not_found",
         workerId: request.params.id
@@ -46,7 +54,9 @@ export function createInternalWorkersRouter(
 
     response.json({
       workerId: request.params.id,
-      ...status
+      ...worker.status,
+      lastSeenAt: worker.lastSeenAt ?? null,
+      runtimeStatus: worker.runtimeStatus ?? worker.status.status
     });
   });
 

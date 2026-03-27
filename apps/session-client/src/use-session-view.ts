@@ -13,11 +13,17 @@ import {
   getSessionBootstrap,
   sendMessage as postMessage
 } from "./session-api";
+import {
+  clearStoredSessionId,
+  storeSessionId
+} from "./session-storage";
 import type {
   SessionConversationSnapshot,
   SessionMessageRecord,
   SessionSnapshot
 } from "./session-types";
+
+type ConnectionState = "connected" | "reconnecting" | "initial_load_failed";
 
 interface SessionViewState {
   snapshot: SessionSnapshot | null;
@@ -30,6 +36,7 @@ interface SessionViewState {
   isLoading: boolean;
   isSending: boolean;
   remainingMs: number;
+  connectionState: ConnectionState;
   cancelQueuedSession: () => Promise<void>;
   endActiveSession: () => Promise<void>;
   sendMessage: (bodyText: string) => Promise<boolean>;
@@ -43,6 +50,8 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
   const [composerError, setComposerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(sessionId));
   const [isSending, setIsSending] = useState(false);
+  const [connectionState, setConnectionState] =
+    useState<ConnectionState>("connected");
   const [now, setNow] = useState(() => Date.now());
 
   const hydrateView = useEffectEvent(
@@ -64,6 +73,7 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
         setSnapshot(nextSnapshot);
         setConversation(nextConversation);
         setError(null);
+        setConnectionState("connected");
 
         if (nextConversation.canSend) {
           setComposerError(null);
@@ -74,6 +84,7 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
 
   const loadBootstrap = useEffectEvent(async () => {
     if (!sessionId) {
+      setIsLoading(false);
       return;
     }
 
@@ -82,9 +93,14 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
     try {
       await hydrateView(getSessionBootstrap);
     } catch (loadError) {
-      setError(
-        loadError instanceof Error ? loadError.message : "Failed to load the session"
-      );
+      startTransition(() => {
+        setConnectionState("initial_load_failed");
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Failed to load the session"
+        );
+      });
     } finally {
       setIsLoading(false);
     }
@@ -98,13 +114,35 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
     try {
       await hydrateView(getSession);
     } catch (loadError) {
-      setError(
-        loadError instanceof Error ? loadError.message : "Failed to refresh the session"
-      );
+      if (snapshot && conversation) {
+        startTransition(() => {
+          setConnectionState("reconnecting");
+          setError(null);
+        });
+        return;
+      }
+
+      startTransition(() => {
+        setConnectionState("initial_load_failed");
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Failed to refresh the session"
+        );
+      });
     }
   });
 
   useEffect(() => {
+    startTransition(() => {
+      setSnapshot(null);
+      setConversation(null);
+      setError(null);
+      setComposerError(null);
+      setConnectionState("connected");
+      setIsLoading(Boolean(sessionId));
+    });
+
     void loadBootstrap();
   }, [sessionId]);
 
@@ -121,6 +159,19 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
       window.clearInterval(timer);
     };
   }, [sessionId]);
+
+  useEffect(() => {
+    if (!snapshot) {
+      return;
+    }
+
+    if (snapshot.session.state === "queued" || snapshot.session.state === "active") {
+      storeSessionId(snapshot.session.sessionId);
+      return;
+    }
+
+    clearStoredSessionId();
+  }, [snapshot]);
 
   useEffect(() => {
     if (snapshot?.session.state !== "active" || !snapshot.session.endsAt) {
@@ -153,6 +204,7 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
     isLoading,
     isSending,
     remainingMs,
+    connectionState,
     cancelQueuedSession: async () => {
       if (!sessionId) {
         return;
@@ -169,6 +221,7 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
         startTransition(() => {
           setSnapshot(nextSnapshot);
           setConversation(nextConversation);
+          setConnectionState("connected");
           setError(null);
           setComposerError(null);
         });
@@ -198,6 +251,7 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
         startTransition(() => {
           setSnapshot(nextSnapshot);
           setConversation(nextConversation);
+          setConnectionState("connected");
           setError(null);
           setComposerError(null);
         });
@@ -223,6 +277,7 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
 
         startTransition(() => {
           setConversation(nextConversation);
+          setConnectionState("connected");
           setComposerError(null);
         });
 

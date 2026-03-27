@@ -140,15 +140,32 @@ async function ensureChatPage(
   return page;
 }
 
+function pageRequiresAuth(page: RelayPageLike | null): boolean {
+  const currentUrl = page?.url().toLowerCase() ?? "";
+
+  return (
+    currentUrl.includes("login") ||
+    currentUrl.includes("signin") ||
+    currentUrl.includes("auth") ||
+    currentUrl.includes("challenge")
+  );
+}
+
 function buildFailureResult(
   page: RelayPageLike | null,
-  failureCode: string
+  failureCode: string,
+  failureClass: WorkerRelayResult["failureClass"],
+  failureStage: WorkerRelayResult["failureStage"],
+  submittedAt: string | null
 ): WorkerRelayResult {
   return {
     assistantText: null,
     completedAt: new Date().toISOString(),
     pageUrl: page?.url() ?? null,
-    failureCode
+    failureCode,
+    failureClass,
+    failureStage,
+    submittedAt
   };
 }
 
@@ -173,7 +190,13 @@ export async function runRelay(
     const composer = await resolveUsableLocator(page, composerSelectors);
 
     if (!composer) {
-      return buildFailureResult(page, "selector_not_found");
+      return buildFailureResult(
+        page,
+        "selector_not_found",
+        pageRequiresAuth(page) ? "auth" : "transient",
+        "dispatch",
+        null
+      );
     }
 
     try {
@@ -186,15 +209,36 @@ export async function runRelay(
         await composer.press("Enter");
       }
     } catch {
-      return buildFailureResult(page, "submit_failed");
+      return buildFailureResult(
+        page,
+        "submit_failed",
+        pageRequiresAuth(page) ? "auth" : "transient",
+        "dispatch",
+        null
+      );
     }
 
+    const submittedAt = new Date().toISOString();
     const startedAt = now();
     let lastObservedText = "";
     let stabilizedAt: number | null = null;
+    let assistantObserved = false;
 
     while (now() - startedAt <= relayTimeoutMs) {
-      const assistantSnapshot = await readAssistantSnapshot(page);
+      let assistantSnapshot: AssistantSnapshot;
+
+      try {
+        assistantSnapshot = await readAssistantSnapshot(page);
+      } catch {
+        return buildFailureResult(
+          page,
+          "capture_failed",
+          "fatal",
+          assistantObserved ? "capture" : "submitted",
+          submittedAt
+        );
+      }
+
       const hasNewAssistantTurn =
         assistantSnapshot.count > baselineAssistantSnapshot.count;
       const hasChangedAssistantText =
@@ -202,6 +246,8 @@ export async function runRelay(
         assistantSnapshot.text !== baselineAssistantSnapshot.text;
 
       if (hasNewAssistantTurn || hasChangedAssistantText) {
+        assistantObserved = true;
+
         if (assistantSnapshot.text.length === 0) {
           stabilizedAt = null;
         } else if (assistantSnapshot.text !== lastObservedText) {
@@ -216,7 +262,10 @@ export async function runRelay(
             assistantText: assistantSnapshot.text,
             completedAt: new Date().toISOString(),
             pageUrl: page.url(),
-            failureCode: null
+            failureCode: null,
+            failureClass: null,
+            failureStage: null,
+            submittedAt
           };
         }
       }
@@ -230,10 +279,22 @@ export async function runRelay(
       latestSnapshot.count > baselineAssistantSnapshot.count &&
       latestSnapshot.text.length === 0
     ) {
-      return buildFailureResult(page, "reply_empty");
+      return buildFailureResult(
+        page,
+        "reply_empty",
+        "fatal",
+        "capture",
+        submittedAt
+      );
     }
 
-    return buildFailureResult(page, "reply_timeout");
+    return buildFailureResult(
+      page,
+      "reply_timeout",
+      "fatal",
+      assistantObserved ? "capture" : "submitted",
+      submittedAt
+    );
   });
 }
 

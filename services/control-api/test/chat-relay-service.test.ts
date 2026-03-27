@@ -37,6 +37,14 @@ const WORKERS: WorkerDefinition[] = [
 const tempDirectories: string[] = [];
 const cleanupCallbacks: Array<() => void> = [];
 
+function createPendingRelayTransport(): ChatRelayTransport {
+  return {
+    async deliver() {
+      return new Promise(() => undefined);
+    }
+  };
+}
+
 function createTestRuntime(relayTransport?: ChatRelayTransport) {
   const root = mkdtempSync(join(tmpdir(), "control-api-chat-test-"));
   tempDirectories.push(root);
@@ -55,12 +63,7 @@ function createTestRuntime(relayTransport?: ChatRelayTransport) {
   sessionService.bootstrap(new Date("2026-03-27T10:00:00.000Z"));
 
   const effectiveRelayTransport =
-    relayTransport ??
-    ({
-      async deliver() {
-        return undefined;
-      }
-    } satisfies ChatRelayTransport);
+    relayTransport ?? createPendingRelayTransport();
 
   const chatRelayService = new ChatRelayService({
     chatStore,
@@ -72,6 +75,7 @@ function createTestRuntime(relayTransport?: ChatRelayTransport) {
     chatRelayService,
     sessionService,
     dispose() {
+      chatRelayService.stopBackgroundRetrySweep();
       sessionService.close();
       chatStore.close();
     }
@@ -84,6 +88,8 @@ async function flushQueuedRelayHandlers() {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
+
   while (cleanupCallbacks.length > 0) {
     const cleanup = cleanupCallbacks.pop();
     cleanup?.();
@@ -104,7 +110,7 @@ afterEach(() => {
 describe("ChatRelayService", () => {
   it("creates a user message and pending assistant placeholder", () => {
     const relayTransport = {
-      deliver: vi.fn().mockResolvedValue(undefined)
+      deliver: vi.fn(() => new Promise(() => undefined))
     } satisfies ChatRelayTransport;
     const runtime = createTestRuntime(relayTransport);
     cleanupCallbacks.push(() => {
@@ -134,6 +140,11 @@ describe("ChatRelayService", () => {
       state: "pending",
       body: "",
       replyToMessageId: snapshot.messages[0]?.messageId
+    });
+    expect(snapshot.relay).toMatchObject({
+      status: "dispatching",
+      attemptCount: 1,
+      maxAttempts: 3
     });
     expect(relayTransport.deliver).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -230,7 +241,8 @@ describe("ChatRelayService", () => {
     const completedSnapshot = runtime.chatRelayService.completeAssistantMessage(
       firstSnapshot.pendingAssistantMessageId!,
       "Doing great!",
-      "2026-03-27T10:01:00.000Z"
+      "2026-03-27T10:01:00.000Z",
+      "2026-03-27T10:00:10.000Z"
     );
 
     expect(completedSnapshot?.messages[1]).toMatchObject({
@@ -238,6 +250,7 @@ describe("ChatRelayService", () => {
       state: "complete",
       body: "Doing great!"
     });
+    expect(completedSnapshot?.relay.status).toBe("completed");
     expect(completedSnapshot?.canSend).toBe(true);
 
     const secondSnapshot = runtime.chatRelayService.sendMessage(
@@ -247,7 +260,10 @@ describe("ChatRelayService", () => {
     const failedSnapshot = runtime.chatRelayService.failAssistantMessage(
       secondSnapshot.pendingAssistantMessageId!,
       "reply_timeout",
-      "2026-03-27T10:02:00.000Z"
+      "2026-03-27T10:02:00.000Z",
+      "fatal",
+      "capture",
+      "2026-03-27T10:01:10.000Z"
     );
 
     const failedMessage = failedSnapshot?.messages.at(-1);
@@ -256,56 +272,198 @@ describe("ChatRelayService", () => {
       state: "failed",
       failureCode: "reply_timeout"
     });
+    expect(failedSnapshot?.relay.status).toBe("failed");
     expect(failedSnapshot?.canSend).toBe(true);
   });
 
-  it("completes the pending assistant message when relay delivery resolves", async () => {
+  it("does not create a second user message when a transient attempt retries", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-27T10:00:00.000Z"));
+
     const relayTransport = {
-      async deliver() {
-        return {
-          assistantText: "Completed from transport",
-          completedAt: "2026-03-27T10:01:00.000Z"
-        };
-      }
+      deliver: vi
+        .fn<ChatRelayTransport["deliver"]>()
+        .mockRejectedValueOnce(
+          Object.assign(new Error("worker down"), {
+            code: "worker_relay_unreachable"
+          })
+        )
+        .mockResolvedValueOnce({
+          assistantText: "Recovered answer",
+          completedAt: "2026-03-27T10:00:03.000Z",
+          submittedAt: "2026-03-27T10:00:02.100Z"
+        })
     } satisfies ChatRelayTransport;
     const runtime = createTestRuntime(relayTransport);
     cleanupCallbacks.push(() => {
       runtime.dispose();
     });
     const session = runtime.sessionService.createSession(
-      "Async Success",
+      "Retry Session",
+      new Date("2026-03-27T10:00:00.000Z")
+    );
+
+    runtime.chatRelayService.sendMessage(
+      session.session.sessionId,
+      "Hello with retry",
+      new Date("2026-03-27T10:00:00.000Z")
+    );
+    await flushQueuedRelayHandlers();
+
+    const retryingSnapshot = runtime.chatRelayService.getConversationSnapshot(
+      session.session.sessionId
+    );
+
+    expect(relayTransport.deliver).toHaveBeenCalledTimes(1);
+    expect(
+      retryingSnapshot?.messages.filter((message) => message.role === "user")
+    ).toHaveLength(1);
+    expect(retryingSnapshot?.messages.at(-1)).toMatchObject({
+      role: "assistant",
+      state: "pending"
+    });
+    expect(retryingSnapshot?.relay).toMatchObject({
+      status: "retrying",
+      attemptCount: 1,
+      maxAttempts: 3
+    });
+
+    vi.setSystemTime(new Date("2026-03-27T10:00:02.000Z"));
+    runtime.chatRelayService.runRetrySweep(new Date());
+    await flushQueuedRelayHandlers();
+
+    const completedSnapshot = runtime.chatRelayService.getConversationSnapshot(
+      session.session.sessionId
+    );
+
+    expect(relayTransport.deliver).toHaveBeenCalledTimes(2);
+    expect(
+      completedSnapshot?.messages.filter((message) => message.role === "user")
+    ).toHaveLength(1);
+    expect(completedSnapshot?.messages.at(-1)).toMatchObject({
+      role: "assistant",
+      state: "complete",
+      body: "Recovered answer"
+    });
+    expect(completedSnapshot?.relay.status).toBe("completed");
+  });
+
+  it("does not retry after submit was acknowledged", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-27T10:00:00.000Z"));
+
+    const relayTransport = {
+      deliver: vi.fn().mockResolvedValue({
+        failureCode: "reply_timeout",
+        failureClass: "transient",
+        failureStage: "submitted",
+        submittedAt: "2026-03-27T10:00:00.100Z",
+        completedAt: "2026-03-27T10:00:30.000Z"
+      })
+    } satisfies ChatRelayTransport;
+    const runtime = createTestRuntime(relayTransport);
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    const session = runtime.sessionService.createSession(
+      "Submitted Failure",
       new Date("2026-03-27T10:00:00.000Z")
     );
 
     runtime.chatRelayService.sendMessage(session.session.sessionId, "Hello");
     await flushQueuedRelayHandlers();
 
+    vi.setSystemTime(new Date("2026-03-27T10:00:10.000Z"));
+    runtime.chatRelayService.runRetrySweep(new Date());
+    await flushQueuedRelayHandlers();
+
     const snapshot = runtime.chatRelayService.getConversationSnapshot(
       session.session.sessionId
     );
-    const assistantMessage = snapshot?.messages.at(-1);
 
-    expect(assistantMessage).toMatchObject({
+    expect(relayTransport.deliver).toHaveBeenCalledTimes(1);
+    expect(snapshot?.messages.at(-1)).toMatchObject({
       role: "assistant",
-      state: "complete",
-      body: "Completed from transport"
+      state: "failed",
+      failureCode: "reply_timeout"
+    });
+    expect(snapshot?.relay).toMatchObject({
+      status: "failed",
+      attemptCount: 1,
+      lastFailureCode: "reply_timeout"
     });
   });
 
-  it("marks the pending assistant message failed when relay delivery fails", async () => {
+  it("stops retrying after three total attempts", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-27T10:00:00.000Z"));
+
     const relayTransport = {
-      async deliver() {
-        throw Object.assign(new Error("worker down"), {
-          code: "worker_unreachable"
-        });
-      }
+      deliver: vi
+        .fn<ChatRelayTransport["deliver"]>()
+        .mockRejectedValue(
+          Object.assign(new Error("worker down"), {
+            code: "worker_relay_unreachable"
+          })
+        )
     } satisfies ChatRelayTransport;
     const runtime = createTestRuntime(relayTransport);
     cleanupCallbacks.push(() => {
       runtime.dispose();
     });
     const session = runtime.sessionService.createSession(
-      "Async Failure",
+      "Retry Exhausted",
+      new Date("2026-03-27T10:00:00.000Z")
+    );
+
+    runtime.chatRelayService.sendMessage(session.session.sessionId, "Hello");
+    await flushQueuedRelayHandlers();
+
+    vi.setSystemTime(new Date("2026-03-27T10:00:02.000Z"));
+    runtime.chatRelayService.runRetrySweep(new Date());
+    await flushQueuedRelayHandlers();
+
+    vi.setSystemTime(new Date("2026-03-27T10:00:07.000Z"));
+    runtime.chatRelayService.runRetrySweep(new Date());
+    await flushQueuedRelayHandlers();
+
+    vi.setSystemTime(new Date("2026-03-27T10:00:15.000Z"));
+    runtime.chatRelayService.runRetrySweep(new Date());
+    await flushQueuedRelayHandlers();
+
+    const snapshot = runtime.chatRelayService.getConversationSnapshot(
+      session.session.sessionId
+    );
+
+    expect(relayTransport.deliver).toHaveBeenCalledTimes(3);
+    expect(snapshot?.messages.at(-1)).toMatchObject({
+      role: "assistant",
+      state: "failed",
+      failureCode: "worker_relay_unreachable"
+    });
+    expect(snapshot?.relay).toMatchObject({
+      status: "failed",
+      attemptCount: 3,
+      maxAttempts: 3,
+      lastFailureCode: "worker_relay_unreachable"
+    });
+  });
+
+  it("leaves one failed assistant message visible after a terminal failure", async () => {
+    const relayTransport = {
+      deliver: vi.fn().mockResolvedValue({
+        failureCode: "selector_not_found",
+        failureClass: "fatal",
+        failureStage: "dispatch",
+        completedAt: "2026-03-27T10:00:01.000Z"
+      })
+    } satisfies ChatRelayTransport;
+    const runtime = createTestRuntime(relayTransport);
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    const session = runtime.sessionService.createSession(
+      "Terminal Failure",
       new Date("2026-03-27T10:00:00.000Z")
     );
 
@@ -315,12 +473,14 @@ describe("ChatRelayService", () => {
     const snapshot = runtime.chatRelayService.getConversationSnapshot(
       session.session.sessionId
     );
-    const assistantMessage = snapshot?.messages.at(-1);
 
-    expect(assistantMessage).toMatchObject({
+    expect(snapshot?.messages).toHaveLength(2);
+    expect(snapshot?.messages.filter((message) => message.role === "assistant")).toHaveLength(1);
+    expect(snapshot?.messages.at(-1)).toMatchObject({
       role: "assistant",
       state: "failed",
-      failureCode: "worker_unreachable"
+      failureCode: "selector_not_found"
     });
+    expect(snapshot?.relay.status).toBe("failed");
   });
 });

@@ -12,6 +12,7 @@ export interface WorkerRecord {
   profilePath: string;
   agentBaseUrl: string;
   status: WorkerStatusRecord;
+  runtimeStatus?: WorkerStatus;
   assignedSessionId?: string;
   assignedUserLabel?: string;
   lastSeenAt?: string;
@@ -22,6 +23,7 @@ export interface WorkerRecord {
 export interface WorkerRegistryUpdate {
   status?: WorkerStatus;
   reason?: string;
+  runtimeStatus?: WorkerStatus | null;
   assignedSessionId?: string | null;
   assignedUserLabel?: string | null;
   lastSeenAt?: string;
@@ -52,6 +54,7 @@ export class WorkerRegistry {
         profilePath: definition.profilePath,
         agentBaseUrl: definition.agentBaseUrl,
         status: createWorkerStatusRecord(definition.defaultStatus, "registry bootstrap"),
+        runtimeStatus: definition.defaultStatus,
         lastSeenAt: now
       });
     }
@@ -92,6 +95,10 @@ export class WorkerRegistry {
         update.status !== undefined
           ? createWorkerStatusRecord(update.status, update.reason)
           : existing.status,
+      runtimeStatus:
+        update.runtimeStatus === null
+          ? undefined
+          : update.runtimeStatus ?? existing.runtimeStatus,
       assignedSessionId:
         update.assignedSessionId === null
           ? undefined

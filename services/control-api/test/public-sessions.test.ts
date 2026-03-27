@@ -23,6 +23,9 @@ function createTestRuntime() {
     sessionDurationMinutes: 60,
     sessionSweepIntervalMs: 5_000,
     sessionClientDistPath: join(root, "missing-client-dist"),
+    dockerSocketPath: "/var/run/docker.sock",
+    workerHealthPollIntervalMs: 5_000,
+    workerHealthTimeoutMs: 3_000,
     workerDefinitions: [
       {
         workerId: "dad",

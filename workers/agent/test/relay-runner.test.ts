@@ -58,6 +58,7 @@ class FakePage {
   constructor(
     private readonly options: {
       roleComposerAvailable?: boolean;
+      contentEditableFallbackAvailable?: boolean;
       sendButtonAvailable?: boolean;
       assistantSteps?: string[][];
       indicatorSteps?: boolean[];
@@ -131,8 +132,16 @@ class FakePage {
     if (selector === "[contenteditable='true']") {
       return new FakeLocator(
         () => ({
-          count: this.options.roleComposerAvailable === false ? 1 : 0,
-          visible: this.options.roleComposerAvailable === false,
+          count:
+            this.options.contentEditableFallbackAvailable === false
+              ? 0
+              : this.options.roleComposerAvailable === false
+                ? 1
+                : 0,
+          visible:
+            this.options.contentEditableFallbackAvailable === false
+              ? false
+              : this.options.roleComposerAvailable === false,
           text: this.lastFilledValue
         }),
         {
@@ -231,7 +240,7 @@ function buildRequest(): WorkerRelayRequest {
 }
 
 describe("runRelay", () => {
-  it("returns assistant text after it stabilizes", async () => {
+  it("includes submittedAt on a successful relay result", async () => {
     const page = new FakePage();
     const context = new FakeBrowserContext(page);
     let currentTime = 0;
@@ -249,6 +258,9 @@ describe("runRelay", () => {
     });
 
     expect(result.failureCode).toBeNull();
+    expect(result.failureClass).toBeNull();
+    expect(result.failureStage).toBeNull();
+    expect(result.submittedAt).toEqual(expect.any(String));
     expect(result.assistantText).toBe("Final stable reply");
     expect(page.lastFilledValue).toBe("Hello from relay");
     expect(page.sendClicks).toBe(1);
@@ -274,11 +286,29 @@ describe("runRelay", () => {
     });
 
     expect(result.failureCode).toBeNull();
+    expect(result.submittedAt).toEqual(expect.any(String));
     expect(page.lastFilledValue).toBe("Hello from relay");
     expect(page.sendClicks).toBe(1);
   });
 
-  it("returns reply_timeout when no assistant response stabilizes", async () => {
+  it("classifies selector failures as transient dispatch failures", async () => {
+    const page = new FakePage({
+      roleComposerAvailable: false,
+      contentEditableFallbackAvailable: false
+    });
+    const context = new FakeBrowserContext(page);
+
+    const result = await runRelay(context, buildRequest(), {
+      lockKey: "dad"
+    });
+
+    expect(result.failureCode).toBe("selector_not_found");
+    expect(result.failureClass).toBe("transient");
+    expect(result.failureStage).toBe("dispatch");
+    expect(result.submittedAt).toBeNull();
+  });
+
+  it("returns reply_timeout as a submitted failure when no assistant response appears", async () => {
     const page = new FakePage({
       assistantSteps: [[], [], [], []],
       indicatorSteps: [false, false, false, false]
@@ -299,6 +329,41 @@ describe("runRelay", () => {
     });
 
     expect(result.failureCode).toBe("reply_timeout");
+    expect(result.failureClass).toBe("fatal");
+    expect(result.failureStage).toBe("submitted");
+    expect(result.submittedAt).toEqual(expect.any(String));
     expect(result.assistantText).toBeNull();
+  });
+
+  it("classifies partial assistant output timeouts as capture failures", async () => {
+    const page = new FakePage({
+      assistantSteps: [
+        [],
+        ["Draft reply"],
+        ["Still typing"],
+        ["Still typing"],
+        ["Still typing"]
+      ],
+      indicatorSteps: [true, true, true, true, true]
+    });
+    const context = new FakeBrowserContext(page);
+    let currentTime = 0;
+
+    const result = await runRelay(context, buildRequest(), {
+      lockKey: "dad",
+      relayTimeoutMs: 15,
+      quiescenceMs: 10,
+      pollIntervalMs: 5,
+      now: () => currentTime,
+      delay: async (ms) => {
+        currentTime += ms;
+        page.advanceStep();
+      }
+    });
+
+    expect(result.failureCode).toBe("reply_timeout");
+    expect(result.failureClass).toBe("fatal");
+    expect(result.failureStage).toBe("capture");
+    expect(result.submittedAt).toEqual(expect.any(String));
   });
 });

@@ -6,14 +6,21 @@ import { ChatStore } from "./chat-store.js";
 import type {
   ChatRelayTransport,
   ConversationSnapshot,
+  RelayAttemptStage,
   RelayDispatchRequest,
   RelayDispatchResult,
-  SessionMessageRecord
+  RelayFailureClass,
+  RelayJobRecord
 } from "./chat-types.js";
 
 const MIN_MESSAGE_LENGTH = 1;
 const MAX_MESSAGE_LENGTH = 4_000;
 const DEFAULT_TRANSPORT_FAILURE = "relay_dispatch_failed";
+const DEFAULT_MAX_ATTEMPTS = 3;
+const RETRY_DELAY_MS_BY_ATTEMPT = new Map<number, number>([
+  [2, 2_000],
+  [3, 5_000]
+]);
 
 export class ChatRelayServiceError extends Error {
   constructor(
@@ -32,6 +39,9 @@ export interface ChatRelayServiceOptions {
 }
 
 export class ChatRelayService {
+  private readonly activeDispatches = new Set<string>();
+  private backgroundRetrySweep?: NodeJS.Timeout;
+
   constructor(private readonly options: ChatRelayServiceOptions) {}
 
   getConversationSnapshot(
@@ -125,23 +135,23 @@ export class ChatRelayService {
       completedAt: null
     });
 
-    const dispatchRequest: RelayDispatchRequest = {
-      workerId,
-      sessionId,
-      userMessageId,
+    this.options.chatStore.insertRelayJob({
       assistantMessageId,
-      bodyText: trimmedBody
-    };
+      sessionId,
+      workerId,
+      userMessageId,
+      state: "queued",
+      attemptCount: 0,
+      maxAttempts: DEFAULT_MAX_ATTEMPTS,
+      nextRetryAt: nowIso,
+      submittedAt: null,
+      completedAt: null,
+      lastFailureCode: null,
+      lastFailureClass: null,
+      lastFailureStage: null
+    });
 
-    void this.options.relayTransport
-      .deliver(dispatchRequest)
-      .then((result) => {
-        this.handleTransportResult(dispatchRequest, result);
-      })
-      .catch((error: unknown) => {
-        const failureCode = this.resolveFailureCode(error);
-        this.failAssistantMessage(assistantMessageId, failureCode);
-      });
+    void this.dispatchRelayJob(assistantMessageId, now);
 
     return this.requireConversationSnapshot(sessionId);
   }
@@ -149,7 +159,8 @@ export class ChatRelayService {
   completeAssistantMessage(
     assistantMessageId: string,
     assistantText: string,
-    completedAt: string = new Date().toISOString()
+    completedAt: string = new Date().toISOString(),
+    submittedAt: string | null = null
   ): ConversationSnapshot | undefined {
     const trimmedAssistantText = assistantText.trim();
 
@@ -171,13 +182,22 @@ export class ChatRelayService {
       return undefined;
     }
 
+    this.options.chatStore.completeRelayJob(
+      assistantMessageId,
+      completedAt,
+      submittedAt
+    );
+
     return this.requireConversationSnapshot(updatedMessage.sessionId);
   }
 
   failAssistantMessage(
     assistantMessageId: string,
     failureCode: string,
-    failedAt: string = new Date().toISOString()
+    failedAt: string = new Date().toISOString(),
+    failureClass: RelayFailureClass = "fatal",
+    failureStage: RelayAttemptStage = "capture",
+    submittedAt: string | null = null
   ): ConversationSnapshot | undefined {
     const updatedMessage = this.options.chatStore.failAssistantMessage(
       assistantMessageId,
@@ -189,7 +209,45 @@ export class ChatRelayService {
       return undefined;
     }
 
+    this.options.chatStore.failRelayJob(
+      assistantMessageId,
+      failureCode,
+      failureClass,
+      failureStage,
+      failedAt,
+      submittedAt
+    );
+
     return this.requireConversationSnapshot(updatedMessage.sessionId);
+  }
+
+  startBackgroundRetrySweep(intervalMs: number): void {
+    if (this.backgroundRetrySweep) {
+      return;
+    }
+
+    this.backgroundRetrySweep = setInterval(() => {
+      this.runRetrySweep();
+    }, intervalMs);
+
+    this.backgroundRetrySweep.unref();
+  }
+
+  stopBackgroundRetrySweep(): void {
+    if (!this.backgroundRetrySweep) {
+      return;
+    }
+
+    clearInterval(this.backgroundRetrySweep);
+    this.backgroundRetrySweep = undefined;
+  }
+
+  runRetrySweep(now: Date = new Date()): void {
+    const jobs = this.options.chatStore.listRetryableRelayJobs(now.toISOString());
+
+    for (const job of jobs) {
+      void this.dispatchRelayJob(job.assistantMessageId, now);
+    }
   }
 
   private buildConversationSnapshot(
@@ -210,6 +268,9 @@ export class ChatRelayService {
         Boolean(sessionSnapshot.session.workerId) &&
         !pendingAssistantMessage,
       pendingAssistantMessageId: pendingAssistantMessage?.messageId ?? null,
+      relay: this.options.chatStore.getRelayStatusForSession(
+        sessionSnapshot.session.sessionId
+      ),
       messages
     };
   }
@@ -249,36 +310,180 @@ export class ChatRelayService {
     return trimmedBody;
   }
 
+  private async dispatchRelayJob(
+    assistantMessageId: string,
+    now: Date = new Date()
+  ): Promise<void> {
+    if (this.activeDispatches.has(assistantMessageId)) {
+      return;
+    }
+
+    const currentJob = this.options.chatStore.getRelayJob(assistantMessageId);
+
+    if (!currentJob || currentJob.state === "completed" || currentJob.state === "failed") {
+      return;
+    }
+
+    const sessionSnapshot = this.options.sessionService.getSessionSnapshot(
+      currentJob.sessionId
+    );
+
+    if (
+      !sessionSnapshot ||
+      sessionSnapshot.session.state !== "active" ||
+      sessionSnapshot.session.workerId !== currentJob.workerId
+    ) {
+      this.handleTransportFailure(currentJob, {
+        failureCode: "session_not_active",
+        failureClass: "fatal",
+        failureStage: "dispatch",
+        completedAt: now.toISOString()
+      });
+      return;
+    }
+
+    const userMessage = this.options.chatStore.getMessage(currentJob.userMessageId);
+
+    if (!userMessage) {
+      this.handleTransportFailure(currentJob, {
+        failureCode: "relay_user_message_missing",
+        failureClass: "fatal",
+        failureStage: "dispatch",
+        completedAt: now.toISOString()
+      });
+      return;
+    }
+
+    const dispatchJob = this.options.chatStore.startRelayAttempt(
+      assistantMessageId,
+      now.toISOString()
+    );
+
+    if (!dispatchJob) {
+      return;
+    }
+
+    const dispatchRequest: RelayDispatchRequest = {
+      workerId: dispatchJob.workerId,
+      sessionId: dispatchJob.sessionId,
+      userMessageId: dispatchJob.userMessageId,
+      assistantMessageId: dispatchJob.assistantMessageId,
+      bodyText: userMessage.body
+    };
+
+    this.activeDispatches.add(assistantMessageId);
+
+    try {
+      const result = await this.options.relayTransport.deliver(dispatchRequest);
+      this.handleTransportResult(dispatchJob, result);
+    } catch (error: unknown) {
+      this.handleTransportFailure(dispatchJob, {
+        failureCode: this.resolveFailureCode(error),
+        failureClass: "transient",
+        failureStage: "dispatch",
+        completedAt: new Date().toISOString()
+      });
+    } finally {
+      this.activeDispatches.delete(assistantMessageId);
+    }
+  }
+
   private handleTransportResult(
-    request: RelayDispatchRequest,
+    job: RelayJobRecord,
     result: RelayDispatchResult | void
   ): void {
     if (!result) {
+      this.handleTransportFailure(job, {
+        failureCode: "relay_result_missing",
+        failureClass: "fatal",
+        failureStage: "dispatch"
+      });
       return;
     }
 
     if (typeof result.failureCode === "string" && result.failureCode.trim()) {
-      this.failAssistantMessage(
-        request.assistantMessageId,
-        result.failureCode,
-        result.completedAt ?? new Date().toISOString()
-      );
+      this.handleTransportFailure(job, {
+        failureCode: result.failureCode,
+        failureClass: result.failureClass ?? "fatal",
+        failureStage:
+          result.failureStage ??
+          (result.submittedAt ? "capture" : "dispatch"),
+        completedAt: result.completedAt,
+        submittedAt: result.submittedAt
+      });
       return;
     }
 
     if (typeof result.assistantText === "string") {
       this.completeAssistantMessage(
-        request.assistantMessageId,
+        job.assistantMessageId,
         result.assistantText,
-        result.completedAt ?? new Date().toISOString()
+        result.completedAt ?? new Date().toISOString(),
+        result.submittedAt ?? null
       );
       return;
     }
 
+    this.handleTransportFailure(job, {
+      failureCode: "relay_result_incomplete",
+      failureClass: "fatal",
+      failureStage: result.submittedAt ? "capture" : "dispatch",
+      completedAt: result.completedAt,
+      submittedAt: result.submittedAt
+    });
+  }
+
+  private handleTransportFailure(
+    job: RelayJobRecord,
+    details: {
+      failureCode: string;
+      failureClass: RelayFailureClass;
+      failureStage: RelayAttemptStage;
+      completedAt?: string;
+      submittedAt?: string;
+    }
+  ): void {
+    const currentJob =
+      this.options.chatStore.getRelayJob(job.assistantMessageId) ?? job;
+    const failedAt = details.completedAt ?? new Date().toISOString();
+    const submittedAt = details.submittedAt ?? null;
+
+    if (
+      details.failureClass === "transient" &&
+      !submittedAt &&
+      currentJob.attemptCount < currentJob.maxAttempts
+    ) {
+      const nextRetryDelayMs = this.getRetryDelayMs(currentJob.attemptCount + 1);
+
+      if (nextRetryDelayMs !== null) {
+        const nextRetryAt = new Date(
+          Date.parse(failedAt) + nextRetryDelayMs
+        ).toISOString();
+
+        this.options.chatStore.scheduleRelayRetry(
+          currentJob.assistantMessageId,
+          details.failureCode,
+          details.failureClass,
+          details.failureStage,
+          failedAt,
+          nextRetryAt
+        );
+        return;
+      }
+    }
+
     this.failAssistantMessage(
-      request.assistantMessageId,
-      "relay_result_incomplete"
+      currentJob.assistantMessageId,
+      details.failureCode,
+      failedAt,
+      details.failureClass,
+      details.failureStage,
+      submittedAt
     );
+  }
+
+  private getRetryDelayMs(nextAttemptNumber: number): number | null {
+    return RETRY_DELAY_MS_BY_ATTEMPT.get(nextAttemptNumber) ?? null;
   }
 
   private resolveFailureCode(error: unknown): string {

@@ -46,11 +46,21 @@ export interface SessionMessageRecord {
   completedAt: string | null;
 }
 
+export interface RelayStatusSnapshot {
+  status: "idle" | "dispatching" | "retrying" | "failed" | "completed";
+  attemptCount: number;
+  maxAttempts: number;
+  nextRetryAt: string | null;
+  lastFailureCode: string | null;
+  lastFailureClass: "transient" | "auth" | "fatal" | null;
+}
+
 export interface SessionConversationSnapshot {
   sessionId: string;
   worker: WorkerSummary | null;
   canSend: boolean;
   pendingAssistantMessageId: string | null;
+  relay: RelayStatusSnapshot;
   messages: SessionMessageRecord[];
 }
 

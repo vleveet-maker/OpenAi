@@ -180,6 +180,21 @@ button {
   border: 1px solid rgba(229, 172, 105, 0.28);
 }
 
+.status-banner.reconnecting {
+  background: rgba(214, 226, 240, 0.14);
+  border: 1px solid rgba(214, 226, 240, 0.28);
+}
+
+.status-banner.retrying {
+  background: rgba(242, 211, 164, 0.16);
+  border: 1px solid rgba(242, 211, 164, 0.28);
+}
+
+.status-banner.failed {
+  background: rgba(214, 97, 72, 0.16);
+  border: 1px solid rgba(214, 97, 72, 0.28);
+}
+
 .shell-card {
   display: grid;
   gap: 1.25rem;

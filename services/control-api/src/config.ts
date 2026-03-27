@@ -24,6 +24,9 @@ export interface ControlApiConfig {
   sessionDurationMinutes: number;
   sessionSweepIntervalMs: number;
   sessionClientDistPath: string;
+  dockerSocketPath: string;
+  workerHealthPollIntervalMs: number;
+  workerHealthTimeoutMs: number;
   workerDefinitions: WorkerDefinition[];
 }
 
@@ -41,6 +44,7 @@ const DEFAULT_SESSION_CLIENT_DIST_PATH = resolve(
   "session-client",
   "dist"
 );
+const DEFAULT_DOCKER_SOCKET_PATH = "/var/run/docker.sock";
 
 const DEFAULT_WORKERS: WorkerDefinition[] = [
   {
@@ -119,6 +123,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ControlApiConf
     sessionSweepIntervalMs: parseInteger(env.SESSION_SWEEP_INTERVAL_MS, 5_000),
     sessionClientDistPath:
       env.SESSION_CLIENT_DIST_PATH ?? DEFAULT_SESSION_CLIENT_DIST_PATH,
+    dockerSocketPath:
+      env.DOCKER_SOCKET_PATH ?? DEFAULT_DOCKER_SOCKET_PATH,
+    workerHealthPollIntervalMs: parseInteger(
+      env.WORKER_HEALTH_POLL_INTERVAL_MS,
+      5_000
+    ),
+    workerHealthTimeoutMs: parseInteger(
+      env.WORKER_HEALTH_TIMEOUT_MS,
+      3_000
+    ),
     workerDefinitions: parseWorkerDefinitions(env.WORKER_DEFINITIONS) ?? DEFAULT_WORKERS
   };
 }

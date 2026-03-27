@@ -27,11 +27,14 @@ This document is for the household operator only. Worker browsers are internal-o
 
 ## Restart Workflow
 
+- Docker socket requirement: `control-api` must have `/var/run/docker.sock` mounted and `DOCKER_SOCKET_PATH=/var/run/docker.sock` configured before restart requests can reach the Docker Engine API.
+- Use the exact internal restart endpoint `POST /internal/workers/:id/restart` with the internal admin token path you already use for other worker controls.
 - Use the internal restart endpoint for a single worker when the browser becomes stale, crashes, or stops responding.
 - Restart only the affected worker container; avoid bouncing the whole pool unless several workers are unhealthy at the same time.
+- Expect status transitions `starting -> ready or disconnected` as the worker-health monitor polls the restarted container.
 - After restart, verify that the same durable profile mount is still attached at `/srv/chatgpt-workers/profiles/<worker-name>`.
 - If the worker returns authenticated, mark it `ready`.
-- If the worker loses ChatGPT auth after restart, move into the manual reauthentication flow.
+- If the worker returns requiring reauth, move into the manual reauthentication flow and complete login yourself before marking the worker ready again.
 
 ## Failure Triage
 

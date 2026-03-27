@@ -10,4 +10,7 @@ export interface WorkerRelayResult {
   completedAt: string;
   pageUrl: string | null;
   failureCode: string | null;
+  failureClass: "transient" | "auth" | "fatal" | null;
+  failureStage: "dispatch" | "submitted" | "capture" | null;
+  submittedAt: string | null;
 }

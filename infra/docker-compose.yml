@@ -14,6 +14,9 @@ services:
       SESSION_DB_PATH: /srv/chatgpt-workers/control-api/session-routing.sqlite
       SESSION_DURATION_MINUTES: "60"
       SESSION_SWEEP_INTERVAL_MS: "5000"
+      DOCKER_SOCKET_PATH: /var/run/docker.sock
+      WORKER_HEALTH_POLL_INTERVAL_MS: "5000"
+      WORKER_HEALTH_TIMEOUT_MS: "3000"
       WORKER_DEFINITIONS: >-
         [
           {"workerId":"dad","displayName":"Dad","containerName":"worker-dad","profilePath":"/srv/chatgpt-workers/profiles/dad","agentBaseUrl":"http://worker-dad:4020","defaultStatus":"starting"},
@@ -25,6 +28,7 @@ services:
     volumes:
       - ../:/app
       - ./data/control-api:/srv/chatgpt-workers/control-api
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - worker-dad
       - worker-wife

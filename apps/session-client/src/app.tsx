@@ -1,4 +1,9 @@
-import { startTransition, useState } from "react";
+import {
+  startTransition,
+  useEffect,
+  useEffectEvent,
+  useState
+} from "react";
 import {
   BrowserRouter,
   Link,
@@ -8,7 +13,15 @@ import {
   useParams
 } from "react-router-dom";
 
-import { createSession } from "./session-api";
+import {
+  createSession,
+  getSessionBootstrap
+} from "./session-api";
+import {
+  clearStoredSessionId,
+  getStoredSessionId,
+  storeSessionId
+} from "./session-storage";
 import {
   formatFailedAssistantMessage,
   formatSessionEndReason,
@@ -39,8 +52,17 @@ function formatCountdown(snapshot: SessionSnapshot, remainingMs: number): string
 
 function getComposerMessage(
   snapshot: SessionSnapshot,
-  conversation: SessionConversationSnapshot | null
+  conversation: SessionConversationSnapshot | null,
+  connectionState: "connected" | "reconnecting" | "initial_load_failed"
 ): string {
+  if (connectionState !== "connected") {
+    return "Connection is restoring before sending is available.";
+  }
+
+  if (conversation?.relay.status === "retrying") {
+    return "Assistant delivery is retrying. Wait for the current attempt to finish.";
+  }
+
   if (snapshot.session.state === "queued") {
     return "Sending is blocked until the session is active.";
   }
@@ -74,6 +96,7 @@ function SessionShell({
   isLoading,
   isSending,
   composerError,
+  connectionState,
   onEndSession,
   onSendMessage
 }: {
@@ -85,12 +108,17 @@ function SessionShell({
   isLoading: boolean;
   isSending: boolean;
   composerError: string | null;
+  connectionState: "connected" | "reconnecting" | "initial_load_failed";
   onEndSession: () => Promise<void>;
   onSendMessage: (bodyText: string) => Promise<boolean>;
 }) {
   const workerLabel = snapshot.worker?.displayName ?? snapshot.session.workerId ?? "Unassigned";
   const [draft, setDraft] = useState("");
-  const composerMessage = getComposerMessage(snapshot, conversation);
+  const composerMessage = getComposerMessage(
+    snapshot,
+    conversation,
+    connectionState
+  );
 
   return (
     <div className="shell-card">
@@ -202,6 +230,37 @@ function StartSessionPage() {
   const [requestedForLabel, setRequestedForLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingStoredSession, setIsCheckingStoredSession] = useState(true);
+
+  const resumeStoredSession = useEffectEvent(async () => {
+    const storedSessionId = getStoredSessionId();
+
+    if (!storedSessionId) {
+      setIsCheckingStoredSession(false);
+      return;
+    }
+
+    try {
+      const snapshot = await getSessionBootstrap(storedSessionId);
+
+      if (snapshot.session.state === "queued" || snapshot.session.state === "active") {
+        startTransition(() => {
+          navigate(`/session/${storedSessionId}`);
+        });
+        return;
+      }
+
+      clearStoredSessionId();
+    } catch {
+      // Keep the stored id for a future reconnect attempt if bootstrap fails transiently.
+    } finally {
+      setIsCheckingStoredSession(false);
+    }
+  });
+
+  useEffect(() => {
+    void resumeStoredSession();
+  }, []);
 
   return (
     <section className="layout-grid">
@@ -212,6 +271,9 @@ function StartSessionPage() {
           Start a timed household session, let the queue resolve automatically, and
           keep the browser worker hidden behind the application surface.
         </p>
+        {isCheckingStoredSession ? (
+          <p className="helper-copy">Checking for a resumable shared-screen session...</p>
+        ) : null}
       </div>
 
       <form
@@ -223,6 +285,8 @@ function StartSessionPage() {
 
           try {
             const snapshot = await createSession(requestedForLabel);
+            storeSessionId(snapshot.session.sessionId);
+
             startTransition(() => {
               navigate(`/session/${snapshot.session.sessionId}`);
             });
@@ -248,7 +312,7 @@ function StartSessionPage() {
           placeholder="Dad, Wife, Shared Evening Chat..."
           value={requestedForLabel}
         />
-        <button disabled={isSubmitting} type="submit">
+        <button disabled={isSubmitting || isCheckingStoredSession} type="submit">
           {isSubmitting ? "Starting..." : "Start Timed Session"}
         </button>
         {error ? <p className="error-text">{error}</p> : null}
@@ -269,6 +333,7 @@ function SessionPage() {
     isLoading,
     isSending,
     remainingMs,
+    connectionState,
     cancelQueuedSession,
     endActiveSession,
     sendMessage
@@ -292,7 +357,7 @@ function SessionPage() {
     );
   }
 
-  if (error && !snapshot) {
+  if (connectionState === "initial_load_failed" && error && !snapshot) {
     return (
       <section className="state-card">
         <p className="eyebrow">Session Error</p>
@@ -309,9 +374,15 @@ function SessionPage() {
     return null;
   }
 
-  if (snapshot.session.state === "queued") {
-    return (
-      <section className="state-stack">
+  const relayStatus = conversation?.relay.status ?? "idle";
+  const reconnecting = connectionState === "reconnecting";
+  const composerBlocked =
+    connectionState !== "connected" || relayStatus === "retrying";
+  const shellCanSend = canSend && !composerBlocked;
+
+  return (
+    <section className="state-stack">
+      {snapshot.session.state === "queued" ? (
         <div className="status-banner queued">
           <span>Queued</span>
           <p>
@@ -319,19 +390,68 @@ function SessionPage() {
             <strong>{snapshot.queuePosition ?? "Unknown"}</strong>
           </p>
         </div>
-        {error ? <p className="error-text">{error}</p> : null}
-        <SessionShell
-          canSend={canSend}
-          composerError={composerError}
-          conversation={conversation}
-          isLoading={isLoading}
-          isSending={isSending}
-          messages={messages}
-          onEndSession={endActiveSession}
-          onSendMessage={sendMessage}
-          remainingMs={remainingMs}
-          snapshot={snapshot}
-        />
+      ) : null}
+
+      {snapshot.session.state === "active" ? (
+        <div className="status-banner active">
+          <span>Active Session</span>
+          <p>The shared screen is pinned to {snapshot.worker?.displayName ?? snapshot.session.workerId}.</p>
+        </div>
+      ) : null}
+
+      {snapshot.session.state !== "queued" && snapshot.session.state !== "active" ? (
+        <div className="status-banner ended">
+          <span>Session Closed</span>
+          <p>{formatSessionEndReason(snapshot.session.endReason)}</p>
+        </div>
+      ) : null}
+
+      {reconnecting ? (
+        <div className="status-banner reconnecting">
+          <span>Reconnect</span>
+          <p>Connection lost. Reconnecting to the current session...</p>
+        </div>
+      ) : null}
+
+      {conversation?.relay.status === "retrying" ? (
+        <div className="status-banner retrying">
+          <span>Relay Retry</span>
+          <p>
+            Retrying assistant delivery
+            {" "}
+            <strong>
+              {conversation.relay.attemptCount}/{conversation.relay.maxAttempts}
+            </strong>
+          </p>
+        </div>
+      ) : null}
+
+      {conversation?.relay.status === "failed" ? (
+        <div className="status-banner failed">
+          <span>Relay Failed</span>
+          <p>Reply delivery failed</p>
+        </div>
+      ) : null}
+
+      {error && connectionState === "connected" ? (
+        <p className="error-text inline">{error}</p>
+      ) : null}
+
+      <SessionShell
+        canSend={shellCanSend}
+        composerError={composerError}
+        connectionState={connectionState}
+        conversation={conversation}
+        isLoading={isLoading}
+        isSending={isSending}
+        messages={messages}
+        onEndSession={endActiveSession}
+        onSendMessage={sendMessage}
+        remainingMs={snapshot.session.state === "active" ? remainingMs : 0}
+        snapshot={snapshot}
+      />
+
+      {snapshot.session.state === "queued" ? (
         <div className="button-row">
           <button
             className="ghost-button"
@@ -344,56 +464,13 @@ function SessionPage() {
             Cancel Queue Entry
           </button>
         </div>
-      </section>
-    );
-  }
+      ) : null}
 
-  if (snapshot.session.state === "active") {
-    return (
-      <section className="state-stack">
-        <div className="status-banner active">
-          <span>Active Session</span>
-          <p>The shared screen is pinned to {snapshot.worker?.displayName ?? snapshot.session.workerId}.</p>
-        </div>
-        {error ? <p className="error-text inline">{error}</p> : null}
-        <SessionShell
-          canSend={canSend}
-          composerError={composerError}
-          conversation={conversation}
-          isLoading={isLoading}
-          isSending={isSending}
-          messages={messages}
-          onEndSession={endActiveSession}
-          onSendMessage={sendMessage}
-          remainingMs={remainingMs}
-          snapshot={snapshot}
-        />
-      </section>
-    );
-  }
-
-  return (
-    <section className="state-stack">
-      <div className="status-banner ended">
-        <span>Session Closed</span>
-        <p>{formatSessionEndReason(snapshot.session.endReason)}</p>
-      </div>
-      {error ? <p className="error-text inline">{error}</p> : null}
-      <SessionShell
-        canSend={canSend}
-        composerError={composerError}
-        conversation={conversation}
-        isLoading={isLoading}
-        isSending={isSending}
-        messages={messages}
-        onEndSession={endActiveSession}
-        onSendMessage={sendMessage}
-        remainingMs={0}
-        snapshot={snapshot}
-      />
-      <Link className="ghost-link" to="/">
-        Start another session
-      </Link>
+      {snapshot.session.state !== "queued" && snapshot.session.state !== "active" ? (
+        <Link className="ghost-link" to="/">
+          Start another session
+        </Link>
+      ) : null}
     </section>
   );
 }

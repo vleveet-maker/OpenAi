@@ -3,6 +3,9 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppRoutes } from "./app";
+import {
+  ACTIVE_SESSION_STORAGE_KEY
+} from "./session-storage";
 import type {
   SessionConversationSnapshot,
   SessionMessageRecord,
@@ -71,6 +74,14 @@ function buildConversation(
     },
     canSend: true,
     pendingAssistantMessageId: null,
+    relay: {
+      status: "completed",
+      attemptCount: 1,
+      maxAttempts: 3,
+      nextRetryAt: null,
+      lastFailureCode: null,
+      lastFailureClass: null
+    },
     messages: [],
     ...partial
   };
@@ -135,6 +146,7 @@ function createFetchStub(
 }
 
 afterEach(() => {
+  window.localStorage.clear();
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -172,286 +184,137 @@ describe("Session client app", () => {
 
     await screen.findByText(/active session/i);
     expect(screen.getByText(/the shared screen is pinned to dad/i)).toBeInTheDocument();
+    expect(window.localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY)).toBe("session-1");
   });
 
-  it("promotes a queued session to active after polling", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-03-27T10:00:00.000Z"));
-
-    const queued = buildSnapshot(
-      {
-        sessionId: "session-2",
-        state: "queued",
-        workerId: null,
-        startedAt: null,
-        endsAt: null
-      },
-      1
-    );
-    const active = buildSnapshot({
-      sessionId: "session-2",
-      requestedForLabel: "Queued Then Active"
-    });
-
-    vi.stubGlobal(
-      "fetch",
-      createFetchStub({
-        "GET /api/session-bootstrap/session-2": {
-          body: queued
-        },
-        "GET /api/sessions/session-2/messages": [
-          {
-            body: buildConversation("session-2", {
-              worker: null,
-              canSend: false
-            })
-          },
-          {
-            body: buildConversation("session-2", {
-              messages: [
-                buildMessage({
-                  messageId: "assistant-queued",
-                  role: "assistant",
-                  body: "Active now"
-                })
-              ]
-            })
-          }
-        ],
-        "GET /api/sessions/session-2": {
-          body: active
-        }
-      })
-    );
-
-    renderWithRoute("/session/session-2");
-    await flushAsyncWork();
-
-    expect(screen.getByText(/waiting for the next ready worker/i)).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument();
-
-    await act(async () => {
-      vi.advanceTimersByTime(5_000);
-    });
-    await flushAsyncWork();
-
-    expect(screen.getByText(/active session/i)).toBeInTheDocument();
-    expect(screen.getByText(/queued then active/i)).toBeInTheDocument();
-  });
-
-  it("loads prior conversation history on refresh", async () => {
+  it("resumes the stored active session on app reload", async () => {
     const session = buildSnapshot({
-      sessionId: "session-3"
+      sessionId: "session-resume"
     });
-    const conversation = buildConversation("session-3", {
+    const conversation = buildConversation("session-resume", {
       messages: [
-        buildMessage({
-          messageId: "user-1",
-          role: "user",
-          body: "Hello there"
-        }),
         buildMessage({
           messageId: "assistant-1",
           role: "assistant",
-          body: "Hi from the saved conversation"
+          body: "Recovered from storage"
         })
       ]
     });
 
+    window.localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, "session-resume");
+
     vi.stubGlobal(
       "fetch",
       createFetchStub({
-        "GET /api/session-bootstrap/session-3": {
-          body: session
-        },
-        "GET /api/sessions/session-3/messages": {
+        "GET /api/session-bootstrap/session-resume": [
+          {
+            body: session
+          },
+          {
+            body: session
+          }
+        ],
+        "GET /api/sessions/session-resume/messages": {
           body: conversation
         }
       })
     );
 
-    renderWithRoute("/session/session-3");
+    renderWithRoute("/");
 
-    await screen.findByText(/hello there/i);
-    expect(
-      screen.getByText(/hi from the saved conversation/i)
-    ).toBeInTheDocument();
-  });
-
-  it("renders pending assistant state while waiting for a reply", async () => {
-    const session = buildSnapshot({
-      sessionId: "session-4"
-    });
-    const initialConversation = buildConversation("session-4");
-    const pendingConversation = buildConversation("session-4", {
-      canSend: false,
-      pendingAssistantMessageId: "assistant-pending",
-      messages: [
-        buildMessage({
-          messageId: "user-4",
-          role: "user",
-          body: "What should we cook?"
-        }),
-        buildMessage({
-          messageId: "assistant-pending",
-          role: "assistant",
-          state: "pending",
-          body: "",
-          replyToMessageId: "user-4",
-          completedAt: null
-        })
-      ]
-    });
-
-    const fetchMock = createFetchStub({
-      "GET /api/session-bootstrap/session-4": {
-        body: session
-      },
-      "GET /api/sessions/session-4/messages": {
-        body: initialConversation
-      },
-      "POST /api/sessions/session-4/messages": {
-        body: pendingConversation,
-        status: 202
-      }
-    });
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    renderWithRoute("/session/session-4");
     await screen.findByText(/active session/i);
-
-    fireEvent.change(screen.getByLabelText(/message the assigned worker/i), {
-      target: {
-        value: "What should we cook?"
-      }
-    });
-    fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
-
-    await screen.findAllByText(/assistant is replying/i);
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/sessions/session-4/messages",
-      expect.objectContaining({
-        method: "POST"
-      })
-    );
-    expect(screen.getByRole("button", { name: /^send$/i })).toBeDisabled();
+    expect(screen.getByText(/recovered from storage/i)).toBeInTheDocument();
   });
 
-  it("replaces the pending bubble with the assistant reply after polling", async () => {
+  it("keeps the current history visible while reconnecting after a poll failure", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-27T10:00:00.000Z"));
 
     const session = buildSnapshot({
-      sessionId: "session-5",
-      endsAt: "2026-03-27T10:05:00.000Z"
+      sessionId: "session-reconnect",
+      endsAt: "2026-03-27T10:10:00.000Z"
     });
-    const initialConversation = buildConversation("session-5");
-    const pendingConversation = buildConversation("session-5", {
-      canSend: false,
-      pendingAssistantMessageId: "assistant-pending",
+    const conversation = buildConversation("session-reconnect", {
       messages: [
         buildMessage({
-          messageId: "user-5",
-          role: "user",
-          body: "Tell me a joke"
-        }),
-        buildMessage({
-          messageId: "assistant-pending",
+          messageId: "assistant-reconnect",
           role: "assistant",
-          state: "pending",
-          body: "",
-          replyToMessageId: "user-5",
-          completedAt: null
-        })
-      ]
-    });
-    const finalConversation = buildConversation("session-5", {
-      messages: [
-        buildMessage({
-          messageId: "user-5",
-          role: "user",
-          body: "Tell me a joke"
-        }),
-        buildMessage({
-          messageId: "assistant-5",
-          role: "assistant",
-          body: "Here is the final answer"
+          body: "Still visible while reconnecting"
         })
       ]
     });
 
-    const fetchMock = createFetchStub({
-      "GET /api/session-bootstrap/session-5": {
-        body: session
-      },
-      "GET /api/sessions/session-5/messages": [
-        {
-          body: initialConversation
+    vi.stubGlobal(
+      "fetch",
+      createFetchStub({
+        "GET /api/session-bootstrap/session-reconnect": {
+          body: session
         },
-        {
-          body: finalConversation
+        "GET /api/sessions/session-reconnect/messages": [
+          {
+            body: conversation
+          },
+          {
+            body: conversation
+          }
+        ],
+        "GET /api/sessions/session-reconnect": {
+          body: {
+            error: "temporary_failure",
+            detail: "Temporary poll failure"
+          },
+          status: 503
         }
-      ],
-      "POST /api/sessions/session-5/messages": {
-        body: pendingConversation,
-        status: 202
-      },
-      "GET /api/sessions/session-5": {
-        body: session
-      }
-    });
+      })
+    );
 
-    vi.stubGlobal("fetch", fetchMock);
-
-    renderWithRoute("/session/session-5");
+    renderWithRoute("/session/session-reconnect");
     await flushAsyncWork();
-    expect(screen.getByText(/active session/i)).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/message the assigned worker/i), {
-      target: {
-        value: "Tell me a joke"
-      }
-    });
-    fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
-
-    await flushAsyncWork();
-    expect(screen.getAllByText(/assistant is replying/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(/still visible while reconnecting/i)
+    ).toBeInTheDocument();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5_000);
     });
     await flushAsyncWork();
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/sessions/session-5/messages",
-      expect.objectContaining({
-        method: "POST"
-      })
-    );
-    expect(screen.getByText(/here is the final answer/i)).toBeInTheDocument();
-    expect(screen.queryByText(/^assistant is replying\.\.\.$/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/connection lost\. reconnecting to the current session/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/still visible while reconnecting/i)
+    ).toBeInTheDocument();
   });
 
-  it("blocks send when the session is ended", async () => {
+  it("shows relay retry status from the conversation snapshot", async () => {
     const session = buildSnapshot({
-      sessionId: "session-6",
-      state: "ended",
-      endedAt: "2026-03-27T10:30:00.000Z",
-      endReason: "manual_end"
+      sessionId: "session-retry"
     });
-    const conversation = buildConversation("session-6", {
-      canSend: false,
+    const conversation = buildConversation("session-retry", {
+      canSend: true,
+      relay: {
+        status: "retrying",
+        attemptCount: 2,
+        maxAttempts: 3,
+        nextRetryAt: "2026-03-27T10:00:02.000Z",
+        lastFailureCode: "worker_relay_unreachable",
+        lastFailureClass: "transient"
+      },
       messages: [
         buildMessage({
-          messageId: "user-6",
+          messageId: "user-retry",
           role: "user",
-          body: "Saved question"
+          body: "Retry me"
         }),
         buildMessage({
-          messageId: "assistant-6",
+          messageId: "assistant-retry",
           role: "assistant",
-          body: "Saved answer"
+          state: "pending",
+          body: "",
+          replyToMessageId: "user-retry",
+          completedAt: null
         })
       ]
     });
@@ -459,22 +322,48 @@ describe("Session client app", () => {
     vi.stubGlobal(
       "fetch",
       createFetchStub({
-        "GET /api/session-bootstrap/session-6": {
+        "GET /api/session-bootstrap/session-retry": {
           body: session
         },
-        "GET /api/sessions/session-6/messages": {
+        "GET /api/sessions/session-retry/messages": {
           body: conversation
         }
       })
     );
 
-    renderWithRoute("/session/session-6");
+    renderWithRoute("/session/session-retry");
 
-    await screen.findByText(/saved question/i);
-    expect(screen.getByText(/saved answer/i)).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(/this session is closed\. you can review history but cannot send more messages\./i)
-    ).toBeDisabled();
+    await screen.findByText(/retrying assistant delivery/i);
+    expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^send$/i })).toBeDisabled();
+  });
+
+  it("clears stored session id when the session is terminal", async () => {
+    const session = buildSnapshot({
+      sessionId: "session-terminal",
+      state: "ended",
+      endedAt: "2026-03-27T10:30:00.000Z",
+      endReason: "manual_end"
+    });
+
+    window.localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, "session-terminal");
+
+    vi.stubGlobal(
+      "fetch",
+      createFetchStub({
+        "GET /api/session-bootstrap/session-terminal": {
+          body: session
+        }
+      })
+    );
+
+    renderWithRoute("/");
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY)).toBeNull();
+    });
+    expect(
+      screen.getByRole("button", { name: /start timed session/i })
+    ).toBeInTheDocument();
   });
 });
