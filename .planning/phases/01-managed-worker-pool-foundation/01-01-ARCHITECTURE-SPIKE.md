@@ -102,6 +102,13 @@ Important rule:
 - Only the `control-api` can call worker-agent control endpoints over the private network.
 - No phase should assume that storing profile data "inside the container" alone is durable enough; persistence must come from a reusable mount.
 
+## Runtime Invariants
+
+- Operator login into ChatGPT is always manual inside the worker browser; the system never automates account login.
+- The platform must not store plaintext account credentials, reusable passwords, or any "remembered login" secret outside the browser profile itself.
+- Recovery flows are allowed to open a browser session for the operator, but they must stop at "browser ready for manual login" and wait for the operator to finish authentication.
+- Worker browsers remain a server-side operational surface, not a user-facing application feature.
+
 ## Minimal Internal API Shape
 
 The baseline internal API can stay small:
