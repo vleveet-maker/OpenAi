@@ -15,12 +15,16 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] A small household worker pool can be represented as named workers with dedicated container identity and durable profile storage.
 - [x] Manual ChatGPT authentication and reauthentication can be modeled as internal-only operator workflows without storing plaintext credentials.
 - [x] Phase 1 has a concrete control-api, worker-agent skeleton, internal recovery routes, and a compose topology that match the planned worker contract.
+- [x] Phase 2 has a durable SQLite-backed session engine with FIFO queueing, 60-minute expiry, and pinned worker assignment.
+- [x] Phase 2 exposes a safe public session API for create, resume, cancel, and end flows without leaking internal worker profile or recovery details.
+- [x] Phase 2 ships a separate shared-screen React client with Start, Queued, Active, and Ended states plus a disabled Phase 3 chat shell.
 
 ### Active
 
 - [ ] Relay messages between the application and the assigned server-hosted ChatGPT worker reliably
-- [ ] Show worker availability, session countdown, and delivery or response progress clearly
+- [ ] Show delivery or response progress clearly once real message relay begins
 - [ ] Keep end-user access constrained to the application surface rather than the raw worker browser UI
+- [ ] Add failure classification, reconnect behavior, and operator observability around live sessions
 
 ### Out of Scope
 
@@ -53,7 +57,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Use browser relay instead of direct OpenAI API | The idea is to give access to existing ChatGPT browser sessions and behavior | - Pending |
-| Keep the application as a thin client | The remote browser should stay hidden; the app only needs chat and session UX | - Pending |
+| Keep the application as a thin client | The remote browser should stay hidden; the app only needs chat and session UX | - Implemented in Phase 2 as a shared-screen session client |
 | Use several persistent named browser workers for household use | The product now serves a small family pool rather than one shared slot | - Implemented in Phase 1 |
 | Use Playwright as the control layer | One automation API across all workers reduces integration churn | - Implemented in Phase 1 baseline |
 | Run each worker in a dedicated Docker container with durable profile storage | Isolation, restartability, and profile persistence are all first-class needs | - Implemented in Phase 1 |
@@ -62,4 +66,4 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Treat BlitzBrowser as the strongest container-runtime candidate, not a hard dependency yet | It matches headful persistent worker needs well, but raw Playwright plus Docker should remain a baseline option | - Reconfirmed as fallback in Phase 1 |
 
 ---
-*Last updated: 2026-03-27 after Phase 1 execution and verification*
+*Last updated: 2026-03-27 after Phase 2 execution and verification*

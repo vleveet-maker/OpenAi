@@ -14,10 +14,10 @@
 
 ### Session Access
 
-- [ ] **SESS-01**: User can start a 60-minute session only when an assigned or available worker is `ready`
-- [ ] **SESS-02**: User stays attached to the same worker for the full active session
-- [ ] **SESS-03**: User sees remaining session time update throughout the active session
-- [ ] **SESS-04**: User can end the session manually, and new message submission is blocked after manual end or expiry
+- [x] **SESS-01**: User can start a 60-minute session only when an assigned or available worker is `ready`
+- [x] **SESS-02**: User stays attached to the same worker for the full active session
+- [x] **SESS-03**: User sees remaining session time update throughout the active session
+- [x] **SESS-04**: User can end the session manually, and new message submission is blocked after manual end or expiry
 
 ### Chat Relay
 
@@ -95,10 +95,10 @@
 | ADMN-04 | Phase 1 | Satisfied |
 | SECU-02 | Phase 1 | Satisfied |
 | SECU-03 | Phase 1 | Satisfied |
-| SESS-01 | Phase 2 | Pending |
-| SESS-02 | Phase 2 | Pending |
-| SESS-03 | Phase 2 | Pending |
-| SESS-04 | Phase 2 | Pending |
+| SESS-01 | Phase 2 | Satisfied |
+| SESS-02 | Phase 2 | Satisfied |
+| SESS-03 | Phase 2 | Satisfied |
+| SESS-04 | Phase 2 | Satisfied |
 | CHAT-01 | Phase 3 | Pending |
 | CHAT-02 | Phase 3 | Pending |
 | CHAT-03 | Phase 3 | Pending |
@@ -118,4 +118,4 @@
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-27 after Phase 1 execution and verification*
+*Last updated: 2026-03-27 after Phase 2 execution and verification*

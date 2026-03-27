@@ -11,7 +11,7 @@ The roadmap starts by standing up a multi-worker browser foundation that can saf
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Managed Worker Pool Foundation** - Stand up several named browser workers in isolated containers
-- [ ] **Phase 2: Timed Session Routing** - Start 60-minute sessions and pin users to the correct worker
+- [x] **Phase 2: Timed Session Routing** - Start 60-minute sessions and pin users to the correct worker
 - [ ] **Phase 3: Core Chat Relay** - Deliver the main send and receive chat loop on an assigned worker
 - [ ] **Phase 4: Resilience and Worker Recovery** - Handle failures, retries, reconnect, and worker restarts
 - [ ] **Phase 5: Guardrails and Observability** - Lock down access boundaries and instrument the worker pool
@@ -44,9 +44,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 02-01: Design worker assignment and session reservation rules
-- [ ] 02-02: Build the session lifecycle API and timer enforcement
-- [ ] 02-03: Build the user-side flow for session start, countdown display, and manual end
+- [x] 02-01: Design worker assignment and session reservation rules
+- [x] 02-02: Build the session lifecycle API and timer enforcement
+- [x] 02-03: Build the user-side flow for session start, countdown display, and manual end
 
 ### Phase 3: Core Chat Relay
 **Goal:** Relay user messages to the assigned worker browser and return assistant replies in the same thread.
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Managed Worker Pool Foundation | 3/3 | Complete | 2026-03-27 |
-| 2. Timed Session Routing | 0/3 | Not started | - |
+| 2. Timed Session Routing | 3/3 | Complete | 2026-03-27 |
 | 3. Core Chat Relay | 0/3 | Not started | - |
 | 4. Resilience and Worker Recovery | 0/3 | Not started | - |
 | 5. Guardrails and Observability | 0/2 | Not started | - |
