@@ -59,7 +59,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 03-01: Define the message relay protocol between application, backend, and worker browser
+- [x] 03-01: Define the message relay protocol between application, backend, and worker browser
 - [ ] 03-02: Implement outbound message submission and inbound reply capture
 - [ ] 03-03: Render active conversation history and pending states in the application
 
