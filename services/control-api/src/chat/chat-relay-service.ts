@@ -109,6 +109,8 @@ export class ChatRelayService {
       completedAt: nowIso
     });
 
+    const assistantCreatedAt = new Date(now.getTime() + 1).toISOString();
+
     this.options.chatStore.insertMessage({
       messageId: assistantMessageId,
       sessionId,
@@ -118,8 +120,8 @@ export class ChatRelayService {
       body: "",
       replyToMessageId: userMessageId,
       failureCode: null,
-      createdAt: nowIso,
-      updatedAt: nowIso,
+      createdAt: assistantCreatedAt,
+      updatedAt: assistantCreatedAt,
       completedAt: null
     });
 
