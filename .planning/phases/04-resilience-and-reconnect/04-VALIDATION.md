@@ -1,9 +1,9 @@
 ---
 phase: 04
 slug: resilience-and-reconnect
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-27
 ---
 
@@ -38,13 +38,13 @@ created: 2026-03-27
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 04-01-01 | 01 | 1 | RELY-02 | unit | `npm.cmd test --prefix services/control-api -- chat-relay-service` | Yes | pending |
-| 04-01-02 | 01 | 1 | RELY-01, RELY-02 | integration | `npm.cmd test --prefix services/control-api -- public-chat` | Yes | pending |
-| 04-01-03 | 01 | 1 | RELY-02 | unit | `npm.cmd test --prefix workers/agent -- relay-runner` | Yes | pending |
-| 04-02-01 | 02 | 2 | RELY-03 | component | `npm.cmd test --prefix apps/session-client -- app` | Yes | pending |
-| 04-02-02 | 02 | 2 | RELY-01, RELY-03 | component | `npm.cmd test --prefix apps/session-client -- use-session-view` | W0 | pending |
-| 04-03-01 | 03 | 3 | ADMN-03 | integration | `npm.cmd test --prefix services/control-api -- internal-worker-actions` | W0 | pending |
-| 04-03-02 | 03 | 3 | RELY-01 | unit | `npm.cmd test --prefix services/control-api -- worker-health-monitor` | W0 | pending |
+| 04-01-01 | 01 | 1 | RELY-02 | unit | `npm.cmd test --prefix services/control-api -- chat-relay-service` | Yes | green |
+| 04-01-02 | 01 | 1 | RELY-01, RELY-02 | integration | `npm.cmd test --prefix services/control-api -- public-chat` | Yes | green |
+| 04-01-03 | 01 | 1 | RELY-02 | unit | `npm.cmd test --prefix workers/agent -- relay-runner` | Yes | green |
+| 04-02-01 | 02 | 2 | RELY-03 | component | `npm.cmd test --prefix apps/session-client -- app` | Yes | green |
+| 04-02-02 | 02 | 2 | RELY-01, RELY-03 | component | `npm.cmd test --prefix apps/session-client -- use-session-view` | Yes | green |
+| 04-03-01 | 03 | 3 | ADMN-03 | integration | `npm.cmd test --prefix services/control-api -- internal-worker-actions` | Yes | green |
+| 04-03-02 | 03 | 3 | RELY-01 | unit | `npm.cmd test --prefix services/control-api -- worker-health-monitor` | Yes | green |
 
 *Status: pending, green, red, or flaky.*
 
@@ -52,9 +52,9 @@ created: 2026-03-27
 
 ## Wave 0 Requirements
 
-- [ ] `services/control-api/test/internal-worker-actions.test.ts` - restart orchestration coverage
-- [ ] `services/control-api/test/worker-health-monitor.test.ts` - worker liveness and recovery visibility coverage
-- [ ] `apps/session-client/src/use-session-view.test.ts` or equivalent - reconnect-specific hook coverage if app-level coverage becomes too indirect
+- [x] `services/control-api/test/internal-worker-actions.test.ts` - restart orchestration coverage
+- [x] `services/control-api/test/worker-health-monitor.test.ts` - worker liveness and recovery visibility coverage
+- [x] `apps/session-client/src/use-session-view.test.ts` or equivalent - reconnect-specific hook coverage if app-level coverage becomes too indirect
 
 ---
 
@@ -70,11 +70,11 @@ created: 2026-03-27
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verify steps or explicit Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all missing restart and reconnect references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 50s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have automated verify steps or explicit Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all missing restart and reconnect references
+- [x] No watch-mode flags
+- [x] Feedback latency < 50s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved

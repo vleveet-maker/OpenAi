@@ -28,15 +28,15 @@
 
 ### Reliability
 
-- [ ] **RELY-01**: User sees a clear error state when message delivery or response capture fails on the worker
-- [ ] **RELY-02**: System retries transient relay failures without creating duplicate user messages
-- [ ] **RELY-03**: User can reconnect to an active session after a temporary network or application interruption and continue on the same worker
+- [x] **RELY-01**: User sees a clear error state when message delivery or response capture fails on the worker
+- [x] **RELY-02**: System retries transient relay failures without creating duplicate user messages
+- [x] **RELY-03**: User can reconnect to an active session after a temporary network or application interruption and continue on the same worker
 
 ### Admin Operations
 
 - [x] **ADMN-01**: Admin can manually authenticate each worker into the required ChatGPT account before user sessions begin
 - [x] **ADMN-02**: Admin can see status for every worker in the pool from an internal admin surface or API
-- [ ] **ADMN-03**: Admin can restart an individual worker and recover service visibility after a failure
+- [x] **ADMN-03**: Admin can restart an individual worker and recover service visibility after a failure
 - [x] **ADMN-04**: Admin can open an internal-only recovery path to a worker for login or reauthentication
 
 ### Security
@@ -103,10 +103,10 @@
 | CHAT-02 | Phase 3 | Satisfied |
 | CHAT-03 | Phase 3 | Satisfied |
 | CHAT-04 | Phase 3 | Satisfied |
-| RELY-01 | Phase 4 | Pending |
-| RELY-02 | Phase 4 | Pending |
-| RELY-03 | Phase 4 | Pending |
-| ADMN-03 | Phase 4 | Pending |
+| RELY-01 | Phase 4 | Satisfied |
+| RELY-02 | Phase 4 | Satisfied |
+| RELY-03 | Phase 4 | Satisfied |
+| ADMN-03 | Phase 4 | Satisfied |
 | SECU-01 | Phase 5 | Pending |
 | OBSV-01 | Phase 5 | Pending |
 | OBSV-02 | Phase 5 | Pending |
@@ -118,4 +118,4 @@
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-27 after Phase 3 execution and verification*
+*Last updated: 2026-03-27 after Phase 4 execution and verification*

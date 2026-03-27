@@ -13,7 +13,7 @@ The roadmap starts by standing up a multi-worker browser foundation that can saf
 - [x] **Phase 1: Managed Worker Pool Foundation** - Stand up several named browser workers in isolated containers
 - [x] **Phase 2: Timed Session Routing** - Start 60-minute sessions and pin users to the correct worker
 - [x] **Phase 3: Core Chat Relay** - Deliver the main send and receive chat loop on an assigned worker
-- [ ] **Phase 4: Resilience and Worker Recovery** - Handle failures, retries, reconnect, and worker restarts
+- [x] **Phase 4: Resilience and Worker Recovery** - Handle failures, retries, reconnect, and worker restarts
 - [ ] **Phase 5: Guardrails and Observability** - Lock down access boundaries and instrument the worker pool
 
 ## Phase Details
@@ -74,9 +74,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 04-01: Add relay acknowledgements, retry rules, and failure classification
-- [ ] 04-02: Add reconnect flow and same-worker session rehydration
-- [ ] 04-03: Add individual worker restart and recovery workflows
+- [x] 04-01: Add relay acknowledgements, retry rules, and failure classification
+- [x] 04-02: Add reconnect flow and same-worker session rehydration
+- [x] 04-03: Add individual worker restart and recovery workflows
 
 ### Phase 5: Guardrails and Observability
 **Goal:** Prevent unsafe access patterns and make the worker pool observable for operators and infrastructure.
@@ -102,5 +102,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Managed Worker Pool Foundation | 3/3 | Complete | 2026-03-27 |
 | 2. Timed Session Routing | 3/3 | Complete | 2026-03-27 |
 | 3. Core Chat Relay | 3/3 | Complete | 2026-03-27 |
-| 4. Resilience and Worker Recovery | 0/3 | Not started | - |
+| 4. Resilience and Worker Recovery | 3/3 | Complete | 2026-03-27 |
 | 5. Guardrails and Observability | 0/2 | Not started | - |
