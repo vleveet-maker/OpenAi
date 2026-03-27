@@ -5,8 +5,18 @@ import { pathToFileURL } from "node:url";
 
 import express from "express";
 
+import {
+  ChatStore
+} from "./chat/chat-store.js";
+import {
+  createChatRelayService,
+  createNoopChatRelayTransport,
+  type ChatRelayService
+} from "./chat/chat-relay-service.js";
+import type { ChatRelayTransport } from "./chat/chat-types.js";
 import { loadConfig, type ControlApiConfig } from "./config.js";
 import { createInternalHealthRouter } from "./routes/internal-health.js";
+import { createPublicChatRouter } from "./routes/public-chat.js";
 import {
   createInternalRecoveryRouter,
   type InternalRecoverySession
@@ -31,11 +41,16 @@ export interface ControlApiRuntime {
   recoverySessions: Map<string, InternalRecoverySession>;
   sessionStore: SessionStore;
   sessionService: SessionService;
+  chatStore: ChatStore;
+  chatRelayService: ChatRelayService;
   dispose(): void;
 }
 
 export function createControlApiRuntime(
-  config: ControlApiConfig = loadConfig()
+  config: ControlApiConfig = loadConfig(),
+  options: {
+    relayTransport?: ChatRelayTransport;
+  } = {}
 ): ControlApiRuntime {
   const workerRegistry = createWorkerRegistry(config.workerDefinitions);
   const sessionStore = new SessionStore(config.sessionDatabasePath);
@@ -44,6 +59,12 @@ export function createControlApiRuntime(
     workerRegistry,
     sessionDurationMinutes: config.sessionDurationMinutes,
     sweepIntervalMs: config.sessionSweepIntervalMs
+  });
+  const chatStore = new ChatStore(config.sessionDatabasePath);
+  const chatRelayService = createChatRelayService({
+    chatStore,
+    sessionService,
+    relayTransport: options.relayTransport ?? createNoopChatRelayTransport()
   });
 
   sessionService.bootstrap();
@@ -54,8 +75,11 @@ export function createControlApiRuntime(
     recoverySessions: new Map<string, InternalRecoverySession>(),
     sessionStore,
     sessionService,
+    chatStore,
+    chatRelayService,
     dispose() {
       sessionService.close();
+      chatStore.close();
     }
   };
 }
@@ -82,7 +106,13 @@ function registerSessionClientRoutes(
 export function createControlApiApp(
   runtime: ControlApiRuntime = createControlApiRuntime()
 ) {
-  const { config, recoverySessions, sessionService, workerRegistry } = runtime;
+  const {
+    config,
+    recoverySessions,
+    sessionService,
+    workerRegistry,
+    chatRelayService
+  } = runtime;
   const app = express();
 
   app.disable("x-powered-by");
@@ -112,6 +142,11 @@ export function createControlApiApp(
   app.use(
     createPublicSessionsRouter({
       sessionService
+    })
+  );
+  app.use(
+    createPublicChatRouter({
+      chatRelayService
     })
   );
 
