@@ -21,10 +21,10 @@
 
 ### Chat Relay
 
-- [ ] **CHAT-01**: User can send a text message from the application to the assigned worker's ChatGPT browser
-- [ ] **CHAT-02**: User receives the corresponding assistant reply back in the same conversation thread
-- [ ] **CHAT-03**: User sees a pending or streaming state while a reply is being generated
-- [ ] **CHAT-04**: User can view the full message history for the current active session
+- [x] **CHAT-01**: User can send a text message from the application to the assigned worker's ChatGPT browser
+- [x] **CHAT-02**: User receives the corresponding assistant reply back in the same conversation thread
+- [x] **CHAT-03**: User sees a pending or streaming state while a reply is being generated
+- [x] **CHAT-04**: User can view the full message history for the current active session
 
 ### Reliability
 
@@ -99,10 +99,10 @@
 | SESS-02 | Phase 2 | Satisfied |
 | SESS-03 | Phase 2 | Satisfied |
 | SESS-04 | Phase 2 | Satisfied |
-| CHAT-01 | Phase 3 | Pending |
-| CHAT-02 | Phase 3 | Pending |
-| CHAT-03 | Phase 3 | Pending |
-| CHAT-04 | Phase 3 | Pending |
+| CHAT-01 | Phase 3 | Satisfied |
+| CHAT-02 | Phase 3 | Satisfied |
+| CHAT-03 | Phase 3 | Satisfied |
+| CHAT-04 | Phase 3 | Satisfied |
 | RELY-01 | Phase 4 | Pending |
 | RELY-02 | Phase 4 | Pending |
 | RELY-03 | Phase 4 | Pending |
@@ -118,4 +118,4 @@
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-27 after Phase 2 execution and verification*
+*Last updated: 2026-03-27 after Phase 3 execution and verification*

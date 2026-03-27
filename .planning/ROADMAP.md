@@ -12,7 +12,7 @@ The roadmap starts by standing up a multi-worker browser foundation that can saf
 
 - [x] **Phase 1: Managed Worker Pool Foundation** - Stand up several named browser workers in isolated containers
 - [x] **Phase 2: Timed Session Routing** - Start 60-minute sessions and pin users to the correct worker
-- [ ] **Phase 3: Core Chat Relay** - Deliver the main send and receive chat loop on an assigned worker
+- [x] **Phase 3: Core Chat Relay** - Deliver the main send and receive chat loop on an assigned worker
 - [ ] **Phase 4: Resilience and Worker Recovery** - Handle failures, retries, reconnect, and worker restarts
 - [ ] **Phase 5: Guardrails and Observability** - Lock down access boundaries and instrument the worker pool
 
@@ -61,7 +61,7 @@ Plans:
 Plans:
 - [x] 03-01: Define the message relay protocol between application, backend, and worker browser
 - [x] 03-02: Implement outbound message submission and inbound reply capture
-- [ ] 03-03: Render active conversation history and pending states in the application
+- [x] 03-03: Render active conversation history and pending states in the application
 
 ### Phase 4: Resilience and Worker Recovery
 **Goal:** Make the relay robust against transient failures, temporary client disconnects, and single-worker crashes.
@@ -101,6 +101,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Managed Worker Pool Foundation | 3/3 | Complete | 2026-03-27 |
 | 2. Timed Session Routing | 3/3 | Complete | 2026-03-27 |
-| 3. Core Chat Relay | 2/3 | In Progress | - |
+| 3. Core Chat Relay | 3/3 | Complete | 2026-03-27 |
 | 4. Resilience and Worker Recovery | 0/3 | Not started | - |
 | 5. Guardrails and Observability | 0/2 | Not started | - |
