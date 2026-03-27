@@ -5,7 +5,13 @@ import express from "express";
 
 import { loadConfig, type ControlApiConfig } from "./config.js";
 import { createInternalHealthRouter } from "./routes/internal-health.js";
+import {
+  createInternalRecoveryRouter,
+  type InternalRecoverySession
+} from "./routes/internal-recovery.js";
+import { createInternalWorkerActionsRouter } from "./routes/internal-worker-actions.js";
 import { createInternalWorkersRouter } from "./routes/internal-workers.js";
+import { requireInternalAdmin } from "./security/internal-admin-guard.js";
 import {
   createWorkerRegistry,
   type WorkerRegistry
@@ -14,6 +20,7 @@ import {
 export interface ControlApiRuntime {
   config: ControlApiConfig;
   workerRegistry: WorkerRegistry;
+  recoverySessions: Map<string, InternalRecoverySession>;
 }
 
 export function createControlApiRuntime(
@@ -21,14 +28,15 @@ export function createControlApiRuntime(
 ): ControlApiRuntime {
   return {
     config,
-    workerRegistry: createWorkerRegistry(config.workerDefinitions)
+    workerRegistry: createWorkerRegistry(config.workerDefinitions),
+    recoverySessions: new Map<string, InternalRecoverySession>()
   };
 }
 
 export function createControlApiApp(
   runtime: ControlApiRuntime = createControlApiRuntime()
 ) {
-  const { config, workerRegistry } = runtime;
+  const { config, recoverySessions, workerRegistry } = runtime;
   const app = express();
 
   app.disable("x-powered-by");
@@ -55,8 +63,19 @@ export function createControlApiApp(
     })
   );
 
+  const internalAdminGuard = requireInternalAdmin({
+    internalAdminToken: config.internalAdminToken,
+    allowPrivateNetworks: true
+  });
+
+  app.use(internalAdminGuard, createInternalWorkersRouter({ workerRegistry }));
   app.use(
-    createInternalWorkersRouter({
+    internalAdminGuard,
+    createInternalRecoveryRouter({
+      workerRegistry,
+      recoverySessions
+    }),
+    createInternalWorkerActionsRouter({
       workerRegistry
     })
   );
