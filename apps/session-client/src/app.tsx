@@ -10,7 +10,9 @@ import {
 
 import { createSession } from "./session-api";
 import {
+  formatFailedAssistantMessage,
   formatSessionEndReason,
+  type SessionConversationSnapshot,
   type SessionSnapshot
 } from "./session-types";
 import { useSessionView } from "./use-session-view";
@@ -23,18 +25,72 @@ function formatDuration(remainingMs: number): string {
   return `${minutes}:${seconds}`;
 }
 
+function formatCountdown(snapshot: SessionSnapshot, remainingMs: number): string {
+  if (snapshot.session.state === "queued") {
+    return "--:--";
+  }
+
+  if (snapshot.session.state === "active") {
+    return formatDuration(remainingMs);
+  }
+
+  return "00:00";
+}
+
+function getComposerMessage(
+  snapshot: SessionSnapshot,
+  conversation: SessionConversationSnapshot | null
+): string {
+  if (snapshot.session.state === "queued") {
+    return "Sending is blocked until the session is active.";
+  }
+
+  if (snapshot.session.state !== "active") {
+    return "This session is closed. You can review history but cannot send more messages.";
+  }
+
+  if (conversation?.pendingAssistantMessageId) {
+    return "Assistant is replying...";
+  }
+
+  if (!conversation?.canSend) {
+    return "Sending is temporarily unavailable.";
+  }
+
+  return "Message the assigned worker";
+}
+
+function renderMessageBody(body: string, fallback: string): string {
+  const trimmedBody = body.trim();
+  return trimmedBody.length > 0 ? trimmedBody : fallback;
+}
+
 function SessionShell({
   snapshot,
+  conversation,
+  messages,
   remainingMs,
+  canSend,
+  isLoading,
+  isSending,
+  composerError,
   onEndSession,
-  isLoading
+  onSendMessage
 }: {
   snapshot: SessionSnapshot;
+  conversation: SessionConversationSnapshot | null;
+  messages: SessionConversationSnapshot["messages"];
   remainingMs: number;
-  onEndSession: () => Promise<void>;
+  canSend: boolean;
   isLoading: boolean;
+  isSending: boolean;
+  composerError: string | null;
+  onEndSession: () => Promise<void>;
+  onSendMessage: (bodyText: string) => Promise<boolean>;
 }) {
   const workerLabel = snapshot.worker?.displayName ?? snapshot.session.workerId ?? "Unassigned";
+  const [draft, setDraft] = useState("");
+  const composerMessage = getComposerMessage(snapshot, conversation);
 
   return (
     <div className="shell-card">
@@ -44,37 +100,85 @@ function SessionShell({
           <h2>{snapshot.session.requestedForLabel}</h2>
         </div>
         <div className="countdown-panel">
-          <span>Remaining</span>
-          <strong data-testid="countdown">{formatDuration(remainingMs)}</strong>
+          <span>{snapshot.session.state === "queued" ? "Starts when active" : "Remaining"}</span>
+          <strong data-testid="countdown">{formatCountdown(snapshot, remainingMs)}</strong>
         </div>
       </div>
 
       <div className="shell-metadata">
         <span>Worker: {workerLabel}</span>
         <span>Status: {snapshot.session.state}</span>
+        {snapshot.session.state === "queued" ? (
+          <span>Queue position: {snapshot.queuePosition ?? "Unknown"}</span>
+        ) : null}
       </div>
 
       <div className="history-panel">
-        <div className="history-bubble system">
-          <p className="bubble-role">System</p>
-          <p>Phase 2 keeps the timed session contract visible here.</p>
-        </div>
-        <div className="history-bubble assistant">
-          <p className="bubble-role">Assistant</p>
-          <p>Chat relay arrives in Phase 3. This shell is intentionally read-only for now.</p>
-        </div>
+        {messages.length === 0 ? (
+          <div className="history-bubble system history-empty">
+            <p className="bubble-role">System</p>
+            <p>
+              {snapshot.session.state === "active"
+                ? "The shared screen is ready. Send the first message when you are ready."
+                : "No messages yet. Conversation history will appear here for this session."}
+            </p>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <div
+              className={`history-bubble ${message.role} ${message.state}`}
+              key={message.messageId}
+            >
+              <p className="bubble-role">
+                {message.role === "user" ? "You" : "Assistant"}
+              </p>
+              <p>
+                {message.state === "pending"
+                  ? "Assistant is replying..."
+                  : message.state === "failed"
+                    ? formatFailedAssistantMessage(message.failureCode)
+                    : renderMessageBody(
+                        message.body,
+                        message.role === "assistant"
+                          ? "Assistant is replying..."
+                          : "Message unavailable"
+                      )}
+              </p>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="composer-panel">
-        <label htmlFor="phase-3-message">Chat relay arrives in Phase 3</label>
+        <label htmlFor="phase-3-message">{composerMessage}</label>
         <textarea
           id="phase-3-message"
-          disabled
-          placeholder="Message sending unlocks in the next phase"
+          disabled={!canSend}
+          maxLength={4_000}
+          onChange={(event) => {
+            setDraft(event.target.value);
+          }}
+          placeholder={
+            canSend
+              ? "Type a message for the assigned ChatGPT worker"
+              : composerMessage
+          }
+          value={draft}
         />
-        <button disabled type="button">
-          Send
+        <button
+          disabled={!canSend || draft.trim().length === 0}
+          onClick={async () => {
+            const sent = await onSendMessage(draft);
+
+            if (sent) {
+              setDraft("");
+            }
+          }}
+          type="button"
+        >
+          {isSending ? "Sending..." : "Send"}
         </button>
+        {composerError ? <p className="error-text">{composerError}</p> : null}
       </div>
 
       {snapshot.session.state === "active" ? (
@@ -157,11 +261,17 @@ function SessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const {
     snapshot,
+    messages,
+    conversation,
+    canSend,
     error,
+    composerError,
     isLoading,
+    isSending,
     remainingMs,
     cancelQueuedSession,
-    endActiveSession
+    endActiveSession,
+    sendMessage
   } = useSessionView(sessionId);
 
   if (!sessionId) {
@@ -201,17 +311,27 @@ function SessionPage() {
 
   if (snapshot.session.state === "queued") {
     return (
-      <section className="state-card">
-        <p className="eyebrow">Queued</p>
-        <h1>Waiting for the next ready worker.</h1>
-        <p>
-          Queue position:{" "}
-          <strong>{snapshot.queuePosition ?? "Unknown"}</strong>
-        </p>
-        <p className="helper-copy">
-          The timer begins only after the session is activated on a worker.
-        </p>
+      <section className="state-stack">
+        <div className="status-banner queued">
+          <span>Queued</span>
+          <p>
+            Waiting for the next ready worker. Queue position:{" "}
+            <strong>{snapshot.queuePosition ?? "Unknown"}</strong>
+          </p>
+        </div>
         {error ? <p className="error-text">{error}</p> : null}
+        <SessionShell
+          canSend={canSend}
+          composerError={composerError}
+          conversation={conversation}
+          isLoading={isLoading}
+          isSending={isSending}
+          messages={messages}
+          onEndSession={endActiveSession}
+          onSendMessage={sendMessage}
+          remainingMs={remainingMs}
+          snapshot={snapshot}
+        />
         <div className="button-row">
           <button
             className="ghost-button"
@@ -237,8 +357,14 @@ function SessionPage() {
         </div>
         {error ? <p className="error-text inline">{error}</p> : null}
         <SessionShell
+          canSend={canSend}
+          composerError={composerError}
+          conversation={conversation}
           isLoading={isLoading}
+          isSending={isSending}
+          messages={messages}
           onEndSession={endActiveSession}
+          onSendMessage={sendMessage}
           remainingMs={remainingMs}
           snapshot={snapshot}
         />
@@ -254,8 +380,14 @@ function SessionPage() {
       </div>
       {error ? <p className="error-text inline">{error}</p> : null}
       <SessionShell
+        canSend={canSend}
+        composerError={composerError}
+        conversation={conversation}
         isLoading={isLoading}
+        isSending={isSending}
+        messages={messages}
         onEndSession={endActiveSession}
+        onSendMessage={sendMessage}
         remainingMs={0}
         snapshot={snapshot}
       />

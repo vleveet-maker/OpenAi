@@ -8,25 +8,69 @@ import {
 import {
   cancelSession,
   endSession,
+  getConversation,
   getSession,
-  getSessionBootstrap
+  getSessionBootstrap,
+  sendMessage as postMessage
 } from "./session-api";
-import type { SessionSnapshot } from "./session-types";
+import type {
+  SessionConversationSnapshot,
+  SessionMessageRecord,
+  SessionSnapshot
+} from "./session-types";
 
 interface SessionViewState {
   snapshot: SessionSnapshot | null;
+  conversation: SessionConversationSnapshot | null;
+  messages: SessionMessageRecord[];
+  pendingAssistantMessageId: string | null;
+  canSend: boolean;
   error: string | null;
+  composerError: string | null;
   isLoading: boolean;
+  isSending: boolean;
   remainingMs: number;
   cancelQueuedSession: () => Promise<void>;
   endActiveSession: () => Promise<void>;
+  sendMessage: (bodyText: string) => Promise<boolean>;
 }
 
 export function useSessionView(sessionId: string | undefined): SessionViewState {
   const [snapshot, setSnapshot] = useState<SessionSnapshot | null>(null);
+  const [conversation, setConversation] =
+    useState<SessionConversationSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [composerError, setComposerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(sessionId));
+  const [isSending, setIsSending] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+
+  const hydrateView = useEffectEvent(
+    async (
+      loadSession: (
+        currentSessionId: string
+      ) => Promise<SessionSnapshot>
+    ) => {
+      if (!sessionId) {
+        return;
+      }
+
+      const [nextSnapshot, nextConversation] = await Promise.all([
+        loadSession(sessionId),
+        getConversation(sessionId)
+      ]);
+
+      startTransition(() => {
+        setSnapshot(nextSnapshot);
+        setConversation(nextConversation);
+        setError(null);
+
+        if (nextConversation.canSend) {
+          setComposerError(null);
+        }
+      });
+    }
+  );
 
   const loadBootstrap = useEffectEvent(async () => {
     if (!sessionId) {
@@ -36,11 +80,7 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
     setIsLoading(true);
 
     try {
-      const nextSnapshot = await getSessionBootstrap(sessionId);
-      startTransition(() => {
-        setSnapshot(nextSnapshot);
-        setError(null);
-      });
+      await hydrateView(getSessionBootstrap);
     } catch (loadError) {
       setError(
         loadError instanceof Error ? loadError.message : "Failed to load the session"
@@ -56,11 +96,7 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
     }
 
     try {
-      const nextSnapshot = await getSession(sessionId);
-      startTransition(() => {
-        setSnapshot(nextSnapshot);
-        setError(null);
-      });
+      await hydrateView(getSession);
     } catch (loadError) {
       setError(
         loadError instanceof Error ? loadError.message : "Failed to refresh the session"
@@ -108,8 +144,14 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
 
   return {
     snapshot,
+    conversation,
+    messages: conversation?.messages ?? [],
+    pendingAssistantMessageId: conversation?.pendingAssistantMessageId ?? null,
+    canSend: Boolean(conversation?.canSend) && !isSending,
     error,
+    composerError,
     isLoading,
+    isSending,
     remainingMs,
     cancelQueuedSession: async () => {
       if (!sessionId) {
@@ -119,10 +161,16 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
       setIsLoading(true);
 
       try {
-        const nextSnapshot = await cancelSession(sessionId);
+        const [nextSnapshot, nextConversation] = await Promise.all([
+          cancelSession(sessionId),
+          getConversation(sessionId)
+        ]);
+
         startTransition(() => {
           setSnapshot(nextSnapshot);
+          setConversation(nextConversation);
           setError(null);
+          setComposerError(null);
         });
       } catch (mutationError) {
         setError(
@@ -142,10 +190,16 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
       setIsLoading(true);
 
       try {
-        const nextSnapshot = await endSession(sessionId);
+        const [nextSnapshot, nextConversation] = await Promise.all([
+          endSession(sessionId),
+          getConversation(sessionId)
+        ]);
+
         startTransition(() => {
           setSnapshot(nextSnapshot);
+          setConversation(nextConversation);
           setError(null);
+          setComposerError(null);
         });
       } catch (mutationError) {
         setError(
@@ -155,6 +209,33 @@ export function useSessionView(sessionId: string | undefined): SessionViewState 
         );
       } finally {
         setIsLoading(false);
+      }
+    },
+    sendMessage: async (bodyText: string) => {
+      if (!sessionId) {
+        return false;
+      }
+
+      setIsSending(true);
+
+      try {
+        const nextConversation = await postMessage(sessionId, bodyText);
+
+        startTransition(() => {
+          setConversation(nextConversation);
+          setComposerError(null);
+        });
+
+        return true;
+      } catch (mutationError) {
+        setComposerError(
+          mutationError instanceof Error
+            ? mutationError.message
+            : "Failed to send the message"
+        );
+        return false;
+      } finally {
+        setIsSending(false);
       }
     }
   };

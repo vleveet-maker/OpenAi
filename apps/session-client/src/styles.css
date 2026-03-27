@@ -170,6 +170,11 @@ button {
   border: 1px solid rgba(90, 164, 146, 0.28);
 }
 
+.status-banner.queued {
+  background: rgba(73, 115, 192, 0.14);
+  border: 1px solid rgba(73, 115, 192, 0.28);
+}
+
 .status-banner.ended {
   background: rgba(229, 172, 105, 0.14);
   border: 1px solid rgba(229, 172, 105, 0.28);
@@ -240,6 +245,24 @@ button {
   background: rgba(86, 118, 187, 0.15);
 }
 
+.history-bubble.user {
+  background: rgba(90, 164, 146, 0.18);
+  justify-self: end;
+}
+
+.history-bubble.pending {
+  border: 1px dashed rgba(242, 211, 164, 0.35);
+}
+
+.history-bubble.failed {
+  background: rgba(214, 97, 72, 0.16);
+  border: 1px solid rgba(214, 97, 72, 0.28);
+}
+
+.history-empty {
+  max-width: none;
+}
+
 .bubble-role {
   color: rgba(244, 238, 227, 0.66);
   font-size: 0.78rem;
@@ -257,6 +280,10 @@ button {
 .composer-panel button:disabled {
   cursor: not-allowed;
   opacity: 0.68;
+}
+
+.composer-panel button:not(:disabled) {
+  justify-self: start;
 }
 
 .error-text {
