@@ -5,6 +5,10 @@ import express from "express";
 import type { BrowserContext } from "playwright";
 
 import { launchWorkerBrowser } from "./browser-launch.js";
+import {
+  runRelay,
+  toRelayBrowserContext
+} from "./chat-relay/relay-runner.js";
 import type {
   WorkerRelayRequest,
   WorkerRelayResult
@@ -112,19 +116,6 @@ function parseRelayRequest(body: unknown): WorkerRelayRequest | null {
   };
 }
 
-async function createDefaultRelayResult(
-  browserContext: BrowserContext
-): Promise<WorkerRelayResult> {
-  const page = browserContext.pages()[0] ?? null;
-
-  return {
-    assistantText: null,
-    completedAt: new Date().toISOString(),
-    pageUrl: page?.url() ?? null,
-    failureCode: "relay_not_implemented"
-  };
-}
-
 export function createWorkerAgentRuntime(
   config: WorkerAgentConfig = loadWorkerAgentConfig(),
   options: WorkerAgentRuntimeOptions = {}
@@ -152,7 +143,10 @@ export function createWorkerAgentRuntime(
         return relayHandler(request, browserContext);
       }
 
-      return createDefaultRelayResult(browserContext);
+      return runRelay(toRelayBrowserContext(browserContext), request, {
+        lockKey: config.workerId,
+        startUrl: config.startUrl
+      });
     },
     async dispose() {
       const browserContext = await browserContextPromise;
