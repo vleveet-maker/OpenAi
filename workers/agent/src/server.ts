@@ -2,6 +2,13 @@ import type { AddressInfo } from "node:net";
 import { pathToFileURL } from "node:url";
 
 import express from "express";
+import type { BrowserContext } from "playwright";
+
+import { launchWorkerBrowser } from "./browser-launch.js";
+import type {
+  WorkerRelayRequest,
+  WorkerRelayResult
+} from "./chat-relay/relay-types.js";
 
 export interface WorkerAgentConfig {
   workerId: string;
@@ -10,6 +17,9 @@ export interface WorkerAgentConfig {
   host: string;
   port: number;
   profilePath: string;
+  browserChannel?: string;
+  headless: boolean;
+  startUrl: string;
 }
 
 function parsePort(value: string | undefined, fallback: number): number {
@@ -19,6 +29,24 @@ function parsePort(value: string | undefined, fallback: number): number {
 
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (!value) {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "true" || normalized === "1") {
+    return true;
+  }
+
+  if (normalized === "false" || normalized === "0") {
+    return false;
+  }
+
+  return fallback;
 }
 
 export function loadWorkerAgentConfig(
@@ -34,13 +62,109 @@ export function loadWorkerAgentConfig(
     port: parsePort(env.WORKER_AGENT_PORT, 4020),
     profilePath:
       env.WORKER_PROFILE_PATH ??
-      `/srv/chatgpt-workers/profiles/${workerId}`
+      `/srv/chatgpt-workers/profiles/${workerId}`,
+    browserChannel: env.WORKER_BROWSER_CHANNEL,
+    headless: parseBoolean(env.WORKER_HEADLESS, false),
+    startUrl: env.WORKER_START_URL ?? "https://chatgpt.com/"
+  };
+}
+
+export interface WorkerAgentRuntime {
+  config: WorkerAgentConfig;
+  getBrowserContext(): Promise<BrowserContext>;
+  relayMessage(request: WorkerRelayRequest): Promise<WorkerRelayResult>;
+  dispose(): Promise<void>;
+}
+
+export interface WorkerAgentRuntimeOptions {
+  browserContextPromise?: Promise<BrowserContext>;
+  relayHandler?: (
+    request: WorkerRelayRequest,
+    browserContext: BrowserContext
+  ) => Promise<WorkerRelayResult>;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function parseRelayRequest(body: unknown): WorkerRelayRequest | null {
+  if (typeof body !== "object" || body === null) {
+    return null;
+  }
+
+  const candidate = body as Record<string, unknown>;
+
+  if (
+    !isNonEmptyString(candidate.sessionId) ||
+    !isNonEmptyString(candidate.userMessageId) ||
+    !isNonEmptyString(candidate.assistantMessageId) ||
+    !isNonEmptyString(candidate.bodyText)
+  ) {
+    return null;
+  }
+
+  return {
+    sessionId: candidate.sessionId.trim(),
+    userMessageId: candidate.userMessageId.trim(),
+    assistantMessageId: candidate.assistantMessageId.trim(),
+    bodyText: candidate.bodyText.trim()
+  };
+}
+
+async function createDefaultRelayResult(
+  browserContext: BrowserContext
+): Promise<WorkerRelayResult> {
+  const page = browserContext.pages()[0] ?? null;
+
+  return {
+    assistantText: null,
+    completedAt: new Date().toISOString(),
+    pageUrl: page?.url() ?? null,
+    failureCode: "relay_not_implemented"
+  };
+}
+
+export function createWorkerAgentRuntime(
+  config: WorkerAgentConfig = loadWorkerAgentConfig(),
+  options: WorkerAgentRuntimeOptions = {}
+): WorkerAgentRuntime {
+  const browserContextPromise =
+    options.browserContextPromise ??
+    launchWorkerBrowser({
+      workerId: config.workerId,
+      profilePath: config.profilePath,
+      browserChannel: config.browserChannel,
+      headless: config.headless,
+      startUrl: config.startUrl
+    });
+  const relayHandler = options.relayHandler;
+
+  return {
+    config,
+    async getBrowserContext() {
+      return browserContextPromise;
+    },
+    async relayMessage(request: WorkerRelayRequest) {
+      const browserContext = await browserContextPromise;
+
+      if (relayHandler) {
+        return relayHandler(request, browserContext);
+      }
+
+      return createDefaultRelayResult(browserContext);
+    },
+    async dispose() {
+      const browserContext = await browserContextPromise;
+      await browserContext.close();
+    }
   };
 }
 
 export function createWorkerAgentApp(
-  config: WorkerAgentConfig = loadWorkerAgentConfig()
+  runtime: WorkerAgentRuntime = createWorkerAgentRuntime()
 ) {
+  const { config } = runtime;
   const app = express();
 
   app.disable("x-powered-by");
@@ -65,15 +189,37 @@ export function createWorkerAgentApp(
     });
   });
 
+  app.post("/internal/relay/messages", async (request, response) => {
+    const relayRequest = parseRelayRequest(request.body);
+
+    if (!relayRequest) {
+      response.status(400).json({
+        error: "invalid_relay_request",
+        detail:
+          "sessionId, userMessageId, assistantMessageId, and bodyText must be non-empty strings"
+      });
+      return;
+    }
+
+    const relayResult = await runtime.relayMessage(relayRequest);
+    response.json(relayResult);
+  });
+
   return app;
 }
 
 async function startWorkerAgent(config: WorkerAgentConfig = loadWorkerAgentConfig()) {
-  const app = createWorkerAgentApp(config);
+  const runtime = createWorkerAgentRuntime(config);
+  await runtime.getBrowserContext();
+  const app = createWorkerAgentApp(runtime);
 
   return new Promise<import("node:http").Server>((resolve) => {
     const server = app.listen(config.port, config.host, () => {
       resolve(server);
+    });
+
+    server.on("close", () => {
+      void runtime.dispose();
     });
   });
 }

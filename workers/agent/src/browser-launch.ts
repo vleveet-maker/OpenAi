@@ -1,7 +1,8 @@
-import { chromium, type BrowserContext, type LaunchPersistentContextOptions } from "playwright";
+import { chromium, type BrowserContext } from "playwright";
 
 export interface WorkerBrowserLaunchOptions {
   workerId: string;
+  profilePath?: string;
   profileRoot?: string;
   browserChannel?: string;
   headless?: boolean;
@@ -9,6 +10,9 @@ export interface WorkerBrowserLaunchOptions {
 }
 
 export const WORKER_PROFILE_ROOT = "/srv/chatgpt-workers/profiles";
+
+type LaunchPersistentContextOptions =
+  Parameters<typeof chromium.launchPersistentContext>[1];
 
 export function getWorkerProfilePath(
   workerId: string,
@@ -20,7 +24,9 @@ export function getWorkerProfilePath(
 export async function launchWorkerBrowser(
   options: WorkerBrowserLaunchOptions
 ): Promise<BrowserContext> {
-  const profilePath = getWorkerProfilePath(options.workerId, options.profileRoot);
+  const profilePath =
+    options.profilePath ??
+    getWorkerProfilePath(options.workerId, options.profileRoot);
   const launchOptions: LaunchPersistentContextOptions = {
     headless: options.headless ?? false,
     channel: options.browserChannel,
