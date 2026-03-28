@@ -1,4 +1,5 @@
 import http from "node:http";
+import { pathToFileURL } from "node:url";
 
 import { loadHostControllerConfig } from "./config.mjs";
 import { HostController } from "./host-controller.mjs";
@@ -34,11 +35,11 @@ async function readRequestBody(request) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-async function main() {
-  const config = loadHostControllerConfig();
-  const controller = new HostController(config);
-
-  const server = http.createServer(async (request, response) => {
+export function createHostControllerServer(
+  config = loadHostControllerConfig(),
+  controller = new HostController(config)
+) {
+  return http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
 
@@ -50,19 +51,22 @@ async function main() {
       }
 
       if (request.method === "GET" && url.pathname === "/health") {
-        const workers = await controller.getWorkerStatuses();
+        const health = await controller.getHealthSnapshot();
         sendJson(response, 200, {
           service: "host-controller",
           status: "ok",
-          workers
+          ...health
         });
         return;
       }
 
       if (request.method === "GET" && url.pathname === "/workers") {
-        const workers = await controller.getWorkerStatuses();
+        const health = await controller.getHealthSnapshot();
         sendJson(response, 200, {
-          workers
+          proxyListening: health.proxyListening,
+          proxyServerUrl: health.proxyServerUrl,
+          poolStatus: health.poolStatus,
+          workers: health.workers
         });
         return;
       }
@@ -70,6 +74,13 @@ async function main() {
       if (request.method === "POST" && url.pathname === "/pool/start") {
         await readRequestBody(request);
         const result = await controller.startPool();
+        sendJson(response, 202, result);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/pool/stop") {
+        await readRequestBody(request);
+        const result = await controller.stopPool();
         sendJson(response, 202, result);
         return;
       }
@@ -101,10 +112,23 @@ async function main() {
       });
     }
   });
+}
+
+async function main() {
+  const config = loadHostControllerConfig();
+  const controller = new HostController(config);
+  const server = createHostControllerServer(config, controller);
 
   server.listen(config.port, config.host, () => {
     console.log(`[host-controller] listening on ${config.host}:${config.port}`);
   });
 }
 
-void main();
+const isMainModule =
+  !process.argv.includes("--test") &&
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMainModule) {
+  void main();
+}

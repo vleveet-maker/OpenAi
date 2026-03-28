@@ -42,6 +42,10 @@ function spawnDetached(command, args, options = {}) {
   return child;
 }
 
+function isWorkerReachable(workerStatus) {
+  return Boolean(workerStatus.agentListening) && Boolean(workerStatus.browserListening);
+}
+
 export class HostController {
   constructor(config) {
     this.config = config;
@@ -69,6 +73,46 @@ export class HostController {
         browserListening: await testLocalPort(worker.cdpPort)
       }))
     );
+  }
+
+  async getProxyRuntimeStatus() {
+    const listening = await testLocalPort(
+      this.config.proxyMixedPort,
+      this.config.proxyListenHost
+    );
+
+    return {
+      listenHost: this.config.proxyListenHost,
+      listenPort: this.config.proxyMixedPort,
+      proxyServerUrl: this.config.proxyServerUrl,
+      listening
+    };
+  }
+
+  getObservedPoolStatus(proxyListening, workers) {
+    if (!proxyListening && workers.every((worker) => !isWorkerReachable(worker))) {
+      return "idle";
+    }
+
+    if (proxyListening && workers.length > 0 && workers.every(isWorkerReachable)) {
+      return "ready";
+    }
+
+    return "degraded";
+  }
+
+  async getHealthSnapshot() {
+    const [proxy, workers] = await Promise.all([
+      this.getProxyRuntimeStatus(),
+      this.getWorkerStatuses()
+    ]);
+
+    return {
+      proxyListening: proxy.listening,
+      proxyServerUrl: proxy.proxyServerUrl,
+      poolStatus: this.getObservedPoolStatus(proxy.listening, workers),
+      workers
+    };
   }
 
   async ensureProxyReady() {
@@ -209,8 +253,84 @@ export class HostController {
       await sleep(500);
     }
 
+    const health = await this.getHealthSnapshot();
+
     return {
       action: "pool_start_requested",
+      proxyListening: health.proxyListening,
+      proxyServerUrl: health.proxyServerUrl,
+      poolStatus: health.poolStatus,
+      workers: results
+    };
+  }
+
+  async stopProxyRuntime() {
+    const proxyRuntime = await this.getProxyRuntimeStatus();
+
+    if (!proxyRuntime.listening) {
+      return {
+        status: "already_stopped",
+        listenPort: this.config.proxyMixedPort
+      };
+    }
+
+    const child = spawn(
+      POWERSHELL_EXE,
+      [
+        "-NoProfile",
+        "-Command",
+        [
+          `$connections = Get-NetTCPConnection -LocalPort ${this.config.proxyMixedPort} -ErrorAction SilentlyContinue;`,
+          "if ($connections) {",
+          "  $connections | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object {",
+          "    if ($_ -gt 0 -and (Get-Process -Id $_ -ErrorAction SilentlyContinue)) {",
+          "      Stop-Process -Id $_ -Force",
+          "    }",
+          "  }",
+          "}"
+        ].join(" ")
+      ],
+      {
+        windowsHide: true,
+        stdio: "ignore"
+      }
+    );
+
+    await new Promise((resolve, reject) => {
+      child.once("exit", (code) => {
+        if (code === 0 || code === null) {
+          resolve();
+          return;
+        }
+
+        reject(new Error(`stop_proxy_failed:${code}`));
+      });
+      child.once("error", reject);
+    });
+
+    return {
+      status: "stop_requested",
+      listenPort: this.config.proxyMixedPort
+    };
+  }
+
+  async stopPool() {
+    const results = [];
+
+    for (const worker of this.config.workers) {
+      results.push(await this.stopWorker(worker.workerId));
+      await sleep(500);
+    }
+
+    const proxy = await this.stopProxyRuntime();
+    const health = await this.getHealthSnapshot();
+
+    return {
+      action: "pool_stop_requested",
+      proxyAction: proxy.status,
+      proxyListening: health.proxyListening,
+      proxyServerUrl: health.proxyServerUrl,
+      poolStatus: health.poolStatus,
       workers: results
     };
   }
