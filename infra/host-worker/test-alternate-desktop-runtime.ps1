@@ -296,5 +296,5 @@ if ($ReturnJson) {
 }
 
 if (-not $phase11Ready) {
-  throw "alternate_desktop_runtime_not_ready:$WorkerId:$result"
+  throw "alternate_desktop_runtime_not_ready:${WorkerId}:$result"
 }

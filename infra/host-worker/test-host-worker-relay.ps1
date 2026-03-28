@@ -15,6 +15,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Resolve-RepoRoot {
+  return (Resolve-Path (Join-Path $PSScriptRoot "..\\..")).Path
+}
+
 function Invoke-JsonRequest {
   param(
     [Parameter(Mandatory = $true)]
@@ -111,6 +115,32 @@ function Get-SessionMessagesSnapshot {
   }
 }
 
+function Stop-NonTargetWorker {
+  param(
+    [Parameter(Mandatory = $true)]
+    [pscustomobject]$Worker,
+    [Parameter(Mandatory = $true)]
+    [hashtable]$HostControllerHeaders,
+    [Parameter(Mandatory = $true)]
+    [hashtable]$InternalHeaders
+  )
+
+  try {
+    $null = Invoke-JsonRequest -Method "POST" -Url "$HostControllerBaseUrl/workers/$($Worker.workerId)/stop" -Headers $HostControllerHeaders -Body @{}
+    return
+  } catch {
+    $workerSnapshot = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$($Worker.workerId)" -Headers $InternalHeaders
+    $repoRoot = Resolve-RepoRoot
+
+    & (Join-Path $PSScriptRoot "stop-host-native-worker.ps1") `
+      -WorkerId $Worker.workerId `
+      -AgentPort $Worker.agentPort `
+      -CdpPort $Worker.cdpPort `
+      -ProfilePath $workerSnapshot.profilePath `
+      -RepoRoot $repoRoot
+  }
+}
+
 $hostControllerHeaders = @{
   "x-host-controller-token" = $HostControllerToken
 }
@@ -143,7 +173,7 @@ try {
   foreach ($worker in @($health.workers | Where-Object { $_.workerId -ne $WorkerId })) {
     if ($worker.agentListening -or $worker.browserListening) {
       Write-Host "[phase-10] Stopping non-target worker $($worker.workerId) for isolated relay verification..."
-      $null = Invoke-JsonRequest -Method "POST" -Url "$HostControllerBaseUrl/workers/$($worker.workerId)/stop" -Headers $hostControllerHeaders -Body @{}
+      Stop-NonTargetWorker -Worker $worker -HostControllerHeaders $hostControllerHeaders -InternalHeaders $internalHeaders
       $stoppedWorkers.Add($worker.workerId) | Out-Null
     }
   }

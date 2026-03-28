@@ -63,7 +63,7 @@ function ConvertTo-CommandLine {
 }
 
 function Ensure-AlternateDesktopInterop {
-  if ([System.Management.Automation.PSTypeName]"Owmcgp.HostWorker.AlternateDesktopInterop").Type) {
+  if (([System.Management.Automation.PSTypeName]"Owmcgp.HostWorker.AlternateDesktopInterop").Type) {
     return
   }
 
@@ -282,7 +282,7 @@ while ((Get-Date) -lt $deadline) {
 }
 
 if (-not (Test-CdpEndpoint -Port $CdpPort)) {
-  throw "alternate_desktop_cdp_not_ready:$WorkerId:$CdpPort"
+  throw "alternate_desktop_cdp_not_ready:${WorkerId}:$CdpPort"
 }
 
 $metadata = [ordered]@{
