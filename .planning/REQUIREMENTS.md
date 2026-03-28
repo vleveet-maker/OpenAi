@@ -7,9 +7,9 @@
 
 ### Internal Orchestration
 
-- [ ] **ORCH-01**: Operator can start the proxied host-native household pool from the internal admin surface without opening PowerShell manually
-- [ ] **ORCH-02**: Operator can stop the proxied host-native household pool from the internal admin surface and see the workers return to expected statuses
-- [ ] **ORCH-03**: Internal admin shows clear lifecycle progress and failure reasons when host-pool start or stop actions fail
+- [x] **ORCH-01**: Operator can start the proxied host-native household pool from the internal admin surface without opening PowerShell manually
+- [x] **ORCH-02**: Operator can stop the proxied host-native household pool from the internal admin surface and see the workers return to expected statuses
+- [x] **ORCH-03**: Internal admin shows clear lifecycle progress and failure reasons when host-pool start or stop actions fail
 
 ### ChatGPT UI Stability
 
@@ -45,9 +45,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ORCH-01 | Phase 9 | Pending |
-| ORCH-02 | Phase 9 | Pending |
-| ORCH-03 | Phase 9 | Pending |
+| ORCH-01 | Phase 9 | Complete |
+| ORCH-02 | Phase 9 | Complete |
+| ORCH-03 | Phase 9 | Complete |
 | STAB-01 | Phase 10 | Pending |
 | STAB-02 | Phase 10 | Pending |
 | STAB-03 | Phase 10 | Pending |
@@ -61,4 +61,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after starting v1.2 Rollout Stability*
+*Last updated: 2026-03-28 after completing Phase 9 internal host-pool orchestration*

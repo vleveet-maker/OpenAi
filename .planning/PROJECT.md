@@ -15,6 +15,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - The core app stack still runs through `control-api`, the public shared-screen client, and the internal admin surface
 - Docker browser workers remain a supported infrastructure baseline, but host-native Chromium workers are now the proven fallback when Docker/browser fingerprinting causes Cloudflare login loops
 - A three-worker host-native pool can be launched only when needed and routed through a local sing-box mixed proxy built from several proxy share links with automatic outbound failover
+- The proxied host-native pool can now be started and stopped from the internal admin surface with explicit lifecycle states and PowerShell fallback tools
 - Host-native worker profiles stay on durable host storage and can be stopped cleanly when the pool is idle
 - New session-backed chats now bootstrap through an explicit fresh-chat contract that prefers `Temporary Chat` and the latest configured reasoning model before the composer unlocks
 - The current shared-screen client is still an interim household surface, not the final user-facing mobile chat experience
@@ -33,6 +34,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] A local proxy layer built from VLESS, Trojan, and Shadowsocks share links can launch the household host-native worker pool on demand and prefer a healthy outbound automatically for new worker traffic.
 - [x] The proxied host-native household pool can be stopped again cleanly so browsers do not remain open when the pool is idle.
 - [x] Each newly activated shared-screen chat can now be blocked behind explicit fresh-chat bootstrap state until `Temporary Chat` and preferred-model selection are ready or have failed clearly.
+- [x] Internal admin can now start and stop the proxied host-native pool with explicit `idle`, `starting`, `ready`, `degraded`, `stopping`, and `failed` lifecycle meaning.
 
 ## Current Milestone: v1.2 Rollout Stability
 
@@ -57,7 +59,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - The backend still owns browser automation, worker assignment, session timing, health monitoring, and recovery.
 - The client application should never expose raw browser controls, account credentials, or recovery tools.
 - The long-term user-facing product should feel like a standard mobile chat-bot app with a chat list, a create-new-chat action, a message composer, and an image-attachment entry point.
-- Host-native workers currently launch through a verified PowerShell operator path, not yet through a one-click `control-api` auto-start workflow.
+- Host-native workers can now be started and stopped from internal admin, while PowerShell scripts remain fallback tools.
 - A new chat should feel like a fresh dialog, not like a continuation of the previous household conversation on the same worker.
 - Fresh-chat behavior now prefers ChatGPT `Temporary Chat` so the dialog does not land in history and does not use or create memories.
 - The current default model policy for a fresh chat is "latest available reasoning model", implemented through `WORKER_PREFERRED_REASONING_MODEL_LABELS` with `GPT-5.4 Thinking` as of 2026-03-28.
@@ -103,4 +105,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after starting v1.2 Rollout Stability*
+*Last updated: 2026-03-28 after completing Phase 9 internal host-pool orchestration*

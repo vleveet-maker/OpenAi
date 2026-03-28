@@ -19,7 +19,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - Integer phases continue from the previous milestone (`9`, `10`, `11`)
 - Decimal phases (`9.1`, `10.1`) remain available for urgent insertions
 
-- [ ] **Phase 9: Internal host-pool orchestration** - Move proxied host-native pool lifecycle control into the internal admin surface with clearer failure reporting
+- [x] **Phase 9: Internal host-pool orchestration** - completed 2026-03-28, moved proxied host-native pool lifecycle control into the internal admin surface with clearer failure reporting
 - [ ] **Phase 10: ChatGPT UI drift hardening** - Harden relay and fresh-chat bootstrap against the current ChatGPT UI until all three workers behave predictably
 - [ ] **Phase 11: Rollout smoke confidence** - Add a repeatable operator smoke path and visible readiness evidence before real household use
 
@@ -62,17 +62,17 @@ Current milestone execution order: 9 -> 10 -> 11
 
 | Phase | Requirements | Status | Completed |
 |-------|--------------|--------|-----------|
-| 9. Internal host-pool orchestration | ORCH-01, ORCH-02, ORCH-03 | Not started | - |
+| 9. Internal host-pool orchestration | ORCH-01, ORCH-02, ORCH-03 | Complete | 2026-03-28 |
 | 10. ChatGPT UI drift hardening | STAB-01, STAB-02, STAB-03 | Not started | - |
 | 11. Rollout smoke confidence | CONF-01, CONF-02 | Not started | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: discuss or plan `Phase 9`
-- Carry-forward debt from `v1.1`: `dad` selector drift, current ChatGPT `Temporary Chat`/model-picker live recheck, and script-only host-pool orchestration
+- Current next action: discuss or plan `Phase 10`
+- Carry-forward debt from `v1.1`: `dad` selector drift and current ChatGPT `Temporary Chat`/model-picker live recheck
 
 ## Next Up
 
-- `$gsd-discuss-phase 9`
-- `$gsd-plan-phase 9`
+- `$gsd-discuss-phase 10`
+- `$gsd-plan-phase 10`

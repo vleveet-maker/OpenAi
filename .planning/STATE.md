@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
-status: ready_to_execute
-stopped_at: Phase 9 planned; next step is `$gsd-execute-phase 9`
-last_updated: "2026-03-28T23:20:00+03:00"
-last_activity: 2026-03-28 -- Planned Phase 9 with host-controller lifecycle, internal pool routes, and admin pool controls
+status: ready_to_plan
+stopped_at: Phase 9 complete; next step is `$gsd-discuss-phase 10` or `$gsd-plan-phase 10`
+last_updated: "2026-03-28T15:08:00+03:00"
+last_activity: 2026-03-28 -- Completed Phase 9 with host-controller lifecycle, internal pool routes, and internal admin pool controls
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
@@ -21,20 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** `Phase 9: Internal host-pool orchestration` is planned and ready to execute
+**Current focus:** `Phase 9: Internal host-pool orchestration` is complete; next up is `Phase 10: ChatGPT UI drift hardening`
 
 ## Current Position
 
 Milestone: `v1.2 Rollout Stability`
-Status: Ready to execute
-Last activity: 2026-03-28 - Planned Phase 9 with explicit pool lifecycle and admin control waves
+Status: Ready to plan
+Last activity: 2026-03-28 - Completed Phase 9 with pool lifecycle routes, admin controls, and operator docs
 
-Progress: [----------] 0%
+Progress: [###-------] 33%
 
 ## Milestone Snapshot
 
-- Phases completed: `0 / 3`
-- Plans completed: `0 / 3`
+- Phases completed: `1 / 3`
+- Plans completed: `3 / 3`
 - Current roadmap:
   - `.planning/ROADMAP.md`
 - Current requirements:
@@ -48,7 +48,7 @@ Progress: [----------] 0%
 - Manual operator login and reauthentication remain the deliberate safety model.
 - Public and internal surfaces remain separated behind one edge and protected browser access flow.
 - Host-native Chromium workers are now the proven fallback when Docker/browser fingerprinting blocks real login or relay.
-- The verified operator path for host-native rollout is script-driven start and stop through a local proxy pool, not yet a one-click in-app auto-start flow.
+- The verified operator path for host-native rollout now goes through `/internal/admin` with `Start pool` and `Stop pool`, while PowerShell scripts remain fallback tools.
 - A fresh user chat now goes through explicit bootstrap state and is blocked until a clean `Temporary Chat` plus preferred-model selection is ready or failed clearly.
 - The current implementation defines "new chat" as the fresh conversation prepared for a newly active timed session, not yet several independent chats inside one active session.
 - The intended future user-facing shape is now explicit: standard mobile chat UX, chat list, create-new-chat, image attachment, and app-level chat continuity across browser workers.
@@ -58,8 +58,8 @@ Progress: [----------] 0%
 
 - `dad` still has one observed proxied live relay failure with `selector_not_found`, which looks like worker-specific relay DOM drift rather than a proxy failover fault.
 - Host-native browser windows currently launch minimized and stop cleanly when idle, but they are still real local windows while active.
-- If desired, a later phase can promote host-worker start and stop into the internal admin UI instead of relying on the verified PowerShell operator path.
 - Phase 8 is code-and-test verified, but live selector drift against the current ChatGPT UI remains a real-world follow-up risk when OpenAI changes Temporary Chat or model-picker UX.
+- Phase 9 is code-and-test verified, but it has not yet been live-smoked end-to-end through the real `/internal/admin` operator flow against a running proxied pool.
 
 ## Accumulated Context
 
@@ -76,9 +76,10 @@ Progress: [----------] 0%
 - Phase 9 context gathered: pool-level admin controls only, reuse existing admin page, and treat partial start as degraded without auto-rollback
 - Future product direction captured: mobile multi-chat UX with image attachment and chat-to-browser continuity preserved as seed material outside rollout scope
 - Phase 9 planned: host-controller stop contract, control-api pool lifecycle service, admin controls, and validation map written
+- Phase 9 executed: host-controller gained symmetric pool stop, control-api added internal host-pool lifecycle routes, and internal admin now exposes `Start pool` / `Stop pool`
 
 ## Session Continuity
 
 Last session: 2026-03-28 22:35
-Stopped at: Phase 9 planned; next step is `$gsd-execute-phase 9`
-Resume file: .planning/phases/09-internal-host-pool-orchestration/09-CONTEXT.md
+Stopped at: Phase 9 complete; next step is `$gsd-discuss-phase 10` or `$gsd-plan-phase 10`
+Resume file: .planning/ROADMAP.md
