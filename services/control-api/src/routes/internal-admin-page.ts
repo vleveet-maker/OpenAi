@@ -230,8 +230,8 @@ function renderInternalAdminPage(): string {
         <h1>Operator Admin</h1>
         <p>
           Internal-only observability and browser access controls for the managed
-          ChatGPT worker pool. This page refreshes itself every 5 seconds and can
-          launch a worker viewer through the protected browser access path.
+          ChatGPT worker pool. Start pool uses hidden runtime only, while visible
+          auth is reserved for explicit manual login or reauthentication.
         </p>
         <div class="status-bar" id="status-bar">Loading latest operator snapshot...</div>
       </header>
@@ -307,7 +307,7 @@ function renderInternalAdminPage(): string {
 
       function describeHostPoolStatus(status) {
         if (status === "idle") {
-          return "Pool is stopped. Start it when the household browsers are needed.";
+          return "Pool is stopped. Start pool uses hidden runtime only when the household browsers are needed.";
         }
 
         if (status === "starting") {
@@ -343,6 +343,18 @@ function renderInternalAdminPage(): string {
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;")
           .replaceAll('"', "&quot;");
+      }
+
+      function runtimeModeLabel(worker) {
+        if (worker.runtimeMode === "visible_auth") {
+          return "Visible auth";
+        }
+
+        if (worker.runtimeMode === "hidden_runtime") {
+          return "Hidden runtime";
+        }
+
+        return "Unknown runtime";
       }
 
       async function fetchJson(url, options = {}) {
@@ -407,6 +419,17 @@ function renderInternalAdminPage(): string {
             ? browserAccess.status + " until " + formatWhen(browserAccess.expiresAt)
             : "none";
           const busyForWorker = pendingAction === worker.workerId;
+          const hiddenRuntimeAuthLost =
+            worker.runtimeType === "host" &&
+            worker.runtimeMode === "hidden_runtime" &&
+            worker.status.status === "reauth_required";
+          const runtimeMode = runtimeModeLabel(worker);
+          const runtimeFacts = [
+            "Runtime mode: " + runtimeMode,
+            "Headless: " + (worker.headless === null || worker.headless === undefined ? "unknown" : worker.headless ? "yes" : "no"),
+            "CDP attached: " + (worker.cdpAttached === null || worker.cdpAttached === undefined ? "unknown" : worker.cdpAttached ? "yes" : "no"),
+            "Proxy configured: " + (worker.proxyServerConfigured === null || worker.proxyServerConfigured === undefined ? "unknown" : worker.proxyServerConfigured ? "yes" : "no")
+          ];
 
           return \`
             <article class="worker-card">
@@ -423,15 +446,18 @@ function renderInternalAdminPage(): string {
                 <span>Runtime: \${escapeHtml(worker.runtimeType)}</span>
                 <span>\${escapeHtml(worker.runtimeType === "host" ? "Host worker: " + worker.containerName : "Container: " + worker.containerName)}</span>
                 <span>Worker state: \${escapeHtml(worker.runtimeStatus || worker.status.status)}</span>
-                <span>Browser access: \${escapeHtml(browserAccessLabel)}</span>
+                \${runtimeFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
+                \${worker.runtimeType === "docker" ? \`<span>Browser access: \${escapeHtml(browserAccessLabel)}</span>\` : \`<span>Visible auth runs only when explicitly requested.</span>\`}
                 <span>Last seen: \${escapeHtml(worker.lastSeenAt || "n/a")}</span>
+                \${hiddenRuntimeAuthLost ? \`<span class="error">Hidden runtime lost auth after manual login; architecture review required.</span>\` : ""}
               </div>
               <div class="worker-actions">
-                \${worker.runtimeType === "docker" ? \`<button data-action="open-browser" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Open browser</button>\` : \`<span class="badge">Managed by Start pool / Stop pool</span>\`}
-                \${worker.runtimeType === "docker" ? \`<button class="secondary" data-action="start-reauth" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start reauth</button>\` : ""}
+                \${worker.runtimeType === "docker" ? \`<button data-action="open-browser" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Open browser</button>\` : \`<button data-action="manual-auth-start" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start visible login</button>\`}
+                \${worker.runtimeType === "docker" ? \`<button class="secondary" data-action="start-reauth" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start reauth</button>\` : \`<button class="secondary" data-action="manual-reauth-start" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start visible reauth</button>\`}
                 <button class="secondary" data-action="mark-ready" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Mark ready</button>
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="warn" data-action="cancel-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Cancel access</button>\` : ""}
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="success" data-action="complete-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login/reauth</button>\` : ""}
+                \${worker.runtimeType === "host" ? \`<button class="success" data-action="manual-auth-complete" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login -> hidden</button>\` : ""}
               </div>
             </article>
           \`;
@@ -584,6 +610,20 @@ function renderInternalAdminPage(): string {
         window.open(result.viewerPath, "_blank", "noopener");
       }
 
+      async function startManualAuth(workerId) {
+        await fetchJson("/internal/workers/" + workerId + "/manual-auth/start", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+      }
+
+      async function completeManualAuth(workerId) {
+        await fetchJson("/internal/workers/" + workerId + "/manual-auth/complete", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+      }
+
       async function cancelAccess(workerId) {
         await fetchJson("/internal/workers/" + workerId + "/browser-access/cancel", {
           method: "POST",
@@ -613,6 +653,10 @@ function renderInternalAdminPage(): string {
             await openBrowser(workerId);
           } else if (action === "start-reauth") {
             await startReauth(workerId);
+          } else if (action === "manual-auth-start" || action === "manual-reauth-start") {
+            await startManualAuth(workerId);
+          } else if (action === "manual-auth-complete") {
+            await completeManualAuth(workerId);
           } else if (action === "cancel-access") {
             await cancelAccess(workerId);
           } else if (action === "complete-access") {

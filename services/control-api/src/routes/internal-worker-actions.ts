@@ -1,8 +1,9 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 
 import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { SessionService } from "../sessions/session-service.js";
 import type { DockerEngineClient } from "../workers/docker-engine-client.js";
+import type { HostControllerClient } from "../workers/host-controller-client.js";
 import type { WorkerHealthMonitor } from "../workers/worker-health-monitor.js";
 import type { WorkerRegistry } from "../workers/worker-registry.js";
 
@@ -10,6 +11,7 @@ export interface InternalWorkerActionsRouterOptions {
   workerRegistry: WorkerRegistry;
   sessionService: SessionService;
   dockerEngineClient: DockerEngineClient;
+  hostControllerClient: HostControllerClient;
   healthMonitor: WorkerHealthMonitor;
   eventRecorder?: OperatorEventRecorder;
 }
@@ -19,14 +21,46 @@ export function createInternalWorkerActionsRouter(
 ) {
   const router = Router();
 
+  function respondWorkerNotFound(workerId: string, response: Response) {
+    response.status(404).json({
+      error: "worker_not_found",
+      workerId
+    });
+  }
+
+  function respondActiveSession(workerId: string, response: Response) {
+    response.status(409).json({
+      error: "worker_has_active_session",
+      workerId
+    });
+  }
+
+  function buildHostTransitionUpdate(
+    workerId: string,
+    runtimeMode: "visible_auth" | "hidden_runtime",
+    reason: string
+  ) {
+    const now = new Date().toISOString();
+
+    options.workerRegistry.updateWorker(workerId, {
+      status: "starting",
+      reason,
+      runtimeStatus: "starting",
+      assignedSessionId: null,
+      assignedUserLabel: null,
+      recoverySessionId: null,
+      runtimeMode,
+      headless: runtimeMode === "hidden_runtime",
+      cdpAttached: runtimeMode === "visible_auth",
+      lastSeenAt: now
+    });
+  }
+
   router.post("/internal/workers/:id/restart", async (request, response) => {
     const worker = options.workerRegistry.getWorker(request.params.id);
 
     if (!worker) {
-      response.status(404).json({
-        error: "worker_not_found",
-        workerId: request.params.id
-      });
+      respondWorkerNotFound(request.params.id, response);
       return;
     }
 
@@ -100,18 +134,12 @@ export function createInternalWorkerActionsRouter(
     const worker = options.workerRegistry.getWorker(request.params.id);
 
     if (!worker) {
-      response.status(404).json({
-        error: "worker_not_found",
-        workerId: request.params.id
-      });
+      respondWorkerNotFound(request.params.id, response);
       return;
     }
 
     if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
-      response.status(409).json({
-        error: "worker_has_active_session",
-        workerId: worker.workerId
-      });
+      respondActiveSession(worker.workerId, response);
       return;
     }
 
@@ -127,6 +155,133 @@ export function createInternalWorkerActionsRouter(
       action: "mark_ready",
       worker: options.workerRegistry.getWorker(worker.workerId)
     });
+  });
+
+  router.post("/internal/workers/:id/manual-auth/start", async (request, response) => {
+    const worker = options.workerRegistry.getWorker(request.params.id);
+
+    if (!worker) {
+      respondWorkerNotFound(request.params.id, response);
+      return;
+    }
+
+    if (worker.runtimeType !== "host") {
+      response.status(409).json({
+        error: "manual_auth_unsupported",
+        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and does not support visible manual auth transitions.`,
+        workerId: worker.workerId
+      });
+      return;
+    }
+
+    if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
+      respondActiveSession(worker.workerId, response);
+      return;
+    }
+
+    try {
+      options.eventRecorder?.recordEvent({
+        eventType: "worker_reauth_started",
+        severity: "info",
+        workerId: worker.workerId,
+        summary: `Worker ${worker.workerId} entering visible auth for manual login or reauthentication`,
+        detailJson: JSON.stringify({
+          runtimeMode: "visible_auth",
+          previousRuntimeMode: worker.runtimeMode ?? null
+        })
+      });
+
+      await options.hostControllerClient.stopWorker(worker.workerId);
+      const result = await options.hostControllerClient.startWorker(
+        worker.workerId,
+        "visible_auth"
+      );
+
+      buildHostTransitionUpdate(
+        worker.workerId,
+        "visible_auth",
+        "manual visible auth requested by operator"
+      );
+      void options.healthMonitor.runHealthSweep();
+
+      response.status(202).json({
+        action: "manual_auth_start_requested",
+        runtimeMode: "visible_auth",
+        hostController: result,
+        worker: options.workerRegistry.getWorker(worker.workerId)
+      });
+    } catch (error: unknown) {
+      response.status(502).json({
+        error: "manual_auth_start_failed",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "The host worker could not enter visible auth mode."
+      });
+    }
+  });
+
+  router.post("/internal/workers/:id/manual-auth/complete", async (request, response) => {
+    const worker = options.workerRegistry.getWorker(request.params.id);
+
+    if (!worker) {
+      respondWorkerNotFound(request.params.id, response);
+      return;
+    }
+
+    if (worker.runtimeType !== "host") {
+      response.status(409).json({
+        error: "manual_auth_unsupported",
+        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and does not support hidden-runtime promotion.`,
+        workerId: worker.workerId
+      });
+      return;
+    }
+
+    if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
+      respondActiveSession(worker.workerId, response);
+      return;
+    }
+
+    try {
+      await options.hostControllerClient.stopWorker(worker.workerId);
+      const result = await options.hostControllerClient.startWorker(
+        worker.workerId,
+        "hidden_runtime"
+      );
+
+      buildHostTransitionUpdate(
+        worker.workerId,
+        "hidden_runtime",
+        "manual login completed; restarting worker in hidden runtime"
+      );
+      options.eventRecorder?.recordEvent({
+        eventType: "worker_reauth_completed",
+        severity: "info",
+        workerId: worker.workerId,
+        summary: `Worker ${worker.workerId} completed manual login and restarted in hidden runtime`,
+        detailJson: JSON.stringify({
+          runtimeMode: "hidden_runtime",
+          previousRuntimeMode: worker.runtimeMode ?? null
+        })
+      });
+      void options.healthMonitor.runHealthSweep();
+
+      response.status(202).json({
+        action: "manual_auth_completed_hidden_runtime_started",
+        runtimeMode: "hidden_runtime",
+        hostController: result,
+        worker: options.workerRegistry.getWorker(worker.workerId)
+      });
+    } catch (error: unknown) {
+      response.status(502).json({
+        error: "manual_auth_complete_failed",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "The host worker could not return to hidden runtime."
+      });
+    }
   });
 
   return router;

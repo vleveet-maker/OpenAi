@@ -19,6 +19,10 @@ export interface WorkerRecord {
   lastSeenAt?: string;
   lastAssignedAt?: string;
   recoverySessionId?: string;
+  runtimeMode?: "visible_auth" | "hidden_runtime";
+  headless?: boolean;
+  cdpAttached?: boolean;
+  proxyServerConfigured?: boolean;
 }
 
 export interface WorkerRegistryUpdate {
@@ -30,6 +34,10 @@ export interface WorkerRegistryUpdate {
   lastSeenAt?: string;
   lastAssignedAt?: string | null;
   recoverySessionId?: string | null;
+  runtimeMode?: "visible_auth" | "hidden_runtime" | null;
+  headless?: boolean | null;
+  cdpAttached?: boolean | null;
+  proxyServerConfigured?: boolean | null;
 }
 
 function cloneWorkerRecord(record: WorkerRecord): WorkerRecord {
@@ -57,6 +65,8 @@ export class WorkerRegistry {
         runtimeType: definition.runtimeType ?? "docker",
         status: createWorkerStatusRecord(definition.defaultStatus, "registry bootstrap"),
         runtimeStatus: definition.defaultStatus,
+        runtimeMode:
+          definition.runtimeType === "host" ? "hidden_runtime" : undefined,
         lastSeenAt: now
       });
     }
@@ -117,7 +127,23 @@ export class WorkerRegistry {
       recoverySessionId:
         update.recoverySessionId === null
           ? undefined
-          : update.recoverySessionId ?? existing.recoverySessionId
+          : update.recoverySessionId ?? existing.recoverySessionId,
+      runtimeMode:
+        update.runtimeMode === null
+          ? undefined
+          : update.runtimeMode ?? existing.runtimeMode,
+      headless:
+        update.headless === null
+          ? undefined
+          : update.headless ?? existing.headless,
+      cdpAttached:
+        update.cdpAttached === null
+          ? undefined
+          : update.cdpAttached ?? existing.cdpAttached,
+      proxyServerConfigured:
+        update.proxyServerConfigured === null
+          ? undefined
+          : update.proxyServerConfigured ?? existing.proxyServerConfigured
     };
 
     this.workers.set(workerId, updated);

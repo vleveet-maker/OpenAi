@@ -18,7 +18,11 @@ export function createInternalWorkersRouter(
       workers: options.workerRegistry.listWorkers().map((worker) => ({
         ...worker,
         lastSeenAt: worker.lastSeenAt ?? null,
-        runtimeStatus: worker.runtimeStatus ?? worker.status.status
+        runtimeStatus: worker.runtimeStatus ?? worker.status.status,
+        runtimeMode: worker.runtimeMode ?? null,
+        headless: worker.headless ?? null,
+        cdpAttached: worker.cdpAttached ?? null,
+        proxyServerConfigured: worker.proxyServerConfigured ?? null
       }))
     });
   });
@@ -37,7 +41,11 @@ export function createInternalWorkersRouter(
     response.json({
       ...worker,
       lastSeenAt: worker.lastSeenAt ?? null,
-      runtimeStatus: worker.runtimeStatus ?? worker.status.status
+      runtimeStatus: worker.runtimeStatus ?? worker.status.status,
+      runtimeMode: worker.runtimeMode ?? null,
+      headless: worker.headless ?? null,
+      cdpAttached: worker.cdpAttached ?? null,
+      proxyServerConfigured: worker.proxyServerConfigured ?? null
     });
   });
 
@@ -56,7 +64,11 @@ export function createInternalWorkersRouter(
       workerId: request.params.id,
       ...worker.status,
       lastSeenAt: worker.lastSeenAt ?? null,
-      runtimeStatus: worker.runtimeStatus ?? worker.status.status
+      runtimeStatus: worker.runtimeStatus ?? worker.status.status,
+      runtimeMode: worker.runtimeMode ?? null,
+      headless: worker.headless ?? null,
+      cdpAttached: worker.cdpAttached ?? null,
+      proxyServerConfigured: worker.proxyServerConfigured ?? null
     });
   });
 

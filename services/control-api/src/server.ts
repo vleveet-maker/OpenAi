@@ -341,6 +341,7 @@ export function createControlApiApp(
       workerRegistry,
       sessionService,
       dockerEngineClient,
+      hostControllerClient: runtime.hostControllerClient,
       healthMonitor,
       eventRecorder: runtime.observabilityService
     })

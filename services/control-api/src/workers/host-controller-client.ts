@@ -6,6 +6,11 @@ export interface HostControllerWorkerStatus {
   proxyServer?: string;
   agentListening: boolean;
   browserListening: boolean;
+  runtimeMode?: "visible_auth" | "hidden_runtime" | null;
+  headless?: boolean | null;
+  cdpAttached?: boolean | null;
+  proxyServerConfigured?: boolean | null;
+  runtimeStatus?: string | null;
 }
 
 export interface HostControllerHealthSnapshot {
@@ -17,10 +22,14 @@ export interface HostControllerHealthSnapshot {
 
 export interface HostControllerPoolResult extends HostControllerHealthSnapshot {
   action: string;
+  runtimeMode?: "visible_auth" | "hidden_runtime";
 }
 
 export interface HostControllerClient {
-  startWorker(workerId: string): Promise<void>;
+  startWorker(
+    workerId: string,
+    runtimeMode?: "visible_auth" | "hidden_runtime"
+  ): Promise<HostControllerPoolResult | Record<string, unknown>>;
   stopWorker(workerId: string): Promise<void>;
   startPool(): Promise<HostControllerPoolResult>;
   stopPool(): Promise<HostControllerPoolResult>;
@@ -63,11 +72,15 @@ export function createHostControllerClient(
     }
   }
 
-  async function post<T>(pathname: string, workerId?: string): Promise<T> {
+  async function post<T>(
+    pathname: string,
+    workerId?: string,
+    body: Record<string, unknown> = {}
+  ): Promise<T> {
     const response = await fetch(new URL(pathname, `${baseUrl}/`), {
       method: "POST",
       headers,
-      body: "{}"
+      body: JSON.stringify(body)
     });
 
     if (response.ok) {
@@ -94,8 +107,10 @@ export function createHostControllerClient(
   }
 
   return {
-    async startWorker(workerId) {
-      await post(`/workers/${workerId}/start`, workerId);
+    async startWorker(workerId, runtimeMode) {
+      return post(`/workers/${workerId}/start`, workerId, {
+        ...(runtimeMode ? { runtimeMode } : {})
+      });
     },
     async stopWorker(workerId) {
       await post(`/workers/${workerId}/stop`, workerId);
@@ -124,7 +139,9 @@ export function createNoopHostControllerClient(): HostControllerClient {
   };
 
   return {
-    async startWorker(_workerId: string) {},
+    async startWorker(_workerId: string, _runtimeMode?: "visible_auth" | "hidden_runtime") {
+      return {};
+    },
     async stopWorker(_workerId: string) {},
     async startPool() {
       return {

@@ -6,6 +6,7 @@ import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ControlApiConfig, WorkerRuntimeType } from "../src/config.js";
+import type { HostControllerClient } from "../src/workers/host-controller-client.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
 import { createReadyBootstrapTransport } from "./test-bootstrap-transport.js";
 
@@ -51,6 +52,44 @@ function createTestRuntime(runtimeType: WorkerRuntimeType = "docker") {
     restartContainer: vi.fn().mockResolvedValue(undefined),
     inspectContainer: vi.fn()
   };
+  const hostControllerClient: HostControllerClient = {
+    startWorker: vi.fn().mockResolvedValue({
+      action: "start_requested",
+      runtimeMode: "hidden_runtime",
+      proxyListening: true,
+      proxyServerUrl: "http://127.0.0.1:7897",
+      poolStatus: "degraded",
+      workers: []
+    }),
+    stopWorker: vi.fn().mockResolvedValue(undefined),
+    startPool: vi.fn().mockResolvedValue({
+      action: "pool_start_requested",
+      runtimeMode: "hidden_runtime",
+      proxyListening: true,
+      proxyServerUrl: "http://127.0.0.1:7897",
+      poolStatus: "ready",
+      workers: []
+    }),
+    stopPool: vi.fn().mockResolvedValue({
+      action: "pool_stop_requested",
+      proxyListening: false,
+      proxyServerUrl: "http://127.0.0.1:7897",
+      poolStatus: "idle",
+      workers: []
+    }),
+    getHealth: vi.fn().mockResolvedValue({
+      proxyListening: false,
+      proxyServerUrl: "http://127.0.0.1:7897",
+      poolStatus: "idle",
+      workers: []
+    }),
+    listWorkers: vi.fn().mockResolvedValue({
+      proxyListening: false,
+      proxyServerUrl: "http://127.0.0.1:7897",
+      poolStatus: "idle",
+      workers: []
+    })
+  };
   const healthMonitor = {
     startHealthMonitor: vi.fn(),
     stopHealthMonitor: vi.fn(),
@@ -58,6 +97,7 @@ function createTestRuntime(runtimeType: WorkerRuntimeType = "docker") {
   };
   const runtime = createControlApiRuntime(config, {
     dockerEngineClient,
+    hostControllerClient,
     healthMonitor,
     bootstrapTransport: createReadyBootstrapTransport()
   });
@@ -67,6 +107,7 @@ function createTestRuntime(runtimeType: WorkerRuntimeType = "docker") {
     runtime,
     app,
     dockerEngineClient,
+    hostControllerClient,
     healthMonitor
   };
 }
@@ -168,5 +209,79 @@ describe("internal worker restart actions", () => {
 
     expect(endedSession?.session.state).toBe("ended");
     expect(endedSession?.session.endReason).toBe("worker_unavailable");
+  });
+});
+
+describe("internal worker manual auth transitions", () => {
+  it("starts host workers in visible_auth for manual login", async () => {
+    const { app, runtime, hostControllerClient, healthMonitor } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/manual-auth/start")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(hostControllerClient.stopWorker).toHaveBeenCalledWith("dad");
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith("dad", "visible_auth");
+    expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
+    expect(response.body.action).toBe("manual_auth_start_requested");
+    expect(response.body.runtimeMode).toBe("visible_auth");
+    expect(response.body.worker.runtimeMode).toBe("visible_auth");
+    expect(response.body.worker.headless).toBe(false);
+    expect(response.body.worker.cdpAttached).toBe(true);
+  });
+
+  it("completes manual auth by restarting the host worker in hidden_runtime", async () => {
+    const { app, runtime, hostControllerClient, healthMonitor } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "reauth_required",
+      reason: "manual transition test",
+      runtimeStatus: "reauth_required",
+      runtimeMode: "visible_auth",
+      headless: false,
+      cdpAttached: true
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/manual-auth/complete")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(hostControllerClient.stopWorker).toHaveBeenCalledWith("dad");
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith("dad", "hidden_runtime");
+    expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
+    expect(response.body.action).toBe("manual_auth_completed_hidden_runtime_started");
+    expect(response.body.runtimeMode).toBe("hidden_runtime");
+    expect(response.body.worker.runtimeMode).toBe("hidden_runtime");
+    expect(response.body.worker.headless).toBe(true);
+    expect(response.body.worker.cdpAttached).toBe(false);
+  });
+
+  it("returns 409 for docker workers on manual auth transitions", async () => {
+    const { app, runtime, hostControllerClient } = createTestRuntime("docker");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+
+    const startResponse = await request(app)
+      .post("/internal/workers/dad/manual-auth/start")
+      .set("x-internal-admin-token", "secret")
+      .expect(409);
+
+    const completeResponse = await request(app)
+      .post("/internal/workers/dad/manual-auth/complete")
+      .set("x-internal-admin-token", "secret")
+      .expect(409);
+
+    expect(startResponse.body.error).toBe("manual_auth_unsupported");
+    expect(completeResponse.body.error).toBe("manual_auth_unsupported");
+    expect(hostControllerClient.stopWorker).not.toHaveBeenCalled();
+    expect(hostControllerClient.startWorker).not.toHaveBeenCalled();
   });
 });

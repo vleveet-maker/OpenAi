@@ -8,6 +8,10 @@ interface WorkerHealthPayload {
   browserContextReady?: boolean;
   lastRelayAt?: string | null;
   lastRelayFailureCode?: string | null;
+  runtimeMode?: "visible_auth" | "hidden_runtime";
+  headless?: boolean;
+  cdpAttached?: boolean;
+  proxyServerConfigured?: boolean;
 }
 
 export interface WorkerHealthMonitorOptions {
@@ -65,10 +69,17 @@ export class WorkerHealthMonitor {
         status: nextStatus,
         reason: "worker health poll succeeded",
         runtimeStatus: payload.runtimeStatus ?? nextStatus,
+        runtimeMode: payload.runtimeMode ?? null,
+        headless: payload.headless ?? null,
+        cdpAttached: payload.cdpAttached ?? null,
+        proxyServerConfigured: payload.proxyServerConfigured ?? null,
         lastSeenAt: checkedAt
       });
 
       if (nextStatus !== previousStatus) {
+        const hiddenRuntimeAuthLost =
+          nextStatus === "reauth_required" &&
+          payload.runtimeMode === "hidden_runtime";
         this.options.eventRecorder?.recordEvent({
           eventType: "worker_status_changed",
           severity:
@@ -78,11 +89,17 @@ export class WorkerHealthMonitor {
                 ? "warn"
                 : "info",
           workerId: worker.workerId,
-          summary: `Worker ${worker.workerId} status changed from ${previousStatus} to ${nextStatus}`,
+          summary: hiddenRuntimeAuthLost
+            ? `Worker ${worker.workerId} hidden runtime lost auth after manual login; architecture review required`
+            : `Worker ${worker.workerId} status changed from ${previousStatus} to ${nextStatus}`,
           detailJson: JSON.stringify({
             previousStatus,
             nextStatus,
             runtimeStatus: payload.runtimeStatus ?? nextStatus,
+            runtimeMode: payload.runtimeMode ?? null,
+            headless: payload.headless ?? null,
+            cdpAttached: payload.cdpAttached ?? null,
+            proxyServerConfigured: payload.proxyServerConfigured ?? null,
             browserContextReady: payload.browserContextReady ?? null,
             lastRelayAt: payload.lastRelayAt ?? null,
             lastRelayFailureCode: payload.lastRelayFailureCode ?? null

@@ -35,9 +35,10 @@ function createTestRuntime() {
       {
         workerId: "dad",
         displayName: "Dad",
-        containerName: "worker-dad",
+        containerName: "host-dad",
         profilePath: "/profiles/dad",
-        agentBaseUrl: "http://worker-dad:4020",
+        agentBaseUrl: "http://host.docker.internal:4021",
+        runtimeType: "host",
         defaultStatus: "ready"
       }
     ]
@@ -85,7 +86,7 @@ afterEach(() => {
 });
 
 describe("internal admin page", () => {
-  it("renders browser access controls and observability endpoints", async () => {
+  it("renders hidden-runtime controls and observability endpoints", async () => {
     const { app, runtime } = createTestRuntime();
     cleanupCallbacks.push(() => runtime.dispose());
 
@@ -96,14 +97,19 @@ describe("internal admin page", () => {
 
     expect(response.text).toContain("Start pool");
     expect(response.text).toContain("Stop pool");
+    expect(response.text).toContain("uses hidden runtime only");
+    expect(response.text).toContain("Start visible login");
+    expect(response.text).toContain("Start visible reauth");
+    expect(response.text).toContain("Complete login -> hidden");
+    expect(response.text).toContain("Hidden runtime");
+    expect(response.text).toContain("Visible auth");
+    expect(response.text).toContain("architecture review required");
     expect(response.text).toContain("/internal/host-pool");
     expect(response.text).toContain("degraded");
     expect(response.text).toContain("failed");
-    expect(response.text).toContain("Open browser");
-    expect(response.text).toContain("Start reauth");
-    expect(response.text).toContain("Complete login/reauth");
+    expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/start");
+    expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/complete");
     expect(response.text).toContain("/internal/workers/");
     expect(response.text).toContain("/internal/observability/summary");
-    expect(response.text).toContain("window.open");
   });
 });
