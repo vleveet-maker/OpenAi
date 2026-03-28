@@ -40,6 +40,13 @@ export interface WorkerHealthSnapshot {
   lastRelayFailureCode: string | null;
 }
 
+export interface WorkerBrowserAccessSnapshot {
+  enabled: boolean;
+  ready: boolean;
+  httpPort: number;
+  display: string;
+}
+
 function parsePort(value: string | undefined, fallback: number): number {
   if (!value) {
     return fallback;
@@ -65,6 +72,22 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   }
 
   return fallback;
+}
+
+function resolveBrowserAccessSnapshot(
+  env: NodeJS.ProcessEnv,
+  browserContextReady: boolean
+): WorkerBrowserAccessSnapshot {
+  const httpPort = parsePort(env.BROWSER_ACCESS_HTTP_PORT, 6080);
+  const display = env.DISPLAY ?? ":99";
+  const enabled = httpPort > 0 && display.trim().length > 0;
+
+  return {
+    enabled,
+    ready: enabled && browserContextReady,
+    httpPort,
+    display
+  };
 }
 
 function resolveRuntimeFailureCode(error: unknown): string {
@@ -105,6 +128,7 @@ export interface WorkerAgentRuntime {
   config: WorkerAgentConfig;
   getBrowserContext(): Promise<BrowserContext>;
   getHealthSnapshot(): WorkerHealthSnapshot;
+  getBrowserAccessSnapshot(): WorkerBrowserAccessSnapshot;
   relayMessage(request: WorkerRelayRequest): Promise<WorkerRelayResult>;
   dispose(): Promise<void>;
 }
@@ -188,6 +212,9 @@ export function createWorkerAgentRuntime(
         ...runtimeState
       };
     },
+    getBrowserAccessSnapshot() {
+      return resolveBrowserAccessSnapshot(process.env, runtimeState.browserContextReady);
+    },
     async relayMessage(request: WorkerRelayRequest) {
       const browserContext = await instrumentedBrowserContextPromise;
 
@@ -230,6 +257,7 @@ export function createWorkerAgentApp(
 
   app.get("/health", (_request, response) => {
     const healthSnapshot = runtime.getHealthSnapshot();
+    const browserAccess = runtime.getBrowserAccessSnapshot();
 
     response.json({
       service: "worker-agent",
@@ -239,16 +267,20 @@ export function createWorkerAgentApp(
       runtimeStatus: healthSnapshot.runtimeStatus,
       browserContextReady: healthSnapshot.browserContextReady,
       lastRelayAt: healthSnapshot.lastRelayAt,
-      lastRelayFailureCode: healthSnapshot.lastRelayFailureCode
+      lastRelayFailureCode: healthSnapshot.lastRelayFailureCode,
+      browserAccess
     });
   });
 
   app.get("/internal/worker", (_request, response) => {
+    const browserAccess = runtime.getBrowserAccessSnapshot();
+
     response.json({
       workerId: config.workerId,
       displayName: config.displayName,
       containerName: config.containerName,
-      profilePath: config.profilePath
+      profilePath: config.profilePath,
+      browserAccess
     });
   });
 
@@ -273,8 +305,10 @@ export function createWorkerAgentApp(
 
 async function startWorkerAgent(config: WorkerAgentConfig = loadWorkerAgentConfig()) {
   const runtime = createWorkerAgentRuntime(config);
-  await runtime.getBrowserContext();
   const app = createWorkerAgentApp(runtime);
+  void runtime.getBrowserContext().catch((error: unknown) => {
+    console.error("[worker-agent] browser bootstrap failed", error);
+  });
 
   return new Promise<import("node:http").Server>((resolve) => {
     const server = app.listen(config.port, config.host, () => {

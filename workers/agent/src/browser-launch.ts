@@ -7,6 +7,7 @@ export interface WorkerBrowserLaunchOptions {
   browserChannel?: string;
   headless?: boolean;
   startUrl?: string;
+  startUrlNavigationTimeoutMs?: number;
 }
 
 export const WORKER_PROFILE_ROOT = "/srv/chatgpt-workers/profiles";
@@ -44,9 +45,18 @@ export async function launchWorkerBrowser(
   const page = context.pages()[0] ?? (await context.newPage());
 
   if (options.startUrl) {
-    await page.goto(options.startUrl, {
-      waitUntil: "domcontentloaded"
-    });
+    try {
+      // Keep browser bootstrap bounded so health stays reachable during challenge pages.
+      await page.goto(options.startUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: options.startUrlNavigationTimeoutMs ?? 15_000
+      });
+    } catch (error: unknown) {
+      console.warn(
+        `[worker-browser] initial navigation to ${options.startUrl} did not finish for ${options.workerId}`,
+        error
+      );
+    }
   }
 
   return context;
