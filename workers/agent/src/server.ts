@@ -6,6 +6,7 @@ import type { BrowserContext } from "playwright";
 
 import {
   launchWorkerBrowser,
+  type WorkerRuntimeMode,
   type WorkerBrowserHandle
 } from "./browser-launch.js";
 import {
@@ -39,10 +40,12 @@ export interface WorkerAgentConfig {
   host: string;
   port: number;
   profilePath: string;
+  runtimeMode: WorkerRuntimeMode;
   browserChannel?: string;
   browserExecutablePath?: string;
   cdpEndpointUrl?: string;
   headless: boolean;
+  proxyServer?: string;
   startUrl: string;
   preferredReasoningModelLabels: string[];
 }
@@ -52,6 +55,10 @@ export interface WorkerHealthSnapshot {
   browserContextReady: boolean;
   lastRelayAt: string | null;
   lastRelayFailureCode: string | null;
+  runtimeMode: WorkerRuntimeMode;
+  headless: boolean;
+  cdpAttached: boolean;
+  proxyServerConfigured: boolean;
 }
 
 export interface WorkerBrowserAccessSnapshot {
@@ -65,6 +72,17 @@ export const DEFAULT_PREFERRED_REASONING_MODEL_LABELS = [
   "GPT-5.4 Thinking",
   "GPT-5.4"
 ];
+
+export function parseWorkerRuntimeMode(
+  value: string | undefined,
+  fallback: WorkerRuntimeMode = "hidden_runtime"
+): WorkerRuntimeMode {
+  if (value === "visible_auth" || value === "hidden_runtime") {
+    return value;
+  }
+
+  return fallback;
+}
 
 function parsePort(value: string | undefined, fallback: number): number {
   if (!value) {
@@ -161,6 +179,14 @@ export function loadWorkerAgentConfig(
   env: NodeJS.ProcessEnv = process.env
 ): WorkerAgentConfig {
   const workerId = env.WORKER_ID ?? "shared-1";
+  const runtimeMode = parseWorkerRuntimeMode(
+    env.WORKER_RUNTIME_MODE,
+    env.WORKER_CDP_ENDPOINT_URL ? "visible_auth" : "hidden_runtime"
+  );
+  const headless =
+    runtimeMode === "hidden_runtime"
+      ? true
+      : parseBoolean(env.WORKER_HEADLESS, false);
 
   return {
     workerId,
@@ -171,10 +197,12 @@ export function loadWorkerAgentConfig(
     profilePath:
       env.WORKER_PROFILE_PATH ??
       `/srv/chatgpt-workers/profiles/${workerId}`,
+    runtimeMode,
     browserChannel: env.WORKER_BROWSER_CHANNEL,
     browserExecutablePath: env.WORKER_BROWSER_EXECUTABLE_PATH,
     cdpEndpointUrl: env.WORKER_CDP_ENDPOINT_URL,
-    headless: parseBoolean(env.WORKER_HEADLESS, false),
+    headless,
+    proxyServer: env.WORKER_PROXY_SERVER,
     startUrl: env.WORKER_START_URL ?? "https://chatgpt.com/",
     preferredReasoningModelLabels: parsePreferredReasoningModelLabels(
       env.WORKER_PREFERRED_REASONING_MODEL_LABELS
@@ -260,12 +288,16 @@ export function createWorkerAgentRuntime(
     runtimeStatus: "starting",
     browserContextReady: false,
     lastRelayAt: null,
-    lastRelayFailureCode: null
+    lastRelayFailureCode: null,
+    runtimeMode: config.runtimeMode,
+    headless: config.headless,
+    cdpAttached: Boolean(config.cdpEndpointUrl),
+    proxyServerConfigured: Boolean(config.proxyServer)
   };
   const browserHandlePromise =
     options.browserHandlePromise ??
     (options.browserContextPromise
-      ? options.browserContextPromise.then((browserContext) => ({
+        ? options.browserContextPromise.then((browserContext) => ({
           browserContext,
           async dispose() {
             await browserContext.close();
@@ -274,10 +306,12 @@ export function createWorkerAgentRuntime(
       : launchWorkerBrowser({
           workerId: config.workerId,
           profilePath: config.profilePath,
+          runtimeMode: config.runtimeMode,
           browserChannel: config.browserChannel,
           browserExecutablePath: config.browserExecutablePath,
           cdpEndpointUrl: config.cdpEndpointUrl,
           headless: config.headless,
+          proxyServer: config.proxyServer,
           startUrl: config.startUrl
         }));
   const instrumentedBrowserHandlePromise = browserHandlePromise
@@ -377,6 +411,10 @@ export function createWorkerAgentApp(
       workerId: config.workerId,
       containerName: config.containerName,
       profilePath: config.profilePath,
+      runtimeMode: healthSnapshot.runtimeMode,
+      headless: healthSnapshot.headless,
+      cdpAttached: healthSnapshot.cdpAttached,
+      proxyServerConfigured: healthSnapshot.proxyServerConfigured,
       runtimeStatus: healthSnapshot.runtimeStatus,
       browserContextReady: healthSnapshot.browserContextReady,
       lastRelayAt: healthSnapshot.lastRelayAt,

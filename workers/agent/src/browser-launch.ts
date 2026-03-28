@@ -3,10 +3,13 @@ import { join } from "node:path";
 
 import { chromium, type BrowserContext } from "playwright";
 
+export type WorkerRuntimeMode = "visible_auth" | "hidden_runtime";
+
 export interface WorkerBrowserLaunchOptions {
   workerId: string;
   profilePath?: string;
   profileRoot?: string;
+  runtimeMode?: WorkerRuntimeMode;
   browserChannel?: string;
   browserExecutablePath?: string;
   headless?: boolean;
@@ -14,6 +17,7 @@ export interface WorkerBrowserLaunchOptions {
   startUrlNavigationTimeoutMs?: number;
   cdpEndpointUrl?: string;
   cdpConnectionTimeoutMs?: number;
+  proxyServer?: string;
 }
 
 export const WORKER_PROFILE_ROOT = "/srv/chatgpt-workers/profiles";
@@ -30,6 +34,43 @@ type LaunchPersistentContextOptions =
 export interface WorkerBrowserHandle {
   browserContext: BrowserContext;
   dispose(): Promise<void>;
+}
+
+export function resolveBrowserTransport(
+  options: WorkerBrowserLaunchOptions
+): "cdp" | "persistent" {
+  if (options.runtimeMode === "hidden_runtime") {
+    return "persistent";
+  }
+
+  return options.cdpEndpointUrl ? "cdp" : "persistent";
+}
+
+export function createPersistentLaunchOptions(
+  options: WorkerBrowserLaunchOptions
+): LaunchPersistentContextOptions {
+  const launchOptions: LaunchPersistentContextOptions = {
+    headless:
+      options.runtimeMode === "hidden_runtime"
+        ? true
+        : options.headless ?? false,
+    args: [
+      "--disable-dev-shm-usage",
+      "--no-default-browser-check"
+    ]
+  };
+
+  if (options.proxyServer) {
+    launchOptions.args?.push(`--proxy-server=${options.proxyServer}`);
+  }
+
+  if (options.browserExecutablePath) {
+    launchOptions.executablePath = options.browserExecutablePath;
+  } else {
+    launchOptions.channel = options.browserChannel;
+  }
+
+  return launchOptions;
 }
 
 export function getWorkerProfilePath(
@@ -88,20 +129,8 @@ async function launchPersistentWorkerBrowser(
   const profilePath =
     options.profilePath ??
     getWorkerProfilePath(options.workerId, options.profileRoot);
-  const launchOptions: LaunchPersistentContextOptions = {
-    headless: options.headless ?? false,
-    args: [
-      "--disable-dev-shm-usage",
-      "--no-default-browser-check"
-    ]
-  };
+  const launchOptions = createPersistentLaunchOptions(options);
   const navigationTimeoutMs = options.startUrlNavigationTimeoutMs ?? 15_000;
-
-  if (options.browserExecutablePath) {
-    launchOptions.executablePath = options.browserExecutablePath;
-  } else {
-    launchOptions.channel = options.browserChannel;
-  }
 
   clearChromiumSingletonArtifacts(profilePath);
 
@@ -153,7 +182,14 @@ async function connectWorkerBrowserOverCdp(
 export async function launchWorkerBrowser(
   options: WorkerBrowserLaunchOptions
 ): Promise<WorkerBrowserHandle> {
-  if (options.cdpEndpointUrl) {
+  if (
+    options.runtimeMode === "hidden_runtime" &&
+    options.cdpEndpointUrl
+  ) {
+    throw new Error("hidden_runtime_requires_no_cdp_endpoint");
+  }
+
+  if (resolveBrowserTransport(options) === "cdp") {
     return connectWorkerBrowserOverCdp(options);
   }
 

@@ -35,6 +35,21 @@ async function readRequestBody(request) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+function parseRuntimeModeFromBody(rawBody, fallback = undefined) {
+  if (!rawBody || rawBody.trim().length === 0) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(rawBody);
+    return typeof parsed?.runtimeMode === "string"
+      ? parsed.runtimeMode
+      : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function createHostControllerServer(
   config = loadHostControllerConfig(),
   controller = new HostController(config)
@@ -72,8 +87,10 @@ export function createHostControllerServer(
       }
 
       if (request.method === "POST" && url.pathname === "/pool/start") {
-        await readRequestBody(request);
-        const result = await controller.startPool();
+        const body = await readRequestBody(request);
+        const result = await controller.startPool(
+          parseRuntimeModeFromBody(body)
+        );
         sendJson(response, 202, result);
         return;
       }
@@ -88,10 +105,17 @@ export function createHostControllerServer(
       const workerAction = matchWorkerAction(url.pathname);
 
       if (request.method === "POST" && workerAction) {
-        await readRequestBody(request);
+        const body = await readRequestBody(request);
 
         if (workerAction.action === "start") {
-          sendJson(response, 202, await controller.startWorker(workerAction.workerId));
+          sendJson(
+            response,
+            202,
+            await controller.startWorker(
+              workerAction.workerId,
+              parseRuntimeModeFromBody(body)
+            )
+          );
           return;
         }
 

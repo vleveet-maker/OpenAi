@@ -7,6 +7,16 @@ import { loadProxyShareLinks, writeSingBoxConfig } from "./proxy-links.mjs";
 
 const POWERSHELL_EXE = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
 
+function normalizeRuntimeMode(value, fallback = "hidden_runtime") {
+  return value === "visible_auth" || value === "hidden_runtime"
+    ? value
+    : fallback;
+}
+
+function toPowerShellRuntimeMode(runtimeMode) {
+  return runtimeMode === "visible_auth" ? "VisibleAuth" : "HiddenRuntime";
+}
+
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -63,16 +73,47 @@ export class HostController {
 
   async getWorkerStatuses() {
     return Promise.all(
-      this.config.workers.map(async (worker) => ({
-        workerId: worker.workerId,
-        displayName: worker.displayName,
-        agentPort: worker.agentPort,
-        cdpPort: worker.cdpPort,
-        proxyServer: this.config.proxyServerUrl,
-        agentListening: await testLocalPort(worker.agentPort),
-        browserListening: await testLocalPort(worker.cdpPort)
-      }))
+      this.config.workers.map(async (worker) => {
+        const agentListening = await testLocalPort(worker.agentPort);
+        const health =
+          agentListening
+            ? await this.fetchWorkerHealth(worker.agentPort)
+            : null;
+
+        return {
+          workerId: worker.workerId,
+          displayName: worker.displayName,
+          agentPort: worker.agentPort,
+          cdpPort: worker.cdpPort,
+          proxyServer: this.config.proxyServerUrl,
+          agentListening,
+          browserListening: health
+            ? Boolean(health.browserContextReady)
+            : await testLocalPort(worker.cdpPort),
+          runtimeMode: health?.runtimeMode ?? null,
+          headless: health?.headless ?? null,
+          cdpAttached: health?.cdpAttached ?? null,
+          proxyServerConfigured: health?.proxyServerConfigured ?? null,
+          runtimeStatus: health?.runtimeStatus ?? null
+        };
+      })
     );
+  }
+
+  async fetchWorkerHealth(agentPort) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${agentPort}/health`, {
+        signal: AbortSignal.timeout(1_500)
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json();
+    } catch {
+      return null;
+    }
   }
 
   async getProxyRuntimeStatus() {
@@ -145,15 +186,20 @@ export class HostController {
     throw new Error("proxy_runtime_failed_to_start");
   }
 
-  async startWorker(workerId) {
+  async startWorker(workerId, runtimeMode = this.config.defaultWorkerRuntimeMode) {
     const worker = this.requireWorker(workerId);
     const proxyRuntime = await this.ensureProxyReady();
+    const resolvedRuntimeMode = normalizeRuntimeMode(
+      runtimeMode,
+      this.config.defaultWorkerRuntimeMode ?? "hidden_runtime"
+    );
 
     if (await testLocalPort(worker.agentPort)) {
       return {
         workerId,
         status: "already_running",
-        proxyServerUrl: proxyRuntime.proxyServerUrl
+        proxyServerUrl: proxyRuntime.proxyServerUrl,
+        runtimeMode: resolvedRuntimeMode
       };
     }
 
@@ -166,6 +212,8 @@ export class HostController {
       "-DetachAgent",
       "-ProxyServer",
       proxyRuntime.proxyServerUrl,
+      "-RuntimeMode",
+      toPowerShellRuntimeMode(resolvedRuntimeMode),
       "-BrowserWindowMode",
       this.config.browserWindowMode
     ].map((value) => `'${String(value).replaceAll("'", "''")}'`);
@@ -198,7 +246,8 @@ export class HostController {
     return {
       workerId,
       status: "start_requested",
-      proxyServerUrl: proxyRuntime.proxyServerUrl
+      proxyServerUrl: proxyRuntime.proxyServerUrl,
+      runtimeMode: resolvedRuntimeMode
     };
   }
 
@@ -245,11 +294,15 @@ export class HostController {
     };
   }
 
-  async startPool() {
+  async startPool(runtimeMode = this.config.defaultWorkerRuntimeMode) {
     const results = [];
+    const resolvedRuntimeMode = normalizeRuntimeMode(
+      runtimeMode,
+      this.config.defaultWorkerRuntimeMode ?? "hidden_runtime"
+    );
 
     for (const worker of this.config.workers) {
-      results.push(await this.startWorker(worker.workerId));
+      results.push(await this.startWorker(worker.workerId, resolvedRuntimeMode));
       await sleep(500);
     }
 
@@ -257,6 +310,7 @@ export class HostController {
 
     return {
       action: "pool_start_requested",
+      runtimeMode: resolvedRuntimeMode,
       proxyListening: health.proxyListening,
       proxyServerUrl: health.proxyServerUrl,
       poolStatus: health.poolStatus,

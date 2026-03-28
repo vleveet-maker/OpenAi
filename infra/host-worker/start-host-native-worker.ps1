@@ -7,6 +7,8 @@ param(
   [string]$ProfilePath = "",
   [string]$StartUrl = "https://chatgpt.com/",
   [string]$ProxyServer = "",
+  [ValidateSet("VisibleAuth", "HiddenRuntime")]
+  [string]$RuntimeMode = "HiddenRuntime",
   [ValidateSet("Normal", "Minimized")]
   [string]$BrowserWindowMode = "Minimized",
   [string]$RepoRoot = "",
@@ -71,7 +73,7 @@ $agentScriptPath = Join-Path $PSScriptRoot "start-host-worker-agent.ps1"
 $null = New-Item -ItemType Directory -Force -Path $resolvedProfilePath
 $null = New-Item -ItemType Directory -Force -Path $logsDirectory
 
-if (-not (Test-CdpEndpoint -Port $CdpPort)) {
+if ($RuntimeMode -eq "VisibleAuth" -and -not (Test-CdpEndpoint -Port $CdpPort)) {
   $browserArgs = @(
     "--remote-debugging-port=$CdpPort",
     "--user-data-dir=$resolvedProfilePath",
@@ -105,7 +107,25 @@ $env:WORKER_AGENT_HOST = "127.0.0.1"
 $env:WORKER_AGENT_PORT = "$AgentPort"
 $env:WORKER_PROFILE_PATH = $resolvedProfilePath
 $env:WORKER_BROWSER_EXECUTABLE_PATH = $resolvedBrowserExecutable
-$env:WORKER_CDP_ENDPOINT_URL = "http://127.0.0.1:$CdpPort"
+$env:WORKER_RUNTIME_MODE =
+  if ($RuntimeMode -eq "VisibleAuth") {
+    "visible_auth"
+  } else {
+    "hidden_runtime"
+  }
+$env:WORKER_HEADLESS =
+  if ($RuntimeMode -eq "HiddenRuntime") {
+    "true"
+  } else {
+    "false"
+  }
+$env:WORKER_PROXY_SERVER = $ProxyServer
+$env:WORKER_CDP_ENDPOINT_URL =
+  if ($RuntimeMode -eq "VisibleAuth") {
+    "http://127.0.0.1:$CdpPort"
+  } else {
+    ""
+  }
 $env:WORKER_START_URL = $StartUrl
 $env:BROWSER_ACCESS_HTTP_PORT = "0"
 
@@ -127,8 +147,12 @@ if ($DetachAgent) {
     $resolvedProfilePath,
     "-StartUrl",
     $StartUrl,
+    "-RuntimeMode",
+    $RuntimeMode,
+    "-ProxyServer",
+    $ProxyServer,
     "-CdpEndpointUrl",
-    "http://127.0.0.1:$CdpPort",
+    $env:WORKER_CDP_ENDPOINT_URL,
     "-RepoRoot",
     $resolvedRepoRoot
   )
@@ -148,6 +172,8 @@ if ($DetachAgent) {
   -BrowserExecutablePath $resolvedBrowserExecutable `
   -ProfilePath $resolvedProfilePath `
   -StartUrl $StartUrl `
-  -CdpEndpointUrl "http://127.0.0.1:$CdpPort" `
+  -RuntimeMode $RuntimeMode `
+  -ProxyServer $ProxyServer `
+  -CdpEndpointUrl $env:WORKER_CDP_ENDPOINT_URL `
   -RepoRoot $resolvedRepoRoot `
   -SkipInstall:$SkipInstall

@@ -6,6 +6,9 @@ param(
   [string]$ProfilePath = "",
   [string]$StartUrl = "https://chatgpt.com/",
   [string]$CdpEndpointUrl = "",
+  [ValidateSet("VisibleAuth", "HiddenRuntime")]
+  [string]$RuntimeMode = "HiddenRuntime",
+  [string]$ProxyServer = "",
   [string]$RepoRoot = "",
   [switch]$SkipInstall
 )
@@ -57,6 +60,19 @@ $env:WORKER_AGENT_HOST = "127.0.0.1"
 $env:WORKER_AGENT_PORT = "$AgentPort"
 $env:WORKER_PROFILE_PATH = $ProfilePath
 $env:WORKER_BROWSER_EXECUTABLE_PATH = $BrowserExecutablePath
+$env:WORKER_RUNTIME_MODE =
+  if ($RuntimeMode -eq "VisibleAuth") {
+    "visible_auth"
+  } else {
+    "hidden_runtime"
+  }
+$env:WORKER_HEADLESS =
+  if ($RuntimeMode -eq "HiddenRuntime") {
+    "true"
+  } else {
+    "false"
+  }
+$env:WORKER_PROXY_SERVER = $ProxyServer
 $env:WORKER_CDP_ENDPOINT_URL = $CdpEndpointUrl
 $env:WORKER_START_URL = $StartUrl
 $env:BROWSER_ACCESS_HTTP_PORT = "0"

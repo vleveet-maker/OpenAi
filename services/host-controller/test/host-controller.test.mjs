@@ -8,6 +8,7 @@ function createConfig() {
     proxyListenHost: "127.0.0.1",
     proxyMixedPort: 7897,
     proxyServerUrl: "http://127.0.0.1:7897",
+    defaultWorkerRuntimeMode: "hidden_runtime",
     workers: [
       {
         workerId: "dad",
@@ -124,4 +125,43 @@ test("stopPool returns pool_stop_requested and stops proxy after worker shutdown
     ]
   );
   assert.deepEqual(sequence, ["worker:dad", "worker:wife", "proxy"]);
+});
+
+test("startPool requests hidden_runtime for each configured worker by default", async () => {
+  const controller = new HostController(createConfig());
+  const calls = [];
+
+  controller.startWorker = async (workerId, runtimeMode) => {
+    calls.push({
+      workerId,
+      runtimeMode
+    });
+
+    return {
+      workerId,
+      status: "start_requested",
+      runtimeMode
+    };
+  };
+  controller.getHealthSnapshot = async () => ({
+    proxyListening: true,
+    proxyServerUrl: "http://127.0.0.1:7897",
+    poolStatus: "ready",
+    workers: []
+  });
+
+  const result = await controller.startPool();
+
+  assert.equal(result.action, "pool_start_requested");
+  assert.equal(result.runtimeMode, "hidden_runtime");
+  assert.deepEqual(calls, [
+    {
+      workerId: "dad",
+      runtimeMode: "hidden_runtime"
+    },
+    {
+      workerId: "wife",
+      runtimeMode: "hidden_runtime"
+    }
+  ]);
 });

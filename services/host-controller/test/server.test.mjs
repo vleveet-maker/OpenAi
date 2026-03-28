@@ -115,14 +115,18 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
 
   await withServer(
     {
-      async startPool() {
-        calls.push("start");
+      async startPool(runtimeMode) {
+        calls.push({
+          action: "start",
+          runtimeMode
+        });
         return {
           action: "pool_start_requested",
+          runtimeMode: runtimeMode ?? "hidden_runtime",
           proxyListening: true,
           proxyServerUrl: "http://127.0.0.1:7897",
           poolStatus: "degraded",
-          workers: [{ workerId: "dad", status: "start_requested" }]
+          workers: [{ workerId: "dad", status: "start_requested", runtimeMode: runtimeMode ?? "hidden_runtime" }]
         };
       },
       async stopPool() {
@@ -143,11 +147,14 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
           "content-type": "application/json",
           "x-host-controller-token": "secret"
         },
-        body: "{}"
+        body: JSON.stringify({
+          runtimeMode: "hidden_runtime"
+        })
       });
       assert.equal(startResponse.status, 202);
       const startBody = await startResponse.json();
       assert.equal(startBody.action, "pool_start_requested");
+      assert.equal(startBody.runtimeMode, "hidden_runtime");
       assert.equal(startBody.poolStatus, "degraded");
       assert.equal(startBody.proxyListening, true);
       assert.equal(startBody.proxyServerUrl, "http://127.0.0.1:7897");
@@ -167,7 +174,52 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
       assert.equal(stopBody.proxyListening, false);
       assert.equal(stopBody.proxyServerUrl, "http://127.0.0.1:7897");
 
-      assert.deepEqual(calls, ["start", "stop"]);
+      assert.deepEqual(calls, [{
+        action: "start",
+        runtimeMode: "hidden_runtime"
+      }, "stop"]);
+    }
+  );
+});
+
+test("POST /workers/:id/start forwards explicit runtimeMode", async () => {
+  const calls = [];
+
+  await withServer(
+    {
+      async startWorker(workerId, runtimeMode) {
+        calls.push({
+          workerId,
+          runtimeMode
+        });
+
+        return {
+          workerId,
+          status: "start_requested",
+          runtimeMode
+        };
+      }
+    },
+    async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/workers/dad/start`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-host-controller-token": "secret"
+        },
+        body: JSON.stringify({
+          runtimeMode: "visible_auth"
+        })
+      });
+
+      assert.equal(response.status, 202);
+      const body = await response.json();
+      assert.equal(body.workerId, "dad");
+      assert.equal(body.runtimeMode, "visible_auth");
+      assert.deepEqual(calls, [{
+        workerId: "dad",
+        runtimeMode: "visible_auth"
+      }]);
     }
   );
 });
