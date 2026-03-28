@@ -39,6 +39,7 @@ import {
   createInternalBrowserAccessService,
   type InternalBrowserAccessService
 } from "./routes/internal-browser-access.js";
+import { createInternalHostPoolRouter } from "./routes/internal-host-pool.js";
 import { createInternalObservabilityRouter } from "./routes/internal-observability.js";
 import { createPublicChatRouter } from "./routes/public-chat.js";
 import {
@@ -58,6 +59,15 @@ import {
   createDockerEngineClient,
   type DockerEngineClient
 } from "./workers/docker-engine-client.js";
+import {
+  createHostControllerClient,
+  createNoopHostControllerClient,
+  type HostControllerClient
+} from "./workers/host-controller-client.js";
+import {
+  createHostPoolService,
+  type HostPoolService
+} from "./workers/host-pool-service.js";
 import {
   createWorkerHealthMonitor,
   type WorkerHealthMonitor
@@ -79,6 +89,8 @@ export interface ControlApiRuntime {
   chatRelayService: ChatRelayService;
   operatorEventStore: OperatorEventStore;
   observabilityService: OperatorObservabilityService;
+  hostControllerClient: HostControllerClient;
+  hostPoolService: HostPoolService;
   dockerEngineClient: DockerEngineClient;
   healthMonitor: WorkerHealthMonitor;
   dispose(): void;
@@ -87,6 +99,7 @@ export interface ControlApiRuntime {
 export interface ControlApiRuntimeOptions {
   relayTransport?: ChatRelayTransport;
   bootstrapTransport?: ChatBootstrapTransport;
+  hostControllerClient?: HostControllerClient;
   dockerEngineClient?: DockerEngineClient;
   healthMonitor?: WorkerHealthMonitor;
 }
@@ -105,6 +118,14 @@ export function createControlApiRuntime(
     store: operatorEventStore,
     workerRegistry
   });
+  const hostControllerClient =
+    options.hostControllerClient ??
+    (config.hostControllerBaseUrl
+      ? createHostControllerClient(
+          config.hostControllerBaseUrl,
+          config.hostControllerToken
+        )
+      : createNoopHostControllerClient());
   let getChatBootstrapHandler: (
     sessionId: string
   ) => SessionChatBootstrapRecord | null = () => null;
@@ -184,6 +205,9 @@ export function createControlApiRuntime(
     sessionService,
     eventRecorder: observabilityService
   });
+  const hostPoolService = createHostPoolService({
+    hostControllerClient
+  });
 
   sessionService.bootstrap();
   chatBootstrapService.scheduleBootstrapForActiveSessions();
@@ -200,6 +224,8 @@ export function createControlApiRuntime(
     chatRelayService,
     operatorEventStore,
     observabilityService,
+    hostControllerClient,
+    hostPoolService,
     dockerEngineClient,
     healthMonitor,
     dispose() {
@@ -241,6 +267,7 @@ export function createControlApiApp(
     sessionService,
     workerRegistry,
     chatRelayService,
+    hostPoolService,
     dockerEngineClient,
     healthMonitor
   } = runtime;
@@ -283,6 +310,9 @@ export function createControlApiApp(
     createInternalWorkersRouter({ workerRegistry }),
     createInternalBrowserAccessRouter({
       service: browserAccessService
+    }),
+    createInternalHostPoolRouter({
+      hostPoolService
     }),
     createInternalObservabilityRouter({
       observabilityService: runtime.observabilityService
