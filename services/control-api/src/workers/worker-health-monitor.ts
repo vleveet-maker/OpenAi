@@ -1,3 +1,4 @@
+import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { SessionService } from "../sessions/session-service.js";
 import type { WorkerStatus } from "./worker-status.js";
 import type { WorkerRecord, WorkerRegistry } from "./worker-registry.js";
@@ -14,6 +15,7 @@ export interface WorkerHealthMonitorOptions {
   sessionService: Pick<SessionService, "handleWorkerReady" | "handleWorkerStatusChange">;
   pollIntervalMs: number;
   timeoutMs: number;
+  eventRecorder?: OperatorEventRecorder;
 }
 
 export class WorkerHealthMonitor {
@@ -66,6 +68,29 @@ export class WorkerHealthMonitor {
         lastSeenAt: checkedAt
       });
 
+      if (nextStatus !== previousStatus) {
+        this.options.eventRecorder?.recordEvent({
+          eventType: "worker_status_changed",
+          severity:
+            nextStatus === "disconnected"
+              ? "error"
+              : nextStatus === "reauth_required"
+                ? "warn"
+                : "info",
+          workerId: worker.workerId,
+          summary: `Worker ${worker.workerId} status changed from ${previousStatus} to ${nextStatus}`,
+          detailJson: JSON.stringify({
+            previousStatus,
+            nextStatus,
+            runtimeStatus: payload.runtimeStatus ?? nextStatus,
+            browserContextReady: payload.browserContextReady ?? null,
+            lastRelayAt: payload.lastRelayAt ?? null,
+            lastRelayFailureCode: payload.lastRelayFailureCode ?? null
+          }),
+          occurredAt: checkedAt
+        });
+      }
+
       if (nextStatus === "ready" && previousStatus !== "ready") {
         this.options.sessionService.handleWorkerReady(now);
       } else if (
@@ -90,6 +115,18 @@ export class WorkerHealthMonitor {
       });
 
       if (previousStatus !== "disconnected") {
+        this.options.eventRecorder?.recordEvent({
+          eventType: "worker_status_changed",
+          severity: "error",
+          workerId: worker.workerId,
+          summary: `Worker ${worker.workerId} status changed from ${previousStatus} to disconnected`,
+          detailJson: JSON.stringify({
+            previousStatus,
+            nextStatus: "disconnected",
+            failureCount: failedCount
+          }),
+          occurredAt: now.toISOString()
+        });
         this.options.sessionService.handleWorkerStatusChange(worker.workerId, now);
       }
     }

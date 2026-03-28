@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { SessionService } from "../sessions/session-service.js";
 import type { DockerEngineClient } from "../workers/docker-engine-client.js";
 import type { WorkerHealthMonitor } from "../workers/worker-health-monitor.js";
@@ -10,6 +11,7 @@ export interface InternalWorkerActionsRouterOptions {
   sessionService: SessionService;
   dockerEngineClient: DockerEngineClient;
   healthMonitor: WorkerHealthMonitor;
+  eventRecorder?: OperatorEventRecorder;
 }
 
 export function createInternalWorkerActionsRouter(
@@ -29,6 +31,16 @@ export function createInternalWorkerActionsRouter(
     }
 
     try {
+      options.eventRecorder?.recordEvent({
+        eventType: "worker_restart_requested",
+        severity: "info",
+        workerId: worker.workerId,
+        summary: `Worker ${worker.workerId} restart requested by internal operator`,
+        detailJson: JSON.stringify({
+          containerName: worker.containerName,
+          requestedTimeoutSeconds: 5
+        })
+      });
       await options.dockerEngineClient.restartContainer(worker.containerName, 5);
 
       const restartedAt = new Date().toISOString();
@@ -54,6 +66,19 @@ export function createInternalWorkerActionsRouter(
           options.workerRegistry.getWorker(worker.workerId) ?? updatedWorker
       });
     } catch (error: unknown) {
+      options.eventRecorder?.recordEvent({
+        eventType: "worker_restart_failed",
+        severity: "error",
+        workerId: worker.workerId,
+        summary: `Worker ${worker.workerId} restart request failed`,
+        detailJson: JSON.stringify({
+          containerName: worker.containerName,
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : "The worker container could not be restarted"
+        })
+      });
       response.status(502).json({
         error: "worker_restart_failed",
         detail:

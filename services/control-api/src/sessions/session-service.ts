@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { WorkerRegistry, WorkerRecord } from "../workers/worker-registry.js";
 import { isWorkerRecoverable } from "../workers/worker-status.js";
 import { SessionStore } from "./session-store.js";
@@ -16,6 +17,7 @@ export interface SessionServiceOptions {
   workerRegistry: WorkerRegistry;
   sessionDurationMinutes: number;
   sweepIntervalMs: number;
+  eventRecorder?: OperatorEventRecorder;
 }
 
 export class SessionService {
@@ -289,6 +291,22 @@ export class SessionService {
     };
 
     this.options.store.updateSession(updatedSession);
+
+    if (reason === "worker_unavailable") {
+      this.options.eventRecorder?.recordEvent({
+        eventType: "session_ended_with_failure",
+        severity: "error",
+        workerId: updatedSession.workerId,
+        sessionId: updatedSession.sessionId,
+        summary: `Session ${updatedSession.sessionId} ended because worker availability was lost`,
+        detailJson: JSON.stringify({
+          requestedForLabel: updatedSession.requestedForLabel,
+          reason,
+          endedAt: updatedSession.endedAt
+        }),
+        occurredAt: nowIso
+      });
+    }
 
     if (session.workerId) {
       this.releaseWorker(session.workerId, nowIso, reason);

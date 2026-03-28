@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { SessionService } from "../sessions/session-service.js";
 import type { SessionSnapshot } from "../sessions/session-types.js";
 import { ChatStore } from "./chat-store.js";
@@ -36,6 +37,7 @@ export interface ChatRelayServiceOptions {
   chatStore: ChatStore;
   sessionService: SessionService;
   relayTransport: ChatRelayTransport;
+  eventRecorder?: OperatorEventRecorder;
 }
 
 export class ChatRelayService {
@@ -468,9 +470,44 @@ export class ChatRelayService {
           failedAt,
           nextRetryAt
         );
+        this.options.eventRecorder?.recordEvent({
+          eventType: "relay_retry_scheduled",
+          severity: "warn",
+          workerId: currentJob.workerId,
+          sessionId: currentJob.sessionId,
+          summary: `Relay retry scheduled for session ${currentJob.sessionId} on worker ${currentJob.workerId}`,
+          detailJson: JSON.stringify({
+            assistantMessageId: currentJob.assistantMessageId,
+            attemptCount: currentJob.attemptCount,
+            maxAttempts: currentJob.maxAttempts,
+            failureCode: details.failureCode,
+            failureClass: details.failureClass,
+            failureStage: details.failureStage,
+            nextRetryAt
+          }),
+          occurredAt: failedAt
+        });
         return;
       }
     }
+
+    this.options.eventRecorder?.recordEvent({
+      eventType: "relay_terminal_failure",
+      severity: "error",
+      workerId: currentJob.workerId,
+      sessionId: currentJob.sessionId,
+      summary: `Relay failed permanently for session ${currentJob.sessionId} on worker ${currentJob.workerId}`,
+      detailJson: JSON.stringify({
+        assistantMessageId: currentJob.assistantMessageId,
+        attemptCount: currentJob.attemptCount,
+        maxAttempts: currentJob.maxAttempts,
+        failureCode: details.failureCode,
+        failureClass: details.failureClass,
+        failureStage: details.failureStage,
+        submittedAt
+      }),
+      occurredAt: failedAt
+    });
 
     this.failAssistantMessage(
       currentJob.assistantMessageId,

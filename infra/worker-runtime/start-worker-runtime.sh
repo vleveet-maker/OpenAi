@@ -20,6 +20,25 @@ cleanup() {
   done
 }
 
+cleanup_profile_locks() {
+  if [[ -z "${WORKER_PROFILE_PATH:-}" ]]; then
+    return
+  fi
+
+  local singleton_socket_target=""
+  singleton_socket_target="$(readlink "${WORKER_PROFILE_PATH}/SingletonSocket" 2>/dev/null || true)"
+
+  rm -f \
+    "${WORKER_PROFILE_PATH}/SingletonCookie" \
+    "${WORKER_PROFILE_PATH}/SingletonLock" \
+    "${WORKER_PROFILE_PATH}/SingletonSocket" \
+    "${WORKER_PROFILE_PATH}/Default/LOCK"
+
+  if [[ -n "$singleton_socket_target" ]]; then
+    rm -rf "$(dirname "$singleton_socket_target")"
+  fi
+}
+
 trap cleanup EXIT INT TERM
 
 mkdir -p /tmp/.X11-unix
@@ -47,8 +66,10 @@ websockify \
   "localhost:${BROWSER_ACCESS_VNC_PORT}" >/tmp/websockify.log 2>&1 &
 WEBSOCKIFY_PID=$!
 
+cleanup_profile_locks
+
 npm ci --prefix workers/agent --no-audit --no-fund
-npm run dev --prefix workers/agent >/tmp/worker-agent.log 2>&1 &
+npm run start --prefix workers/agent >/tmp/worker-agent.log 2>&1 &
 APP_PID=$!
 
 wait -n "$APP_PID" "$WEBSOCKIFY_PID" "$X11VNC_PID" "$FLUXBOX_PID" "$XVFB_PID"

@@ -1,31 +1,33 @@
 import { Router } from "express";
 
+import { summarizeWorkerStatusCounts } from "../observability/operator-events.js";
 import type { WorkerRegistry } from "../workers/worker-registry.js";
 
-export interface InternalHealthRouterOptions {
+export interface HealthRouterOptions {
   serviceName: string;
   workerRegistry: WorkerRegistry;
 }
 
-export function createInternalHealthRouter(
-  options: InternalHealthRouterOptions
-) {
+export function createHealthRouter(options: HealthRouterOptions) {
   const router = Router();
 
-  router.get("/internal/health", (_request, response) => {
-    const workers = options.workerRegistry.listWorkers();
-    const counts = workers.reduce<Record<string, number>>((accumulator, worker) => {
-      const current = accumulator[worker.status.status] ?? 0;
-      accumulator[worker.status.status] = current + 1;
-      return accumulator;
-    }, {});
-
+  router.get("/healthz", (_request, response) => {
     response.json({
       service: options.serviceName,
       status: "ok",
+      checkedAt: new Date().toISOString()
+    });
+  });
+
+  router.get("/readyz", (_request, response) => {
+    const workerSummary = summarizeWorkerStatusCounts(options.workerRegistry);
+
+    response.json({
+      service: options.serviceName,
+      status: workerSummary.degraded ? "degraded" : "ready",
       checkedAt: new Date().toISOString(),
-      workerCount: workers.length,
-      workerStatusCounts: counts
+      totalWorkers: workerSummary.totalWorkers,
+      workerStatusCounts: workerSummary.workerStatusCounts
     });
   });
 

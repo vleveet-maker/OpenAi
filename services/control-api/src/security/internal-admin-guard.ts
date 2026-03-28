@@ -40,7 +40,7 @@ export function requireInternalAdmin(
       Boolean(options.internalAdminToken) &&
       providedToken === options.internalAdminToken;
     const networkAllowed =
-      options.allowPrivateNetworks !== false &&
+      options.allowPrivateNetworks === true &&
       isPrivateOrLoopbackAddress(clientAddress);
 
     if (tokenMatches || networkAllowed) {

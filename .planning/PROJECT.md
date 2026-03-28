@@ -21,6 +21,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] Phase 5 now routes public and internal traffic through one Nginx edge with a loopback-only admin entry and token-first internal guardrails.
 - [x] Phase 5 adds a durable operator event trail, safe `healthz` and `readyz` endpoints, and a read-only internal admin page.
 - [x] Phase 05.1 adds protected noVNC browser access paths, 15-minute worker-scoped access sessions, and a live Docker smoke-tested manual login or reauth flow.
+- [x] Phase 6 hardens worker runtime startup so recreated or restarted Chromium profiles return the full pool to `ready` without manual lock cleanup.
 
 ### Active
 
@@ -69,4 +70,4 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Protect browser viewers with time-bounded access sessions on the internal edge | Manual login needs a real browser window, but raw worker ports still cannot be exposed publicly | - Implemented in Phase 05.1 |
 
 ---
-*Last updated: 2026-03-28 after Phase 05.1 execution and verification*
+*Last updated: 2026-03-28 after Phase 6 execution and verification*

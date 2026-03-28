@@ -17,7 +17,8 @@ export const WORKER_PROFILE_ROOT = "/srv/chatgpt-workers/profiles";
 const CHROMIUM_SINGLETON_ARTIFACTS = [
   "SingletonCookie",
   "SingletonLock",
-  "SingletonSocket"
+  "SingletonSocket",
+  "Default/LOCK"
 ] as const;
 
 type LaunchPersistentContextOptions =

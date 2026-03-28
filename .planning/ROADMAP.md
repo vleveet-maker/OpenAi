@@ -16,6 +16,7 @@ The roadmap starts by standing up a multi-worker browser foundation that can saf
 - [x] **Phase 4: Resilience and Worker Recovery** - Handle failures, retries, reconnect, and worker restarts
 - [x] **Phase 5: Guardrails and Observability** - Lock down access boundaries and instrument the worker pool
 - [x] **Phase 5.1: Internal browser access for manual ChatGPT login and reauthentication (INSERTED)** - Add an internal-only path for opening worker browsers and completing manual login or reauth
+- [x] **Phase 6: Stabilize persistent browser profile recovery and live worker readiness** - Harden worker startup so recreated profiles reliably return the pool to ready
 
 ## Phase Details
 
@@ -96,7 +97,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -106,8 +107,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1
 | 4. Resilience and Worker Recovery | 3/3 | Complete | 2026-03-27 |
 | 5. Guardrails and Observability | 2/2 | Complete | 2026-03-27 |
 | 5.1. Internal browser access for manual ChatGPT login and reauthentication | 3/3 | Complete | 2026-03-28 |
+| 6. Stabilize persistent browser profile recovery and live worker readiness | 1/1 | Complete | 2026-03-28 |
 
-### Phase 05.1: Internal browser access for manual ChatGPT login and reauthentication (INSERTED)
+### Phase 5.1: Internal browser access for manual ChatGPT login and reauthentication (INSERTED)
 
 **Goal:** Give the operator an internal-only way to open a live worker browser for first login and reauthentication without exposing raw browser access publicly.
 **Requirements:** ADMN-04, SECU-03
@@ -122,3 +124,17 @@ Plans:
 - [x] 05.1-01: Add worker viewer runtime and browser-access health metadata
 - [x] 05.1-02: Add secure browser access session routes and protected internal proxying
 - [x] 05.1-03: Add operator browser-access controls, docs, and smoke coverage
+
+### Phase 6: Stabilize persistent browser profile recovery and live worker readiness
+
+**Goal:** Make recreated or restarted browser workers recover their persistent Chromium profiles and return the full pool to `ready` without manual cleanup.
+**Requirements**: WORK-03, WORK-04, OBSV-02
+**Depends on:** Phase 5.1
+**Success Criteria** (what must be TRUE):
+  1. Recreating the worker containers no longer leaves the pool stuck in `disconnected` because of stale Chromium singleton artifacts.
+  2. Restarting one worker returns the full pool to `ready` after a normal cold start.
+  3. `readyz` remains sufficient to confirm full pool recovery without entering the containers manually.
+**Plans:** 1/1 plans complete
+
+Plans:
+- [x] 06-01: Harden worker runtime startup with profile lock cleanup and non-watch execution

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
 import { join } from "node:path";
@@ -67,9 +67,14 @@ describe("worker browser access runtime", () => {
       for (const artifact of [
         "SingletonCookie",
         "SingletonLock",
-        "SingletonSocket"
+        "SingletonSocket",
+        "Default/LOCK"
       ]) {
-        writeFileSync(join(profilePath, artifact), "stale");
+        const targetPath = join(profilePath, artifact);
+        mkdirSync(join(targetPath, ".."), {
+          recursive: true
+        });
+        writeFileSync(targetPath, "stale");
       }
 
       clearChromiumSingletonArtifacts(profilePath);
