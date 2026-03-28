@@ -15,11 +15,22 @@ import {
 import type { ChatRelayTransport } from "./chat/chat-types.js";
 import { createWorkerRelayClient } from "./chat/worker-relay-client.js";
 import { loadConfig, type ControlApiConfig } from "./config.js";
-import { createInternalHealthRouter } from "./routes/internal-health.js";
+import {
+  createOperatorObservabilityService,
+  OperatorEventStore,
+  type OperatorObservabilityService
+} from "./observability/operator-events.js";
+import { createHealthRouter } from "./routes/internal-health.js";
+import { createInternalAdminPageRouter } from "./routes/internal-admin-page.js";
+import {
+  createInternalBrowserAccessRouter,
+  createInternalBrowserAccessService,
+  type InternalBrowserAccessService
+} from "./routes/internal-browser-access.js";
+import { createInternalObservabilityRouter } from "./routes/internal-observability.js";
 import { createPublicChatRouter } from "./routes/public-chat.js";
 import {
-  createInternalRecoveryRouter,
-  type InternalRecoverySession
+  createInternalRecoveryRouter
 } from "./routes/internal-recovery.js";
 import { createInternalWorkerActionsRouter } from "./routes/internal-worker-actions.js";
 import { createInternalWorkersRouter } from "./routes/internal-workers.js";
@@ -46,11 +57,13 @@ import {
 export interface ControlApiRuntime {
   config: ControlApiConfig;
   workerRegistry: WorkerRegistry;
-  recoverySessions: Map<string, InternalRecoverySession>;
+  browserAccessService: InternalBrowserAccessService;
   sessionStore: SessionStore;
   sessionService: SessionService;
   chatStore: ChatStore;
   chatRelayService: ChatRelayService;
+  operatorEventStore: OperatorEventStore;
+  observabilityService: OperatorObservabilityService;
   dockerEngineClient: DockerEngineClient;
   healthMonitor: WorkerHealthMonitor;
   dispose(): void;
@@ -69,16 +82,23 @@ export function createControlApiRuntime(
   const workerRegistry = createWorkerRegistry(config.workerDefinitions);
   const workerRelayClient = createWorkerRelayClient();
   const sessionStore = new SessionStore(config.sessionDatabasePath);
+  const operatorEventStore = new OperatorEventStore(config.sessionDatabasePath);
+  const observabilityService = createOperatorObservabilityService({
+    store: operatorEventStore,
+    workerRegistry
+  });
   const sessionService = createSessionService({
     store: sessionStore,
     workerRegistry,
     sessionDurationMinutes: config.sessionDurationMinutes,
-    sweepIntervalMs: config.sessionSweepIntervalMs
+    sweepIntervalMs: config.sessionSweepIntervalMs,
+    eventRecorder: observabilityService
   });
   const chatStore = new ChatStore(config.sessionDatabasePath);
   const chatRelayService = createChatRelayService({
     chatStore,
     sessionService,
+    eventRecorder: observabilityService,
     relayTransport:
       options.relayTransport ??
       {
@@ -102,19 +122,27 @@ export function createControlApiRuntime(
       workerRegistry,
       sessionService,
       pollIntervalMs: config.workerHealthPollIntervalMs,
-      timeoutMs: config.workerHealthTimeoutMs
+      timeoutMs: config.workerHealthTimeoutMs,
+      eventRecorder: observabilityService
     });
+  const browserAccessService = createInternalBrowserAccessService({
+    workerRegistry,
+    sessionService,
+    eventRecorder: observabilityService
+  });
 
   sessionService.bootstrap();
 
   return {
     config,
     workerRegistry,
-    recoverySessions: new Map<string, InternalRecoverySession>(),
+    browserAccessService,
     sessionStore,
     sessionService,
     chatStore,
     chatRelayService,
+    operatorEventStore,
+    observabilityService,
     dockerEngineClient,
     healthMonitor,
     dispose() {
@@ -122,6 +150,7 @@ export function createControlApiRuntime(
       chatRelayService.stopBackgroundRetrySweep();
       sessionService.close();
       chatStore.close();
+      operatorEventStore.close();
     }
   };
 }
@@ -150,7 +179,7 @@ export function createControlApiApp(
 ) {
   const {
     config,
-    recoverySessions,
+    browserAccessService,
     sessionService,
     workerRegistry,
     chatRelayService,
@@ -160,24 +189,17 @@ export function createControlApiApp(
   const app = express();
 
   app.disable("x-powered-by");
+  app.set("trust proxy", true);
+  app.use((_request, response, next) => {
+    response.setHeader("X-Frame-Options", "DENY");
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("Referrer-Policy", "no-referrer");
+    next();
+  });
   app.use(express.json());
 
-  app.get("/internal/bootstrap", (_request, response) => {
-    response.json({
-      service: config.serviceName,
-      host: config.host,
-      port: config.port,
-      workerCount: config.workerDefinitions.length,
-      statuses: config.workerDefinitions.map((worker) => ({
-        workerId: worker.workerId,
-        containerName: worker.containerName,
-        defaultStatus: worker.defaultStatus
-      }))
-    });
-  });
-
   app.use(
-    createInternalHealthRouter({
+    createHealthRouter({
       serviceName: config.serviceName,
       workerRegistry
     })
@@ -195,23 +217,44 @@ export function createControlApiApp(
   );
 
   const internalAdminGuard = requireInternalAdmin({
-    internalAdminToken: config.internalAdminToken,
-    allowPrivateNetworks: true
+    internalAdminToken: config.internalAdminToken
   });
 
-  app.use(internalAdminGuard, createInternalWorkersRouter({ workerRegistry }));
+  app.use(
+    internalAdminGuard,
+    createInternalWorkersRouter({ workerRegistry }),
+    createInternalBrowserAccessRouter({
+      service: browserAccessService
+    }),
+    createInternalObservabilityRouter({
+      observabilityService: runtime.observabilityService
+    }),
+    createInternalAdminPageRouter()
+  );
+  app.get("/internal/bootstrap", internalAdminGuard, (_request, response) => {
+    response.json({
+      service: config.serviceName,
+      host: config.host,
+      port: config.port,
+      workerCount: config.workerDefinitions.length,
+      statuses: config.workerDefinitions.map((worker) => ({
+        workerId: worker.workerId,
+        containerName: worker.containerName,
+        defaultStatus: worker.defaultStatus
+      }))
+    });
+  });
   app.use(
     internalAdminGuard,
     createInternalRecoveryRouter({
-      workerRegistry,
-      recoverySessions,
-      sessionService
+      browserAccessService
     }),
     createInternalWorkerActionsRouter({
       workerRegistry,
       sessionService,
       dockerEngineClient,
-      healthMonitor
+      healthMonitor,
+      eventRecorder: runtime.observabilityService
     })
   );
 
