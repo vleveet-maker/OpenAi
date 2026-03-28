@@ -14,8 +14,8 @@
 ### ChatGPT UI Stability
 
 - [ ] **STAB-01**: Proxied live relay succeeds on all three household workers against the current ChatGPT UI, including `dad`
-- [ ] **STAB-02**: Fresh-chat bootstrap succeeds against the current `Temporary Chat` and reasoning-model picker UI on a logged-in worker
-- [ ] **STAB-03**: Selector and drift-sensitive browser automation paths are centralized enough that relay and bootstrap fixes do not require hunting across unrelated files
+- [x] **STAB-02**: Fresh-chat bootstrap succeeds against the current `Temporary Chat` and reasoning-model picker UI on a logged-in worker
+- [x] **STAB-03**: Selector and drift-sensitive browser automation paths are centralized enough that relay and bootstrap fixes do not require hunting across unrelated files
 
 ### Rollout Confidence
 
@@ -48,9 +48,9 @@
 | ORCH-01 | Phase 9 | Complete |
 | ORCH-02 | Phase 9 | Complete |
 | ORCH-03 | Phase 9 | Complete |
-| STAB-01 | Phase 10 | Pending |
-| STAB-02 | Phase 10 | Pending |
-| STAB-03 | Phase 10 | Pending |
+| STAB-01 | Phase 10 | Partial |
+| STAB-02 | Phase 10 | Complete |
+| STAB-03 | Phase 10 | Complete |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
@@ -61,4 +61,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after completing Phase 9 internal host-pool orchestration*
+*Last updated: 2026-03-28 after partially completing Phase 10 ChatGPT UI drift hardening*
