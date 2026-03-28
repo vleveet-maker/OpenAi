@@ -1,12 +1,27 @@
-version: "3.9"
-
 services:
+  edge:
+    image: nginx:1.27-alpine
+    container_name: edge
+    environment:
+      INTERNAL_ADMIN_TOKEN: ${INTERNAL_ADMIN_TOKEN:-local-internal-admin-token}
+    ports:
+      - 8080:8080
+      - 127.0.0.1:8081:8081
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      - control-api
+      - session-client
+    networks:
+      - edge-net
+      - worker-net
+
   control-api:
     image: node:22-bookworm
     container_name: control-api
     working_dir: /app
     command: >
-      sh -c "npm install --prefix services/control-api &&
+      sh -c "npm ci --prefix services/control-api --no-audit --no-fund &&
       npm run dev --prefix services/control-api"
     environment:
       CONTROL_API_HOST: 0.0.0.0
@@ -15,6 +30,7 @@ services:
       SESSION_DURATION_MINUTES: "60"
       SESSION_SWEEP_INTERVAL_MS: "5000"
       DOCKER_SOCKET_PATH: /var/run/docker.sock
+      INTERNAL_ADMIN_TOKEN: ${INTERNAL_ADMIN_TOKEN:-local-internal-admin-token}
       WORKER_HEALTH_POLL_INTERVAL_MS: "5000"
       WORKER_HEALTH_TIMEOUT_MS: "3000"
       WORKER_DEFINITIONS: >-
@@ -23,11 +39,10 @@ services:
           {"workerId":"wife","displayName":"Wife","containerName":"worker-wife","profilePath":"/srv/chatgpt-workers/profiles/wife","agentBaseUrl":"http://worker-wife:4020","defaultStatus":"starting"},
           {"workerId":"shared-1","displayName":"Shared 1","containerName":"worker-shared-1","profilePath":"/srv/chatgpt-workers/profiles/shared-1","agentBaseUrl":"http://worker-shared-1:4020","defaultStatus":"starting"}
         ]
-    ports:
-      - "4010:4010"
     volumes:
       - ../:/app
       - ./data/control-api:/srv/chatgpt-workers/control-api
+      - control-api-node_modules:/app/services/control-api/node_modules
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - worker-dad
@@ -41,85 +56,94 @@ services:
     container_name: session-client
     working_dir: /app
     command: >
-      sh -c "npm install --prefix apps/session-client &&
+      sh -c "npm ci --prefix apps/session-client --no-audit --no-fund &&
       npm run dev --prefix apps/session-client -- --host 0.0.0.0 --port 4173"
     environment:
       VITE_PROXY_TARGET: http://control-api:4010
-    ports:
-      - "4173:4173"
     volumes:
       - ../:/app
+      - session-client-node_modules:/app/apps/session-client/node_modules
     depends_on:
       - control-api
     networks:
       - worker-net
 
   worker-dad:
-    image: node:22-bookworm
+    build: ./worker-runtime
     container_name: worker-dad
     working_dir: /app
-    command: >
-      sh -c "npm install --prefix workers/agent &&
-      npm run dev --prefix workers/agent"
     environment:
+      DISPLAY: :99
+      BROWSER_ACCESS_HTTP_PORT: 6080
       WORKER_ID: dad
       WORKER_DISPLAY_NAME: Dad
       WORKER_CONTAINER_NAME: worker-dad
       WORKER_AGENT_HOST: 0.0.0.0
       WORKER_AGENT_PORT: "4020"
       WORKER_PROFILE_PATH: /srv/chatgpt-workers/profiles/dad
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     shm_size: 1gb
     tty: true
     volumes:
       - ../:/app
       - ./data/profiles/dad:/srv/chatgpt-workers/profiles/dad
+      - worker-dad-node_modules:/app/workers/agent/node_modules
     networks:
       - worker-net
 
   worker-wife:
-    image: node:22-bookworm
+    build: ./worker-runtime
     container_name: worker-wife
     working_dir: /app
-    command: >
-      sh -c "npm install --prefix workers/agent &&
-      npm run dev --prefix workers/agent"
     environment:
+      DISPLAY: :99
+      BROWSER_ACCESS_HTTP_PORT: 6080
       WORKER_ID: wife
       WORKER_DISPLAY_NAME: Wife
       WORKER_CONTAINER_NAME: worker-wife
       WORKER_AGENT_HOST: 0.0.0.0
       WORKER_AGENT_PORT: "4020"
       WORKER_PROFILE_PATH: /srv/chatgpt-workers/profiles/wife
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     shm_size: 1gb
     tty: true
     volumes:
       - ../:/app
       - ./data/profiles/wife:/srv/chatgpt-workers/profiles/wife
+      - worker-wife-node_modules:/app/workers/agent/node_modules
     networks:
       - worker-net
 
   worker-shared-1:
-    image: node:22-bookworm
+    build: ./worker-runtime
     container_name: worker-shared-1
     working_dir: /app
-    command: >
-      sh -c "npm install --prefix workers/agent &&
-      npm run dev --prefix workers/agent"
     environment:
+      DISPLAY: :99
+      BROWSER_ACCESS_HTTP_PORT: 6080
       WORKER_ID: shared-1
       WORKER_DISPLAY_NAME: Shared 1
       WORKER_CONTAINER_NAME: worker-shared-1
       WORKER_AGENT_HOST: 0.0.0.0
       WORKER_AGENT_PORT: "4020"
       WORKER_PROFILE_PATH: /srv/chatgpt-workers/profiles/shared-1
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     shm_size: 1gb
     tty: true
     volumes:
       - ../:/app
       - ./data/profiles/shared-1:/srv/chatgpt-workers/profiles/shared-1
+      - worker-shared-1-node_modules:/app/workers/agent/node_modules
     networks:
       - worker-net
 
 networks:
+  edge-net:
   worker-net:
-    internal: true
+
+volumes:
+  control-api-node_modules:
+  session-client-node_modules:
+  worker-dad-node_modules:
+  worker-wife-node_modules:
+  worker-shared-1-node_modules:
