@@ -25,9 +25,9 @@
 
 ### Hidden Runtime Reliability Review
 
-- [ ] **RREV-01**: The project has a live-evidence-backed answer on whether the current hidden/headless runtime can reach a usable ChatGPT session after manual login on the same durable worker profile
-- [ ] **RREV-02**: Pool and worker control-plane status reflects real runtime state closely enough that rollout decisions are not made on false `ready`, false `degraded`, or stale `idle` signals
-- [ ] **RREV-03**: If the current hidden runtime is not viable, the milestone chooses and documents a concrete alternative browser runtime path before rollout-confidence work continues
+- [x] **RREV-01**: The project has a live-evidence-backed answer on whether the current hidden/headless runtime can reach a usable ChatGPT session after manual login on the same durable worker profile
+- [x] **RREV-02**: Pool and worker control-plane status reflects real runtime state closely enough that rollout decisions are not made on false `ready`, false `degraded`, or stale `idle` signals
+- [x] **RREV-03**: If the current hidden runtime is not viable, the milestone chooses and documents a concrete alternative browser runtime path before rollout-confidence work continues
 
 ### Rollout Confidence
 
@@ -66,9 +66,9 @@
 | HIDE-01 | Phase 10.1 | Complete |
 | HIDE-02 | Phase 10.1 | Complete |
 | HIDE-03 | Phase 10.1 | Complete |
-| RREV-01 | Phase 10.2 | Pending |
-| RREV-02 | Phase 10.2 | Pending |
-| RREV-03 | Phase 10.2 | Pending |
+| RREV-01 | Phase 10.2 | Complete |
+| RREV-02 | Phase 10.2 | Complete |
+| RREV-03 | Phase 10.2 | Complete |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
@@ -79,4 +79,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after executing Phase 10.1 Hidden runtime after manual login*
+*Last updated: 2026-03-28 after executing Phase 10.2 Hidden runtime reliability review and alternative browser runtime decision*

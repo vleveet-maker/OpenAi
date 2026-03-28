@@ -10,6 +10,14 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 - Routine household use should run without any visible desktop browser.
 - If hidden runtime loses auth after manual login, treat that as runtime architecture review evidence rather than a signal to keep silently retrying.
 
+## Phase 10.2 Runtime Decision
+
+- Phase 10.2 runtime decision: `block_phase_11_pending_new_runtime_design`.
+- The current host hidden runtime is not selected for rollout because live evidence showed challenge or non-usable startup behavior after the visible-auth handoff.
+- The explicit `docker_headed_xvfb` candidate is also not selected: a live bootstrap probe on `worker-dad` returned `bootstrap_challenge_detected` with a Cloudflare challenge URL.
+- Phase 11 must not use the current host hidden runtime or the current Docker/Xvfb candidate as its assumed steady-state path.
+- The next required step is a new runtime design phase for a more reliable non-visible browser runtime.
+
 ## Three-Worker Setup
 
 1. Start the stack with the host-native override:
@@ -38,6 +46,15 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 - The canonical maintainer probe is:
   `powershell -ExecutionPolicy Bypass -File .\infra\host-worker\test-hidden-runtime-transition.ps1 -WorkerId dad`
 - If the probe reports `hidden_runtime_auth_unstable`, the correct next step is runtime architecture review.
+- Phase 10.2 allows exactly one bounded rescue attempt for hidden runtime:
+  `CurrentExecutable` first, then one `ChannelMsedge` retry only when the first run returns `bootstrap_challenge_detected` or `bootstrap_surface_unusable`.
+- Every probe appends a row to `infra/data/host-worker-logs/runtime-matrix.jsonl` so hidden-runtime viability is evidence-backed instead of anecdotal.
+
+## Bounded Rescue Attempt
+
+- `CurrentExecutable` keeps the current hidden runtime launch path with the explicitly resolved browser executable.
+- `ChannelMsedge` is the single rescue variant: hidden runtime omits `WORKER_BROWSER_EXECUTABLE_PATH`, sets `WORKER_BROWSER_CHANNEL=msedge`, and stays non-visible.
+- This bounded rescue attempt is not an open-ended retry loop. If both attempts still fail, treat hidden runtime as an architecture decision problem rather than keep retrying the same worker indefinitely.
 
 ## Notes
 

@@ -20,6 +20,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Host-native workers now support an explicit visible-auth then hidden-runtime split, so routine pool start no longer needs visible browser windows after manual login is complete
 - New session-backed chats now bootstrap through an explicit fresh-chat contract that prefers `Temporary Chat` and the latest configured reasoning model before the composer unlocks
 - Current ChatGPT UI drift hardening now has centralized selector maintenance, localized `Temporary Chat` support, and live `smoke-ok` success on `wife` and `shared-1`
+- Phase 10.2 runtime review now confirms that neither the current host hidden runtime nor the current headed Docker/Xvfb candidate is trustworthy enough to use as the rollout-confidence baseline
 - The current shared-screen client is still an interim household surface, not the final user-facing mobile chat experience
 - The desired runtime policy is now explicit: first login or reauthentication may use a visible interactive browser, but steady-state household work should run headless or otherwise non-visible to the operator's desktop session
 
@@ -40,6 +41,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] Internal admin can now start and stop the proxied host-native pool with explicit `idle`, `starting`, `ready`, `degraded`, `stopping`, and `failed` lifecycle meaning.
 - [x] Relay and bootstrap selector maintenance is now centralized and live-verified against the current localized ChatGPT UI on two logged-in household workers.
 - [x] Host-native workers now expose explicit `visible_auth` and `hidden_runtime` modes, operator transition controls, and a canonical hidden-runtime validation probe.
+- [x] Runtime review now distinguishes process reachability from ChatGPT usability and confirms that the current hidden runtime choices must not be treated as rollout-ready steady-state browser paths.
 
 ## Current Milestone: v1.2 Rollout Stability
 
@@ -50,6 +52,8 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Harden relay and fresh-chat bootstrap against the current ChatGPT UI so all three workers, including `dad`, can be trusted more evenly.
 - Finish the last `dad` live proof only after the hidden-runtime transition is in place for the household path.
 - Add a repeatable rollout smoke path so the operator can confirm readiness before the family starts using the pool again.
+
+**Current runtime gate:** Phase 10.2 ended with `block_phase_11_pending_new_runtime_design`. Rollout-smoke work cannot continue until a follow-up non-visible runtime design phase is inserted and implemented.
 
 ## Out of Scope
 
@@ -72,7 +76,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - The current default model policy for a fresh chat is "latest available reasoning model", implemented through `WORKER_PREFERRED_REASONING_MODEL_LABELS` with `GPT-5.4 Thinking` as of 2026-03-28.
 - Each app-level chat should map to one underlying browser conversation: a new chat should claim a free worker and start a fresh `Temporary Chat`, while continuing an existing chat should stay pinned to the same underlying browser conversation.
 - Image attachment belongs in the future user-facing app flow and should relay into the same active browser conversation rather than creating a separate hidden path.
-- The largest remaining real-world risks are worker-specific ChatGPT DOM drift and the ergonomics of running native browser windows on the host only when needed.
+- The largest remaining real-world risks are no longer ordinary selector drift; they are the reliability of the non-visible runtime choice after manual login and the need for a more dependable steady-state browser path.
 - `wife` and `shared-1` now pass live `Temporary Chat -> GPT-5.4 Thinking -> smoke-ok` probes; `dad` currently fails as `bootstrap_auth_required`, which is a profile/authentication tail rather than a generic selector-drift failure.
 - If saved ChatGPT login state still proves unreliable after a deliberate visible-login then hidden-runtime split, that should be treated as evidence that the current multi-browser runtime choice is not robust enough and needs architectural replacement rather than more patching.
 - `v1.2` intentionally keeps scope on rollout reliability rather than adding billing, entitlements, or broader product expansion yet.
@@ -95,6 +99,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Prefer the latest ChatGPT reasoning model for a new chat | Fresh dialogs should start on the strongest current reasoning default instead of a stale model selection | - Implemented in v1.1 |
 | Allow visible interactive browser only for manual login or reauthentication, then require hidden runtime for normal use | The operator should not have browser windows popping up during routine household use, but manual auth still needs a real interactive surface | - Recorded during v1.2 |
 | Treat post-login auth instability as an architectural signal, not an operational nuisance | If a worker still loses ChatGPT auth after a clean visible-login then hidden-runtime transition, the current multi-browser approach is not trustworthy enough and should be reconsidered | - Recorded during v1.2 |
+| Block rollout confidence on ambiguous hidden runtime assumptions | Phase 10.2 live evidence showed both current host hidden runtime and current Docker/Xvfb candidate falling into non-usable ChatGPT paths, so Phase 11 must wait for a new runtime design | - Recorded during v1.2 |
 | Target a standard mobile chat-app UX for the future user-facing surface | The household product should eventually look and behave like a familiar chat app rather than an operator-first shared screen | - Preserved as future direction in v1.2 |
 | Keep chat continuity at the app-dialog level | A new chat should start clean on an available worker, while continuing a chat should stay on the same underlying browser thread | - Preserved as future direction in v1.2 |
 
@@ -116,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after executing Phase 10.1 Hidden runtime after manual login*
+*Last updated: 2026-03-28 after executing Phase 10.2 Hidden runtime reliability review and alternative browser runtime decision*

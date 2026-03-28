@@ -36,6 +36,14 @@ This document is for the household operator only. Worker browsers stay internal-
 - The PowerShell scripts remain fallback tools if `/internal/admin` is unavailable, but they are no longer the primary operator path.
 - Minimized windows are no longer an accepted steady-state behavior. Routine use should stay in hidden runtime without any visible desktop browser.
 
+## Phase 10.2 Runtime Decision
+
+- Phase 10.2 runtime decision: `block_phase_11_pending_new_runtime_design`.
+- Current host hidden runtime is not accepted for rollout confidence. Live probes showed the same durable profiles reaching Cloudflare challenge or non-usable startup paths after manual login.
+- The explicit Docker/Xvfb candidate runtime also reached `bootstrap_challenge_detected` on a live bootstrap probe, so it is not the chosen steady-state runtime either.
+- Do not treat either current hidden runtime path as the routine household baseline for Phase 11.
+- Phase 11 is blocked and a follow-up runtime design phase must be inserted before rollout smoke confidence continues.
+
 ## Browser Access
 
 - Open `http://127.0.0.1:8081/internal/admin`.
