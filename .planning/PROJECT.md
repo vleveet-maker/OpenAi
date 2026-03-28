@@ -11,7 +11,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 ## Current State
 
 - `v1.0 Household MVP` shipped on `2026-03-28`
-- `v1.1 Household Rollout Hardening` is now active and focuses on real-world household operation, not product expansion
+- `v1.1 Household Rollout Hardening` shipped on `2026-03-28` and hardened real-world household rollout without expanding public product scope yet
 - The core app stack still runs through `control-api`, the public shared-screen client, and the internal admin surface
 - Docker browser workers remain a supported infrastructure baseline, but host-native Chromium workers are now the proven fallback when Docker/browser fingerprinting causes Cloudflare login loops
 - A three-worker host-native pool can be launched only when needed and routed through a local sing-box mixed proxy built from several proxy share links with automatic outbound failover
@@ -33,10 +33,11 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] The proxied host-native household pool can be stopped again cleanly so browsers do not remain open when the pool is idle.
 - [x] Each newly activated shared-screen chat can now be blocked behind explicit fresh-chat bootstrap state until `Temporary Chat` and preferred-model selection are ready or have failed clearly.
 
-## Current Milestone Goals
+## Next Milestone Goals
 
-- Keep the proxied host-native worker pool and fresh-chat bootstrap rules in a state that is safe to close out as `v1.1`
-- Carry forward only the remaining rollout debt around live selector drift and future app-driven host-worker orchestration
+- Decide whether the next milestone should keep hardening household rollout debt or shift back to product-facing expansion.
+- If rollout hardening continues, target the remaining live ChatGPT selector drift risk and the `dad` proxied relay edge case first.
+- If product expansion resumes, build on the now-proven host-native fallback and fresh-chat isolation rather than reopening the earlier Docker-only assumptions.
 
 ## Out of Scope
 
@@ -74,4 +75,4 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Prefer the latest ChatGPT reasoning model for a new chat | Fresh dialogs should start on the strongest current reasoning default instead of a stale model selection | - Implemented in v1.1 |
 
 ---
-*Last updated: 2026-03-28 after completing Phase 8 fresh-chat isolation and preferred-model selection for v1.1*
+*Last updated: 2026-03-28 after shipping v1.1 Household Rollout Hardening*

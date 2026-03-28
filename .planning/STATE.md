@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Household Rollout Hardening
-status: ready_to_complete
-stopped_at: Validation cleanup completed; next step is milestone closeout or optional live smoke
-last_updated: "2026-03-28T21:45:00+03:00"
-last_activity: 2026-03-28 -- Validated phases 7 and 8: Nyquist remains partial only for live host/browser and external ChatGPT UI checks
+status: completed
+stopped_at: Milestone archived; next step is `$gsd-new-milestone`
+last_updated: "2026-03-28T22:05:00+03:00"
+last_activity: 2026-03-28 -- Archived v1.1 Household Rollout Hardening and prepared .planning for the next milestone
 progress:
   total_phases: 2
   completed_phases: 2
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Milestone closeout for `v1.1 Household Rollout Hardening`
+**Current focus:** Planning the next milestone after archived `v1.1 Household Rollout Hardening`
 
 ## Current Position
 
 Milestone: `v1.1 Household Rollout Hardening`
-Status: Ready to complete
-Last activity: 2026-03-28 - Validated phases 7 and 8 and reduced rollout debt to manual live checks
+Status: Completed and archived
+Last activity: 2026-03-28 - Archived v1.1 and reduced open follow-up work to optional rollout debt
 
 Progress: [##########] 100%
 
@@ -38,7 +38,7 @@ Progress: [##########] 100%
 - Current roadmap:
   - `.planning/ROADMAP.md`
 - Current requirements:
-  - `.planning/REQUIREMENTS.md`
+  - none active until the next milestone starts
 
 ## Carry-Forward Context
 
@@ -69,9 +69,10 @@ Progress: [##########] 100%
 - v1.1 milestone audited: no blockers found, status recorded as tech_debt because of selector drift and live-only validation tails
 - Phase 7 validated: automated proxy/config coverage documented and live host/browser checks captured as manual-only
 - Phase 8 validated: automated bootstrap coverage documented and live ChatGPT UI checks captured as manual-only
+- v1.1 milestone archived: roadmap, requirements, and audit moved into `.planning/milestones/`
 
 ## Session Continuity
 
-Last session: 2026-03-28 21:45
-Stopped at: Validation cleanup completed; next step is `$gsd-complete-milestone`
+Last session: 2026-03-28 22:05
+Stopped at: Milestone archived; next step is `$gsd-new-milestone`
 Resume file: None
