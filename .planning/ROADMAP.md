@@ -69,10 +69,10 @@ Current milestone execution order: 9 -> 10 -> 11
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: discuss or plan `Phase 10`
+- Current next action: execute `Phase 10`
 - Carry-forward debt from `v1.1`: `dad` selector drift and current ChatGPT `Temporary Chat`/model-picker live recheck
 
 ## Next Up
 
-- `$gsd-discuss-phase 10`
-- `$gsd-plan-phase 10`
+- `$gsd-execute-phase 10`
+- `$gsd-review --phase 10 --all`

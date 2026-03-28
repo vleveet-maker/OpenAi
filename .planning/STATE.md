@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
-status: ready_to_plan
-stopped_at: Phase 9 complete; next step is `$gsd-discuss-phase 10` or `$gsd-plan-phase 10`
-last_updated: "2026-03-28T15:08:00+03:00"
-last_activity: 2026-03-28 -- Completed Phase 9 with host-controller lifecycle, internal pool routes, and internal admin pool controls
+status: ready_to_execute
+stopped_at: Phase 10 planned; next step is `$gsd-execute-phase 10`
+last_updated: "2026-03-28T15:25:00+03:00"
+last_activity: 2026-03-28 -- Planned Phase 10 with selector foundation, relay hardening, and bootstrap hardening waves
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 3
+  total_plans: 6
   completed_plans: 3
   percent: 33
 ---
@@ -21,20 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** `Phase 9: Internal host-pool orchestration` is complete; next up is `Phase 10: ChatGPT UI drift hardening`
+**Current focus:** `Phase 10: ChatGPT UI drift hardening` is planned and ready to execute
 
 ## Current Position
 
 Milestone: `v1.2 Rollout Stability`
-Status: Ready to plan
-Last activity: 2026-03-28 - Completed Phase 9 with pool lifecycle routes, admin controls, and operator docs
+Status: Ready to execute
+Last activity: 2026-03-28 - Planned Phase 10 with selector foundation, current-UI relay hardening, and Temporary Chat/model drift coverage
 
 Progress: [###-------] 33%
 
 ## Milestone Snapshot
 
 - Phases completed: `1 / 3`
-- Plans completed: `3 / 3`
+- Plans completed: `3 / 6`
 - Current roadmap:
   - `.planning/ROADMAP.md`
 - Current requirements:
@@ -77,9 +77,10 @@ Progress: [###-------] 33%
 - Future product direction captured: mobile multi-chat UX with image attachment and chat-to-browser continuity preserved as seed material outside rollout scope
 - Phase 9 planned: host-controller stop contract, control-api pool lifecycle service, admin controls, and validation map written
 - Phase 9 executed: host-controller gained symmetric pool stop, control-api added internal host-pool lifecycle routes, and internal admin now exposes `Start pool` / `Stop pool`
+- Phase 10 planned: centralized selector contracts, current-ui relay hardening, targeted live relay verification, and Temporary Chat/model drift hardening
 
 ## Session Continuity
 
 Last session: 2026-03-28 22:35
-Stopped at: Phase 9 complete; next step is `$gsd-discuss-phase 10` or `$gsd-plan-phase 10`
-Resume file: .planning/ROADMAP.md
+Stopped at: Phase 10 planned; next step is `$gsd-execute-phase 10`
+Resume file: .planning/phases/10-chatgpt-ui-drift-hardening/10-CONTEXT.md
