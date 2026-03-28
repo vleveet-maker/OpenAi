@@ -1,0 +1,157 @@
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  "" close;
+}
+
+upstream control_api_upstream {
+  server control-api:4010;
+}
+
+upstream session_client_upstream {
+  server session-client:4173;
+}
+
+map $browser_worker_id $browser_upstream {
+  default "";
+  dad worker-dad:6080;
+  wife worker-wife:6080;
+  shared-1 worker-shared-1:6080;
+}
+
+server {
+  listen 8080;
+  server_name _;
+
+  add_header X-Frame-Options "DENY" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "no-referrer" always;
+
+  location = /healthz {
+    return 404;
+  }
+
+  location = /readyz {
+    return 404;
+  }
+
+  location ^~ /internal/ {
+    return 404;
+  }
+
+  location ^~ /internal/browser/ {
+    return 404;
+  }
+
+  location = /health {
+    return 404;
+  }
+
+  location = /internal/relay/messages {
+    return 404;
+  }
+
+  location = /internal/worker {
+    return 404;
+  }
+
+  location ^~ /api/ {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_pass http://control_api_upstream;
+  }
+
+  location / {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_pass http://session_client_upstream;
+  }
+}
+
+server {
+  listen 8081;
+  server_name _;
+
+  resolver 127.0.0.11 ipv6=off;
+
+  add_header X-Frame-Options "DENY" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "no-referrer" always;
+
+  location = /healthz {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header x-internal-admin-token "${INTERNAL_ADMIN_TOKEN}";
+    proxy_pass http://control_api_upstream;
+  }
+
+  location = /readyz {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header x-internal-admin-token "${INTERNAL_ADMIN_TOKEN}";
+    proxy_pass http://control_api_upstream;
+  }
+
+  location = /internal/admin {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header x-internal-admin-token "${INTERNAL_ADMIN_TOKEN}";
+    proxy_pass http://control_api_upstream;
+  }
+
+  location = /internal/browser-access/authorize {
+    internal;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header x-internal-admin-token "${INTERNAL_ADMIN_TOKEN}";
+    proxy_pass http://control_api_upstream/internal/browser-access/authorize?workerId=$browser_worker_id&sessionId=$arg_sessionId&accessToken=$arg_accessToken;
+  }
+
+  location ~ ^/internal/browser/(?<browser_worker_id>(dad|wife|shared-1))/(?<browser_path>.+)$ {
+    auth_request /internal/browser-access/authorize;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Browser-Worker-Id $browser_worker_id;
+    proxy_set_header X-Browser-Session-Id $arg_sessionId;
+    proxy_set_header X-Browser-Access-Token $arg_accessToken;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_pass http://$browser_upstream/$browser_path$is_args$args;
+  }
+
+  location ^~ /internal/ {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header x-internal-admin-token "${INTERNAL_ADMIN_TOKEN}";
+    proxy_pass http://control_api_upstream;
+  }
+
+  location / {
+    return 404;
+  }
+}
