@@ -10,6 +10,7 @@ import {
   type RelayPageLike
 } from "./selector-map.js";
 import type {
+  WorkerRelayFailureCode,
   WorkerRelayRequest,
   WorkerRelayResult
 } from "./relay-types.js";
@@ -153,7 +154,7 @@ function pageRequiresAuth(page: RelayPageLike | null): boolean {
 
 function buildFailureResult(
   page: RelayPageLike | null,
-  failureCode: string,
+  failureCode: WorkerRelayFailureCode,
   failureClass: WorkerRelayResult["failureClass"],
   failureStage: WorkerRelayResult["failureStage"],
   submittedAt: string | null

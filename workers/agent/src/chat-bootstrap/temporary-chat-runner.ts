@@ -10,7 +10,10 @@ import {
   type BootstrapLocatorLike,
   type BootstrapPageLike
 } from "./bootstrap-selector-map.js";
-import type { WorkerChatBootstrapResult } from "./bootstrap-types.js";
+import type {
+  WorkerChatBootstrapFailureCode,
+  WorkerChatBootstrapResult
+} from "./bootstrap-types.js";
 
 export interface TemporaryChatBootstrapOptions {
   lockKey: string;
@@ -104,7 +107,7 @@ function pageRequiresAuth(page: BootstrapPageLike | null): boolean {
 
 function buildFailureResult(
   page: BootstrapPageLike | null,
-  failureCode: string
+  failureCode: WorkerChatBootstrapFailureCode
 ): WorkerChatBootstrapResult {
   return {
     status: "failed",
