@@ -20,6 +20,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - New session-backed chats now bootstrap through an explicit fresh-chat contract that prefers `Temporary Chat` and the latest configured reasoning model before the composer unlocks
 - Current ChatGPT UI drift hardening now has centralized selector maintenance, localized `Temporary Chat` support, and live `smoke-ok` success on `wife` and `shared-1`
 - The current shared-screen client is still an interim household surface, not the final user-facing mobile chat experience
+- The desired runtime policy is now explicit: first login or reauthentication may use a visible interactive browser, but steady-state household work should run headless or otherwise non-visible to the operator's desktop session
 
 ## Validated
 
@@ -71,6 +72,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Image attachment belongs in the future user-facing app flow and should relay into the same active browser conversation rather than creating a separate hidden path.
 - The largest remaining real-world risks are worker-specific ChatGPT DOM drift and the ergonomics of running native browser windows on the host only when needed.
 - `wife` and `shared-1` now pass live `Temporary Chat -> GPT-5.4 Thinking -> smoke-ok` probes; `dad` currently fails as `bootstrap_auth_required`, which is a profile/authentication tail rather than a generic selector-drift failure.
+- If saved ChatGPT login state still proves unreliable after a deliberate visible-login then hidden-runtime split, that should be treated as evidence that the current multi-browser runtime choice is not robust enough and needs architectural replacement rather than more patching.
 - `v1.2` intentionally keeps scope on rollout reliability rather than adding billing, entitlements, or broader product expansion yet.
 
 ## Key Decisions
@@ -89,6 +91,8 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Treat each new user chat as a clean dialog boundary | Users should not get confused by inheriting previous thread context from the same worker | - Implemented in v1.1 |
 | Prefer `Temporary Chat` for fresh dialogs | The new chat should stay out of history and avoid using or creating memories | - Implemented in v1.1 |
 | Prefer the latest ChatGPT reasoning model for a new chat | Fresh dialogs should start on the strongest current reasoning default instead of a stale model selection | - Implemented in v1.1 |
+| Allow visible interactive browser only for manual login or reauthentication, then require hidden runtime for normal use | The operator should not have browser windows popping up during routine household use, but manual auth still needs a real interactive surface | - Recorded during v1.2 |
+| Treat post-login auth instability as an architectural signal, not an operational nuisance | If a worker still loses ChatGPT auth after a clean visible-login then hidden-runtime transition, the current multi-browser approach is not trustworthy enough and should be reconsidered | - Recorded during v1.2 |
 | Target a standard mobile chat-app UX for the future user-facing surface | The household product should eventually look and behave like a familiar chat app rather than an operator-first shared screen | - Preserved as future direction in v1.2 |
 | Keep chat continuity at the app-dialog level | A new chat should start clean on an available worker, while continuing a chat should stay on the same underlying browser thread | - Preserved as future direction in v1.2 |
 
