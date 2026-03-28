@@ -20,8 +20,9 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - Decimal phases (`9.1`, `10.1`) remain available for urgent insertions
 
 - [x] **Phase 9: Internal host-pool orchestration** - completed 2026-03-28, moved proxied host-native pool lifecycle control into the internal admin surface with clearer failure reporting
-- [ ] **Phase 10: ChatGPT UI drift hardening** - active; relay and fresh-chat bootstrap now pass live on `wife` and `shared-1`, while `dad` still needs manual reauth before the final three-worker proof
+- [ ] **Phase 10: ChatGPT UI drift hardening** - active; selector hardening landed, but live hidden-runtime validation now shows all three workers falling into Cloudflare challenge instead of stable ChatGPT bootstrap
 - [x] **Phase 10.1: Hidden runtime after manual login** - (INSERTED) completed 2026-03-28; explicit visible-auth and hidden-runtime paths now exist, plus a canonical hidden-runtime validation probe
+- [ ] **Phase 10.2: Hidden runtime reliability review and alternative browser runtime decision** - (INSERTED) planned in 3 waves to prove-or-pivot the current hidden runtime, fix control-plane truth, and end with a concrete runtime decision before rollout confidence work continues
 - [ ] **Phase 11: Rollout smoke confidence** - Add a repeatable operator smoke path and visible readiness evidence before real household use
 
 ## Phase Details
@@ -45,7 +46,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
   1. Relay succeeds on all three household workers against the current ChatGPT UI, including `dad`.
   2. Fresh-chat bootstrap still reaches `Temporary Chat` plus the preferred reasoning model on a logged-in worker.
   3. Selector updates for relay and bootstrap live in centralized, maintainable code paths instead of fragmented browser-specific patches.
-**Current status:** Selector centralization is complete and live probes pass on `wife` plus `shared-1`; `dad` is currently blocked on manual reauthentication with `bootstrap_auth_required`.
+**Current status:** Selector centralization is complete, but live validation now shows `visible_auth` reaching a normal logged-in ChatGPT page while `hidden_runtime` on the same durable profile lands in Cloudflare challenge flow on all three workers.
 
 ### Phase 10.1: Hidden runtime after manual login (INSERTED)
 
@@ -67,10 +68,29 @@ Plans:
 - [x] `10.1-02-PLAN.md` - control-api visibility, manual-auth transitions, and internal admin controls
 - [x] `10.1-03-PLAN.md` - hidden-runtime validation probe, operator docs, and reliability review rules
 
+### Phase 10.2: Hidden runtime reliability review and alternative browser runtime decision (INSERTED)
+
+**Goal:** Decide, with live evidence, whether the current hidden/headless runtime can be stabilized for ChatGPT household use or whether v1.2 must pivot to a more reliable non-visible browser runtime before rollout confidence work continues.
+**Requirements**: RREV-01, RREV-02, RREV-03
+**Depends on:** Phase 10.1
+**Plans:** 3 plans
+
+**Success Criteria** (what must be TRUE):
+  1. The project has a clear evidence-backed answer on whether the current hidden runtime is viable after manual login on durable profiles.
+  2. Control-plane status for pool and workers is trustworthy enough that rollout decisions are not made on false `ready` or stale `idle` signals.
+  3. If the current hidden runtime is not viable, the milestone has a concrete alternative browser runtime decision before Phase 11 proceeds.
+
+**Current status:** Planned for three waves: control-plane truth, bounded hidden-runtime evidence plus rescue attempt, and an explicit keep-or-pivot runtime decision for Phase 11.
+
+Plans:
+- [ ] `10.2-01-PLAN.md` - truthful pool and worker state instead of false ready/idle signals
+- [ ] `10.2-02-PLAN.md` - challenge-classified evidence path and one bounded hidden-runtime rescue attempt
+- [ ] `10.2-03-PLAN.md` - Docker/Xvfb alternative runtime candidate and final runtime decision artifact
+
 ### Phase 11: Rollout smoke confidence
 
 **Goal:** Give the operator a repeatable confidence check before the household begins using the pool after changes or drift.
-**Depends on:** Phase 10.1
+**Depends on:** Phase 10.2
 **Requirements:** CONF-01, CONF-02
 **Success Criteria** (what must be TRUE):
   1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
@@ -80,22 +100,23 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Current milestone execution order: 9 -> 10 -> 10.1 -> 11
+Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 11
 
 | Phase | Requirements | Status | Completed |
 |-------|--------------|--------|-----------|
 | 9. Internal host-pool orchestration | ORCH-01, ORCH-02, ORCH-03 | Complete | 2026-03-28 |
 | 10. ChatGPT UI drift hardening | STAB-01, STAB-02, STAB-03 | In progress | - |
 | 10.1 Hidden runtime after manual login | HIDE-01, HIDE-02, HIDE-03 | Complete | 2026-03-28 |
+| 10.2 Hidden runtime reliability review and alternative browser runtime decision | RREV-01, RREV-02, RREV-03 | Planned | - |
 | 11. Rollout smoke confidence | CONF-01, CONF-02 | Not started | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: plan `Phase 11` and use the new hidden-runtime probe in rollout smoke confidence
-- Carry-forward debt from `v1.1`: `dad` selector drift and current ChatGPT `Temporary Chat`/model-picker live recheck
+- Current next action: execute `Phase 10.2` and turn the live hidden-runtime failure into an explicit runtime decision
+- Carry-forward debt from `v1.1`: current ChatGPT `Temporary Chat`/model-picker live recheck plus the new hidden-runtime reliability decision
 
 ## Next Up
 
-- `$gsd-plan-phase 11`
-- run `test-hidden-runtime-transition.ps1` as the first live rollout-confidence probe, especially on `dad`
+- `$gsd-execute-phase 10.2`
+- review Phase 11 after Phase 10.2 so rollout smoke confidence targets the right runtime

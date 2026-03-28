@@ -23,6 +23,12 @@
 - [x] **HIDE-02**: Pool start and routine household relay use hidden runtime by default and do not open visible browser windows on the operator desktop
 - [x] **HIDE-03**: If a worker loses ChatGPT auth in hidden runtime after manual login, the system surfaces explicit manual-reauth plus reliability-review status instead of silently reopening windows or treating the worker as healthy
 
+### Hidden Runtime Reliability Review
+
+- [ ] **RREV-01**: The project has a live-evidence-backed answer on whether the current hidden/headless runtime can reach a usable ChatGPT session after manual login on the same durable worker profile
+- [ ] **RREV-02**: Pool and worker control-plane status reflects real runtime state closely enough that rollout decisions are not made on false `ready`, false `degraded`, or stale `idle` signals
+- [ ] **RREV-03**: If the current hidden runtime is not viable, the milestone chooses and documents a concrete alternative browser runtime path before rollout-confidence work continues
+
 ### Rollout Confidence
 
 - [ ] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
@@ -60,12 +66,15 @@
 | HIDE-01 | Phase 10.1 | Complete |
 | HIDE-02 | Phase 10.1 | Complete |
 | HIDE-03 | Phase 10.1 | Complete |
+| RREV-01 | Phase 10.2 | Pending |
+| RREV-02 | Phase 10.2 | Pending |
+| RREV-03 | Phase 10.2 | Pending |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 11 total
-- Mapped to phases: 11
+- v1.2 requirements: 14 total
+- Mapped to phases: 14
 - Unmapped: 0
 
 ---
