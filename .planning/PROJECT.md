@@ -17,6 +17,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - A three-worker host-native pool can be launched only when needed and routed through a local sing-box mixed proxy built from several proxy share links with automatic outbound failover
 - The proxied host-native pool can now be started and stopped from the internal admin surface with explicit lifecycle states and PowerShell fallback tools
 - Host-native worker profiles stay on durable host storage and can be stopped cleanly when the pool is idle
+- Host-native workers now support an explicit visible-auth then hidden-runtime split, so routine pool start no longer needs visible browser windows after manual login is complete
 - New session-backed chats now bootstrap through an explicit fresh-chat contract that prefers `Temporary Chat` and the latest configured reasoning model before the composer unlocks
 - Current ChatGPT UI drift hardening now has centralized selector maintenance, localized `Temporary Chat` support, and live `smoke-ok` success on `wife` and `shared-1`
 - The current shared-screen client is still an interim household surface, not the final user-facing mobile chat experience
@@ -38,6 +39,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] Each newly activated shared-screen chat can now be blocked behind explicit fresh-chat bootstrap state until `Temporary Chat` and preferred-model selection are ready or have failed clearly.
 - [x] Internal admin can now start and stop the proxied host-native pool with explicit `idle`, `starting`, `ready`, `degraded`, `stopping`, and `failed` lifecycle meaning.
 - [x] Relay and bootstrap selector maintenance is now centralized and live-verified against the current localized ChatGPT UI on two logged-in household workers.
+- [x] Host-native workers now expose explicit `visible_auth` and `hidden_runtime` modes, operator transition controls, and a canonical hidden-runtime validation probe.
 
 ## Current Milestone: v1.2 Rollout Stability
 
@@ -46,7 +48,6 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 **Target features:**
 - Start and stop the proxied host-native household pool from the internal admin surface instead of relying only on PowerShell scripts.
 - Harden relay and fresh-chat bootstrap against the current ChatGPT UI so all three workers, including `dad`, can be trusted more evenly.
-- Split worker operation into explicit visible-auth and hidden-runtime modes so routine household use no longer opens browser windows on the operator desktop after manual login is complete.
 - Finish the last `dad` live proof only after the hidden-runtime transition is in place for the household path.
 - Add a repeatable rollout smoke path so the operator can confirm readiness before the family starts using the pool again.
 
@@ -115,4 +116,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after planning Phase 10.1 Hidden runtime after manual login*
+*Last updated: 2026-03-28 after executing Phase 10.1 Hidden runtime after manual login*

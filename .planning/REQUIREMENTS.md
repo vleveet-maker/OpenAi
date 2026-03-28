@@ -19,9 +19,9 @@
 
 ### Hidden Runtime Transition
 
-- [ ] **HIDE-01**: Operator can intentionally start one host worker in a visible interactive auth mode for first login or reauthentication and then switch that same durable profile back into hidden runtime
-- [ ] **HIDE-02**: Pool start and routine household relay use hidden runtime by default and do not open visible browser windows on the operator desktop
-- [ ] **HIDE-03**: If a worker loses ChatGPT auth in hidden runtime after manual login, the system surfaces explicit manual-reauth plus reliability-review status instead of silently reopening windows or treating the worker as healthy
+- [x] **HIDE-01**: Operator can intentionally start one host worker in a visible interactive auth mode for first login or reauthentication and then switch that same durable profile back into hidden runtime
+- [x] **HIDE-02**: Pool start and routine household relay use hidden runtime by default and do not open visible browser windows on the operator desktop
+- [x] **HIDE-03**: If a worker loses ChatGPT auth in hidden runtime after manual login, the system surfaces explicit manual-reauth plus reliability-review status instead of silently reopening windows or treating the worker as healthy
 
 ### Rollout Confidence
 
@@ -57,9 +57,9 @@
 | STAB-01 | Phase 10 | Partial |
 | STAB-02 | Phase 10 | Complete |
 | STAB-03 | Phase 10 | Complete |
-| HIDE-01 | Phase 10.1 | Pending |
-| HIDE-02 | Phase 10.1 | Pending |
-| HIDE-03 | Phase 10.1 | Pending |
+| HIDE-01 | Phase 10.1 | Complete |
+| HIDE-02 | Phase 10.1 | Complete |
+| HIDE-03 | Phase 10.1 | Complete |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
@@ -70,4 +70,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after planning Phase 10.1 Hidden runtime after manual login*
+*Last updated: 2026-03-28 after executing Phase 10.1 Hidden runtime after manual login*
