@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
-status: ready_to_plan
-stopped_at: Phase 9 context gathered; next step is `$gsd-plan-phase 9`
-last_updated: "2026-03-28T22:55:00+03:00"
-last_activity: 2026-03-28 -- Gathered Phase 9 context and captured future mobile multi-chat plus image-attachment product direction
+status: ready_to_execute
+stopped_at: Phase 9 planned; next step is `$gsd-execute-phase 9`
+last_updated: "2026-03-28T23:20:00+03:00"
+last_activity: 2026-03-28 -- Planned Phase 9 with host-controller lifecycle, internal pool routes, and admin pool controls
 progress:
   total_phases: 3
   completed_phases: 0
@@ -21,20 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** `Phase 9: Internal host-pool orchestration` is ready for planning
+**Current focus:** `Phase 9: Internal host-pool orchestration` is planned and ready to execute
 
 ## Current Position
 
 Milestone: `v1.2 Rollout Stability`
-Status: Ready to plan
-Last activity: 2026-03-28 - Captured Phase 9 context and preserved future mobile multi-chat product direction
+Status: Ready to execute
+Last activity: 2026-03-28 - Planned Phase 9 with explicit pool lifecycle and admin control waves
 
 Progress: [----------] 0%
 
 ## Milestone Snapshot
 
 - Phases completed: `0 / 3`
-- Plans completed: `0 / 0`
+- Plans completed: `0 / 3`
 - Current roadmap:
   - `.planning/ROADMAP.md`
 - Current requirements:
@@ -75,9 +75,10 @@ Progress: [----------] 0%
 - v1.2 started: requirements and roadmap reset around internal orchestration, selector drift hardening, and rollout smoke confidence
 - Phase 9 context gathered: pool-level admin controls only, reuse existing admin page, and treat partial start as degraded without auto-rollback
 - Future product direction captured: mobile multi-chat UX with image attachment and chat-to-browser continuity preserved as seed material outside rollout scope
+- Phase 9 planned: host-controller stop contract, control-api pool lifecycle service, admin controls, and validation map written
 
 ## Session Continuity
 
 Last session: 2026-03-28 22:35
-Stopped at: Phase 9 context gathered; next step is `$gsd-plan-phase 9`
+Stopped at: Phase 9 planned; next step is `$gsd-execute-phase 9`
 Resume file: .planning/phases/09-internal-host-pool-orchestration/09-CONTEXT.md
