@@ -17,6 +17,12 @@
 - [x] **STAB-02**: Fresh-chat bootstrap succeeds against the current `Temporary Chat` and reasoning-model picker UI on a logged-in worker
 - [x] **STAB-03**: Selector and drift-sensitive browser automation paths are centralized enough that relay and bootstrap fixes do not require hunting across unrelated files
 
+### Hidden Runtime Transition
+
+- [ ] **HIDE-01**: Operator can intentionally start one host worker in a visible interactive auth mode for first login or reauthentication and then switch that same durable profile back into hidden runtime
+- [ ] **HIDE-02**: Pool start and routine household relay use hidden runtime by default and do not open visible browser windows on the operator desktop
+- [ ] **HIDE-03**: If a worker loses ChatGPT auth in hidden runtime after manual login, the system surfaces explicit manual-reauth plus reliability-review status instead of silently reopening windows or treating the worker as healthy
+
 ### Rollout Confidence
 
 - [ ] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
@@ -51,14 +57,17 @@
 | STAB-01 | Phase 10 | Partial |
 | STAB-02 | Phase 10 | Complete |
 | STAB-03 | Phase 10 | Complete |
+| HIDE-01 | Phase 10.1 | Pending |
+| HIDE-02 | Phase 10.1 | Pending |
+| HIDE-03 | Phase 10.1 | Pending |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 8 total
-- Mapped to phases: 8
+- v1.2 requirements: 11 total
+- Mapped to phases: 11
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after partially completing Phase 10 ChatGPT UI drift hardening*
+*Last updated: 2026-03-28 after planning Phase 10.1 Hidden runtime after manual login*

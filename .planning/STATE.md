@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
 status: ready_to_execute
-stopped_at: Phase 10 is partially executed; `wife` and `shared-1` pass current-ui live probes, while `dad` still needs manual reauthentication before rerunning the targeted relay probe
-last_updated: "2026-03-28T17:02:30+03:00"
-last_activity: 2026-03-28 -- Executed Phase 10 selector and bootstrap hardening, verified live `smoke-ok` on `wife` and `shared-1`, and isolated the residual `dad` blocker as `bootstrap_auth_required`
+stopped_at: Phase 10.1 planned; next step is `$gsd-execute-phase 10.1`
+last_updated: "2026-03-28T23:25:00+03:00"
+last_activity: 2026-03-28 -- Planned urgent Phase 10.1 for hidden runtime after manual login
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 1
-  total_plans: 6
+  total_plans: 9
   completed_plans: 6
-  percent: 66
+  percent: 67
 ---
 
 # Project State
@@ -21,19 +21,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** `Phase 10: ChatGPT UI drift hardening` is partially executed; only the `dad` live reauth tail is still open
+**Current focus:** `Phase 10.1: Hidden runtime after manual login` is planned and ready to execute
 
 ## Current Position
 
 Milestone: `v1.2 Rollout Stability`
 Status: Ready to execute
-Last activity: 2026-03-28 - Executed Phase 10, achieved live current-ui success on `wife` and `shared-1`, and isolated `dad` as a manual reauth blocker
+Last activity: 2026-03-28 - Planned urgent Phase 10.1 for hidden runtime after manual login
 
-Progress: [######----] 66%
+Progress: [#######---] 67%
 
 ## Milestone Snapshot
 
-- Phases completed: `1 / 3`
+- Phases completed: `1 / 4`
 - Plans completed: `6 / 6`
 - Current roadmap:
   - `.planning/ROADMAP.md`
@@ -56,8 +56,8 @@ Progress: [######----] 66%
 
 ### Remaining Rollout Debt
 
-- `dad` no longer fails with opaque selector drift. The remaining live blocker is `bootstrap_auth_required`, which means that specific host-native profile needs manual ChatGPT reauthentication before the final three-worker proof can pass.
-- Host-native browser windows currently launch minimized and stop cleanly when idle, but they are still real local windows while active.
+- `dad` no longer fails with opaque selector drift. The remaining live blocker is `bootstrap_auth_required`, which means that specific host-native profile still needs manual ChatGPT reauthentication before the final three-worker proof can pass.
+- Host-native browser windows currently launch minimized and stop cleanly when idle, but routine active use still opens real local windows. Phase 10.1 exists to remove that remaining operator-facing behavior.
 - Phase 10 fixed the current localized `Temporary Chat` and model-picker drift on `wife` and `shared-1`, but future ChatGPT UI changes can still reintroduce fresh-chat or relay breakage.
 - Phase 9 is code-and-test verified, but it has not yet been live-smoked end-to-end through the real `/internal/admin` operator flow against a running proxied pool.
 
@@ -80,9 +80,11 @@ Progress: [######----] 66%
 - Phase 10 planned: centralized selector contracts, current-ui relay hardening, targeted live relay verification, and Temporary Chat/model drift hardening
 - Phase 10 executed partially: selector maintenance is centralized, current localized `Temporary Chat` onboarding and model selection are hardened, and live `smoke-ok` probes pass on `wife` and `shared-1`
 - Phase 10 residual tail isolated: `dad` now reports `bootstrap_auth_required`, so the remaining blocker is manual reauth rather than generic selector drift
+- Phase 10.1 inserted after Phase 10: Hidden runtime after manual login (URGENT)
+- Phase 10.1 planned: visible-auth and hidden-runtime split, internal transition controls, and hidden-runtime validation path documented in 3 plans
 
 ## Session Continuity
 
 Last session: 2026-03-28 22:35
-Stopped at: Phase 10 partially executed; next step is manual `dad` reauth followed by the targeted relay probe
-Resume file: .planning/phases/10-chatgpt-ui-drift-hardening/10-CONTEXT.md
+Stopped at: Phase 10.1 planned; next step is `$gsd-execute-phase 10.1`
+Resume file: .planning/phases/10.1-hidden-runtime-after-manual-login/10.1-CONTEXT.md

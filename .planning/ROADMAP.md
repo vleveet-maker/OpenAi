@@ -21,6 +21,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 
 - [x] **Phase 9: Internal host-pool orchestration** - completed 2026-03-28, moved proxied host-native pool lifecycle control into the internal admin surface with clearer failure reporting
 - [ ] **Phase 10: ChatGPT UI drift hardening** - active; relay and fresh-chat bootstrap now pass live on `wife` and `shared-1`, while `dad` still needs manual reauth before the final three-worker proof
+- [ ] **Phase 10.1: Hidden runtime after manual login** - (INSERTED) urgent runtime follow-up so routine work no longer opens visible browser windows after manual auth is complete
 - [ ] **Phase 11: Rollout smoke confidence** - Add a repeatable operator smoke path and visible readiness evidence before real household use
 
 ## Phase Details
@@ -46,10 +47,27 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
   3. Selector updates for relay and bootstrap live in centralized, maintainable code paths instead of fragmented browser-specific patches.
 **Current status:** Selector centralization is complete and live probes pass on `wife` plus `shared-1`; `dad` is currently blocked on manual reauthentication with `bootstrap_auth_required`.
 
+### Phase 10.1: Hidden runtime after manual login (INSERTED)
+
+**Goal:** Split host-native workers into an explicit visible-auth path and a hidden steady-state path so manual ChatGPT login stays interactive, but routine household use no longer opens browser windows on the operator desktop.
+**Requirements:** HIDE-01, HIDE-02, HIDE-03
+**Depends on:** Phase 10
+**Plans:** 3 plans
+
+**Success Criteria** (what must be TRUE):
+  1. Operator can start one host worker in visible auth mode for manual login or reauthentication and then switch that same durable profile into hidden runtime.
+  2. Pool start and routine relay use hidden runtime by default and do not open visible browser windows on the desktop.
+  3. If hidden runtime later reports `reauth_required` or `bootstrap_auth_required`, the system never silently reopens windows and instead surfaces manual-reauth plus runtime-reliability-review status clearly.
+
+Plans:
+- [ ] `10.1-01-PLAN.md` - Runtime split in host-controller, scripts, and worker-agent
+- [ ] `10.1-02-PLAN.md` - control-api visibility, manual-auth transitions, and internal admin controls
+- [ ] `10.1-03-PLAN.md` - hidden-runtime validation probe, operator docs, and reliability review rules
+
 ### Phase 11: Rollout smoke confidence
 
 **Goal:** Give the operator a repeatable confidence check before the household begins using the pool after changes or drift.
-**Depends on:** Phase 10
+**Depends on:** Phase 10.1
 **Requirements:** CONF-01, CONF-02
 **Success Criteria** (what must be TRUE):
   1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
@@ -59,21 +77,22 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 ## Progress
 
 **Execution Order:**
-Current milestone execution order: 9 -> 10 -> 11
+Current milestone execution order: 9 -> 10 -> 10.1 -> 11
 
 | Phase | Requirements | Status | Completed |
 |-------|--------------|--------|-----------|
 | 9. Internal host-pool orchestration | ORCH-01, ORCH-02, ORCH-03 | Complete | 2026-03-28 |
 | 10. ChatGPT UI drift hardening | STAB-01, STAB-02, STAB-03 | In progress | - |
+| 10.1 Hidden runtime after manual login | HIDE-01, HIDE-02, HIDE-03 | Planned | - |
 | 11. Rollout smoke confidence | CONF-01, CONF-02 | Not started | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: finish the `dad` manual reauth tail and rerun the targeted Phase 10 relay probe
+- Current next action: execute urgent `Phase 10.1` before continuing deeper rollout work
 - Carry-forward debt from `v1.1`: `dad` selector drift and current ChatGPT `Temporary Chat`/model-picker live recheck
 
 ## Next Up
 
-- reauthenticate `dad` in ChatGPT, then rerun `powershell -ExecutionPolicy Bypass -File .\\infra\\host-worker\\test-host-worker-relay.ps1 -WorkerId dad -TimeoutSeconds 180`
-- `$gsd-execute-phase 10`
+- `$gsd-execute-phase 10.1`
+- after execution, return to the final `dad` hidden-runtime relay proof before `Phase 11`
