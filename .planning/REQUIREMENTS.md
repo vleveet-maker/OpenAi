@@ -1,0 +1,70 @@
+# Requirements: v1.1 Household Rollout Hardening
+
+**Defined:** 2026-03-28
+**Core Value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
+
+## v1.1 Requirements
+
+### Host-Native Runtime
+
+- [x] **HOST-01**: Operator can run selected household workers as host-native Chromium browsers when the Docker browser path is blocked by Cloudflare or similar anti-bot friction
+- [x] **HOST-02**: Each host-native worker keeps its own durable local browser profile across launches
+- [x] **HOST-03**: `control-api` sees host-native workers through the same worker contract and status model used by the rest of the app
+
+### Proxy-Backed On-Demand Launch
+
+- [x] **PROXY-01**: Operator can store several proxy share links in ignored local configuration and generate runtime proxy config from them
+- [x] **PROXY-02**: New host-native worker traffic can route through a local proxy layer that automatically prefers a healthy outbound when one configured proxy is unavailable
+- [x] **PROXY-03**: Operator can start and stop the full three-worker proxied host-native pool only when it is needed
+
+### Live Rollout Validation
+
+- [x] **LIVE-01**: At least one real ChatGPT login and reply cycle works through a host-native worker outside the old Docker browser loop
+- [x] **LIVE-02**: At least two different workers complete a live relay smoke while running through the shared proxy-backed host-native pool
+
+### Security
+
+- [x] **SECU-04**: Proxy provider links and generated proxy runtime files stay on local ignored storage rather than tracked project files
+
+### Clean Chat Isolation
+
+- [x] **CHATISO-01**: Each newly started user chat begins from a clean dialog boundary on the assigned worker instead of inheriting the previous conversation thread
+- [x] **CHATISO-02**: The system prefers ChatGPT `Temporary Chat` for each new chat so the dialog stays out of history and does not use or create memories
+- [x] **CHATISO-03**: The system prefers the latest available reasoning model for each new chat instead of reusing a stale previous model selection
+- [x] **CHATISO-04**: Message sending remains blocked until fresh-chat bootstrap is ready or a clear failure state is surfaced
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Automated CAPTCHA bypass or stealth scraping stacks | The rollout hardening milestone keeps manual login and avoids building the product around anti-detection tooling |
+| One-click start and stop of host-native workers from the internal admin page | A verified script-driven operator path shipped first; in-app orchestration can be a follow-up |
+| Making native browser windows fully invisible while active | Current verified path starts them minimized and stops them when idle, but still uses real local browser windows |
+| Billing, entitlements, public multi-tenant scale, voice, files, or images | Not part of this rollout-hardening milestone |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| HOST-01 | Phase 7 | Satisfied |
+| HOST-02 | Phase 7 | Satisfied |
+| HOST-03 | Phase 7 | Satisfied |
+| PROXY-01 | Phase 7 | Satisfied |
+| PROXY-02 | Phase 7 | Satisfied |
+| PROXY-03 | Phase 7 | Satisfied |
+| LIVE-01 | Phase 7 | Satisfied |
+| LIVE-02 | Phase 7 | Satisfied |
+| SECU-04 | Phase 7 | Satisfied |
+| CHATISO-01 | Phase 8 | Satisfied |
+| CHATISO-02 | Phase 8 | Satisfied |
+| CHATISO-03 | Phase 8 | Satisfied |
+| CHATISO-04 | Phase 8 | Satisfied |
+
+**Coverage:**
+- v1.1 requirements: 13 total
+- Mapped to phases: 13
+- Unmapped: 0
+
+---
+*Requirements defined: 2026-03-28*
+*Last updated: 2026-03-28 after completing Phase 8 clean-chat isolation requirements*

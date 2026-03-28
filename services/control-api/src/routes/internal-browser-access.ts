@@ -59,7 +59,11 @@ function buildViewerPath(
   sessionId: string,
   accessToken: string
 ): string {
-  return `/internal/browser/${workerId}/vnc.html?path=/internal/browser/${workerId}/websockify&autoconnect=true&resize=remote&sessionId=${sessionId}&accessToken=${accessToken}`;
+  const websockifyPath = encodeURIComponent(
+    `internal/browser/${workerId}/websockify?sessionId=${sessionId}&accessToken=${accessToken}`
+  );
+
+  return `/internal/browser/${workerId}/vnc_lite.html?path=${websockifyPath}&autoconnect=true&resize=remote&sessionId=${sessionId}&accessToken=${accessToken}`;
 }
 
 function cloneBrowserAccessSession(

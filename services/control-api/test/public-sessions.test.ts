@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type { ControlApiConfig } from "../src/config.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
+import { createReadyBootstrapTransport } from "./test-bootstrap-transport.js";
 
 const tempDirectories: string[] = [];
 
@@ -19,6 +20,9 @@ function createTestRuntime() {
     host: "127.0.0.1",
     port: 0,
     internalAdminToken: "secret",
+    hostControllerBaseUrl: undefined,
+    hostControllerToken: undefined,
+    autoStartHostWorkers: false,
     sessionDatabasePath: join(root, "session-routing.sqlite"),
     sessionDurationMinutes: 60,
     sessionSweepIntervalMs: 5_000,
@@ -46,7 +50,9 @@ function createTestRuntime() {
     ]
   };
 
-  const runtime = createControlApiRuntime(config);
+  const runtime = createControlApiRuntime(config, {
+    bootstrapTransport: createReadyBootstrapTransport()
+  });
   const app = createControlApiApp(runtime);
 
   return {
@@ -82,6 +88,10 @@ describe("public session routes", () => {
     expect(response.body.session.requestedForLabel).toBe("Family Shared");
     expect(response.body.session.state).toBe("active");
     expect(response.body.worker.displayName).toBe("Dad");
+    expect(response.body.chatBootstrap).toMatchObject({
+      status: "pending",
+      conversationMode: "unknown"
+    });
     expect(response.body.worker.profilePath).toBeUndefined();
     expect(response.body.worker.recoveryUrl).toBeUndefined();
 
@@ -123,6 +133,7 @@ describe("public session routes", () => {
 
     expect(promoted.body.session.state).toBe("active");
     expect(promoted.body.queuePosition).toBeNull();
+    expect(promoted.body.chatBootstrap).toBeTruthy();
 
     runtime.dispose();
   });

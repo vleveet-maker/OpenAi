@@ -346,16 +346,18 @@ function renderInternalAdminPage(): string {
                 </div>
               </header>
               <div class="worker-meta">
-                <span>Container: \${escapeHtml(worker.containerName)}</span>
-                <span>Runtime: \${escapeHtml(worker.runtimeStatus || worker.status.status)}</span>
+                <span>Runtime: \${escapeHtml(worker.runtimeType)}</span>
+                <span>\${escapeHtml(worker.runtimeType === "host" ? "Host worker: " + worker.containerName : "Container: " + worker.containerName)}</span>
+                <span>Worker state: \${escapeHtml(worker.runtimeStatus || worker.status.status)}</span>
                 <span>Browser access: \${escapeHtml(browserAccessLabel)}</span>
                 <span>Last seen: \${escapeHtml(worker.lastSeenAt || "n/a")}</span>
               </div>
               <div class="worker-actions">
-                <button data-action="open-browser" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Open browser</button>
-                <button class="secondary" data-action="start-reauth" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start reauth</button>
-                \${hasActiveBrowserAccess ? \`<button class="warn" data-action="cancel-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Cancel access</button>\` : ""}
-                \${hasActiveBrowserAccess ? \`<button class="success" data-action="complete-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login/reauth</button>\` : ""}
+                \${worker.runtimeType === "docker" ? \`<button data-action="open-browser" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Open browser</button>\` : \`<span class="badge">Use local host launcher scripts</span>\`}
+                \${worker.runtimeType === "docker" ? \`<button class="secondary" data-action="start-reauth" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start reauth</button>\` : ""}
+                <button class="secondary" data-action="mark-ready" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Mark ready</button>
+                \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="warn" data-action="cancel-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Cancel access</button>\` : ""}
+                \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="success" data-action="complete-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login/reauth</button>\` : ""}
               </div>
             </article>
           \`;
@@ -469,6 +471,13 @@ function renderInternalAdminPage(): string {
         });
       }
 
+      async function markReady(workerId) {
+        await fetchJson("/internal/workers/" + workerId + "/mark-ready", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+      }
+
       async function performAction(workerId, action) {
         pendingAction = workerId;
 
@@ -481,6 +490,8 @@ function renderInternalAdminPage(): string {
             await cancelAccess(workerId);
           } else if (action === "complete-access") {
             await completeAccess(workerId);
+          } else if (action === "mark-ready") {
+            await markReady(workerId);
           }
 
           await refresh();

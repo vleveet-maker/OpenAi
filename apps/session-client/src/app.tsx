@@ -23,6 +23,8 @@ import {
   storeSessionId
 } from "./session-storage";
 import {
+  formatChatBootstrapFailure,
+  formatChatMode,
   formatFailedAssistantMessage,
   formatSessionEndReason,
   type SessionConversationSnapshot,
@@ -69,6 +71,14 @@ function getComposerMessage(
 
   if (snapshot.session.state !== "active") {
     return "This session is closed. You can review history but cannot send more messages.";
+  }
+
+  if (!snapshot.chatBootstrap || snapshot.chatBootstrap.status === "pending") {
+    return "Fresh chat setup is still preparing on the assigned worker.";
+  }
+
+  if (snapshot.chatBootstrap.status === "failed") {
+    return formatChatBootstrapFailure(snapshot.chatBootstrap.failureCode);
   }
 
   if (conversation?.pendingAssistantMessageId) {
@@ -139,6 +149,12 @@ function SessionShell({
         {snapshot.session.state === "queued" ? (
           <span>Queue position: {snapshot.queuePosition ?? "Unknown"}</span>
         ) : null}
+        {snapshot.session.state !== "queued" ? (
+          <span>Chat mode: {formatChatMode(snapshot.chatBootstrap?.conversationMode)}</span>
+        ) : null}
+        {snapshot.chatBootstrap?.modelLabel ? (
+          <span>Model: {snapshot.chatBootstrap.modelLabel}</span>
+        ) : null}
       </div>
 
       <div className="history-panel">
@@ -146,7 +162,13 @@ function SessionShell({
           <div className="history-bubble system history-empty">
             <p className="bubble-role">System</p>
             <p>
-              {snapshot.session.state === "active"
+              {snapshot.session.state === "active" &&
+              snapshot.chatBootstrap?.status === "pending"
+                ? "Fresh chat setup is preparing a clean Temporary Chat before sending is unlocked."
+                : snapshot.session.state === "active" &&
+                    snapshot.chatBootstrap?.status === "failed"
+                  ? formatChatBootstrapFailure(snapshot.chatBootstrap.failureCode)
+                : snapshot.session.state === "active"
                 ? "The shared screen is ready. Send the first message when you are ready."
                 : "No messages yet. Conversation history will appear here for this session."}
             </p>
@@ -378,7 +400,10 @@ function SessionPage() {
   const reconnecting = connectionState === "reconnecting";
   const composerBlocked =
     connectionState !== "connected" || relayStatus === "retrying";
-  const shellCanSend = canSend && !composerBlocked;
+  const shellCanSend =
+    canSend &&
+    !composerBlocked &&
+    snapshot.chatBootstrap?.status === "ready";
 
   return (
     <section className="state-stack">
@@ -392,10 +417,36 @@ function SessionPage() {
         </div>
       ) : null}
 
-      {snapshot.session.state === "active" ? (
-        <div className="status-banner active">
-          <span>Active Session</span>
-          <p>The shared screen is pinned to {snapshot.worker?.displayName ?? snapshot.session.workerId}.</p>
+      {snapshot.session.state === "active" &&
+      (!snapshot.chatBootstrap || snapshot.chatBootstrap.status === "pending") ? (
+        <div className="status-banner preparing">
+          <span>Preparing Fresh Chat</span>
+          <p>
+            Opening a clean Temporary Chat on{" "}
+            {snapshot.worker?.displayName ?? snapshot.session.workerId}.
+          </p>
+        </div>
+      ) : null}
+
+      {snapshot.session.state === "active" &&
+      snapshot.chatBootstrap?.status === "ready" ? (
+        <div className="status-banner ready">
+          <span>Temporary Chat Ready</span>
+          <p>
+            Clean chat isolation is active on{" "}
+            {snapshot.worker?.displayName ?? snapshot.session.workerId}
+            {snapshot.chatBootstrap.modelLabel
+              ? ` using ${snapshot.chatBootstrap.modelLabel}.`
+              : "."}
+          </p>
+        </div>
+      ) : null}
+
+      {snapshot.session.state === "active" &&
+      snapshot.chatBootstrap?.status === "failed" ? (
+        <div className="status-banner failed">
+          <span>Chat Setup Failed</span>
+          <p>{formatChatBootstrapFailure(snapshot.chatBootstrap.failureCode)}</p>
         </div>
       ) : null}
 
@@ -426,7 +477,7 @@ function SessionPage() {
         </div>
       ) : null}
 
-      {conversation?.relay.status === "failed" ? (
+      {conversation?.relay.status === "failed" && snapshot.chatBootstrap?.status !== "failed" ? (
         <div className="status-banner failed">
           <span>Relay Failed</span>
           <p>Reply delivery failed</p>

@@ -170,6 +170,16 @@ button {
   border: 1px solid rgba(90, 164, 146, 0.28);
 }
 
+.status-banner.preparing {
+  background: rgba(214, 226, 240, 0.16);
+  border: 1px solid rgba(214, 226, 240, 0.3);
+}
+
+.status-banner.ready {
+  background: rgba(90, 164, 146, 0.16);
+  border: 1px solid rgba(90, 164, 146, 0.28);
+}
+
 .status-banner.queued {
   background: rgba(73, 115, 192, 0.14);
   border: 1px solid rgba(73, 115, 192, 0.28);

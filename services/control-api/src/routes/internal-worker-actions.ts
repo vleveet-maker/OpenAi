@@ -30,6 +30,15 @@ export function createInternalWorkerActionsRouter(
       return;
     }
 
+    if (worker.runtimeType !== "docker") {
+      response.status(409).json({
+        error: "worker_restart_unsupported",
+        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and cannot be restarted via Docker.`,
+        workerId: worker.workerId
+      });
+      return;
+    }
+
     try {
       options.eventRecorder?.recordEvent({
         eventType: "worker_restart_requested",

@@ -7,10 +7,28 @@ import {
   ACTIVE_SESSION_STORAGE_KEY
 } from "./session-storage";
 import type {
+  SessionChatBootstrapRecord,
   SessionConversationSnapshot,
   SessionMessageRecord,
   SessionSnapshot
 } from "./session-types";
+
+function buildChatBootstrap(
+  partial: Partial<SessionChatBootstrapRecord> = {}
+): SessionChatBootstrapRecord {
+  return {
+    sessionId: "session-1",
+    workerId: "dad",
+    status: "ready",
+    conversationMode: "temporary",
+    modelLabel: "GPT-5.4 Thinking",
+    failureCode: null,
+    requestedAt: "2026-03-27T10:00:00.000Z",
+    completedAt: "2026-03-27T10:00:01.000Z",
+    updatedAt: "2026-03-27T10:00:01.000Z",
+    ...partial
+  };
+}
 
 function buildSnapshot(
   partial: Partial<SessionSnapshot["session"]> & { sessionId: string },
@@ -37,7 +55,14 @@ function buildSnapshot(
           displayName: "Dad",
           status: session.state === "active" ? "busy" : "ready"
         }
-      : null
+      : null,
+    chatBootstrap:
+      session.state === "active" || session.state === "ended"
+        ? buildChatBootstrap({
+            sessionId: session.sessionId,
+            workerId: session.workerId ?? "dad"
+          })
+        : null
   };
 }
 
@@ -82,6 +107,9 @@ function buildConversation(
       lastFailureCode: null,
       lastFailureClass: null
     },
+    chatBootstrap: buildChatBootstrap({
+      sessionId
+    }),
     messages: [],
     ...partial
   };
@@ -182,8 +210,9 @@ describe("Session client app", () => {
     });
     fireEvent.submit(screen.getByRole("button", { name: /start timed session/i }));
 
-    await screen.findByText(/active session/i);
-    expect(screen.getByText(/the shared screen is pinned to dad/i)).toBeInTheDocument();
+    await screen.findByText(/temporary chat ready/i);
+    expect(screen.getByText(/worker: dad/i)).toBeInTheDocument();
+    expect(screen.getByText(/model: gpt-5\.4 thinking/i)).toBeInTheDocument();
     expect(window.localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY)).toBe("session-1");
   });
 
@@ -222,7 +251,7 @@ describe("Session client app", () => {
 
     renderWithRoute("/");
 
-    await screen.findByText(/active session/i);
+    await screen.findByText(/temporary chat ready/i);
     expect(screen.getByText(/recovered from storage/i)).toBeInTheDocument();
   });
 
@@ -335,6 +364,80 @@ describe("Session client app", () => {
 
     await screen.findByText(/retrying assistant delivery/i);
     expect(screen.getByText("2/3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^send$/i })).toBeDisabled();
+  });
+
+  it("keeps the composer disabled while fresh chat setup is preparing", async () => {
+    const session = buildSnapshot({
+      sessionId: "session-pending"
+    });
+    session.chatBootstrap = buildChatBootstrap({
+      sessionId: "session-pending",
+      status: "pending",
+      conversationMode: "unknown",
+      modelLabel: null,
+      completedAt: null
+    });
+    const conversation = buildConversation("session-pending", {
+      canSend: false,
+      chatBootstrap: session.chatBootstrap
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      createFetchStub({
+        "GET /api/session-bootstrap/session-pending": {
+          body: session
+        },
+        "GET /api/sessions/session-pending/messages": {
+          body: conversation
+        }
+      })
+    );
+
+    renderWithRoute("/session/session-pending");
+
+    await screen.findByText(/preparing fresh chat/i);
+    expect(
+      screen.getByText(/fresh chat setup is still preparing on the assigned worker/i)
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^send$/i })).toBeDisabled();
+  });
+
+  it("shows chat setup failure before sending is unlocked", async () => {
+    const session = buildSnapshot({
+      sessionId: "session-bootstrap-failed"
+    });
+    session.chatBootstrap = buildChatBootstrap({
+      sessionId: "session-bootstrap-failed",
+      status: "failed",
+      conversationMode: "unknown",
+      modelLabel: null,
+      failureCode: "model_not_available"
+    });
+    const conversation = buildConversation("session-bootstrap-failed", {
+      canSend: false,
+      chatBootstrap: session.chatBootstrap
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      createFetchStub({
+        "GET /api/session-bootstrap/session-bootstrap-failed": {
+          body: session
+        },
+        "GET /api/sessions/session-bootstrap-failed/messages": {
+          body: conversation
+        }
+      })
+    );
+
+    renderWithRoute("/session/session-bootstrap-failed");
+
+    await screen.findByText(/chat setup failed/i);
+    expect(
+      screen.getAllByText(/preferred reasoning model is not available/i)
+    ).toHaveLength(3);
     expect(screen.getByRole("button", { name: /^send$/i })).toBeDisabled();
   });
 

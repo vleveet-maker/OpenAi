@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ControlApiConfig } from "../src/config.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
+import { createReadyBootstrapTransport } from "./test-bootstrap-transport.js";
 
 const tempDirectories: string[] = [];
 const cleanupCallbacks: Array<() => void> = [];
@@ -20,6 +21,9 @@ function createTestRuntime() {
     host: "127.0.0.1",
     port: 0,
     internalAdminToken: "secret",
+    hostControllerBaseUrl: undefined,
+    hostControllerToken: undefined,
+    autoStartHostWorkers: false,
     sessionDatabasePath: join(root, "session-routing.sqlite"),
     sessionDurationMinutes: 60,
     sessionSweepIntervalMs: 5_000,
@@ -50,7 +54,8 @@ function createTestRuntime() {
   };
   const runtime = createControlApiRuntime(config, {
     dockerEngineClient,
-    healthMonitor
+    healthMonitor,
+    bootstrapTransport: createReadyBootstrapTransport()
   });
   const app = createControlApiApp(runtime);
 

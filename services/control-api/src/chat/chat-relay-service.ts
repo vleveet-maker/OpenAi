@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { SessionService } from "../sessions/session-service.js";
 import type { SessionSnapshot } from "../sessions/session-types.js";
+import type { ChatBootstrapService } from "./chat-bootstrap-service.js";
 import { ChatStore } from "./chat-store.js";
 import type {
   ChatRelayTransport,
@@ -38,6 +39,7 @@ export interface ChatRelayServiceOptions {
   sessionService: SessionService;
   relayTransport: ChatRelayTransport;
   eventRecorder?: OperatorEventRecorder;
+  chatBootstrapService?: ChatBootstrapService;
 }
 
 export class ChatRelayService {
@@ -86,6 +88,26 @@ export class ChatRelayService {
         409,
         "session_worker_unavailable",
         "The active session does not currently have an assigned worker"
+      );
+    }
+
+    const chatBootstrap =
+      this.options.chatBootstrapService?.getBootstrap(sessionId) ??
+      sessionSnapshot.chatBootstrap;
+
+    if (!chatBootstrap || chatBootstrap.status === "pending") {
+      throw new ChatRelayServiceError(
+        409,
+        "chat_bootstrap_pending",
+        "Fresh chat setup is still preparing on the assigned worker"
+      );
+    }
+
+    if (chatBootstrap.status === "failed") {
+      throw new ChatRelayServiceError(
+        409,
+        "chat_bootstrap_failed",
+        `Fresh chat setup failed${chatBootstrap.failureCode ? `: ${chatBootstrap.failureCode}` : ""}`
       );
     }
 
@@ -268,11 +290,13 @@ export class ChatRelayService {
       canSend:
         sessionSnapshot.session.state === "active" &&
         Boolean(sessionSnapshot.session.workerId) &&
+        sessionSnapshot.chatBootstrap?.status === "ready" &&
         !pendingAssistantMessage,
       pendingAssistantMessageId: pendingAssistantMessage?.messageId ?? null,
       relay: this.options.chatStore.getRelayStatusForSession(
         sessionSnapshot.session.sessionId
       ),
+      chatBootstrap: sessionSnapshot.chatBootstrap,
       messages
     };
   }

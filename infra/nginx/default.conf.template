@@ -18,14 +18,34 @@ map $browser_worker_id $browser_upstream {
   shared-1 worker-shared-1:6080;
 }
 
-map $query_string $browser_session_id {
+map $query_string $browser_session_id_query {
   default "";
   ~*(^|&)sessionId=([^&]+) $2;
 }
 
-map $query_string $browser_access_token {
+map $query_string $browser_access_token_query {
   default "";
   ~*(^|&)accessToken=([^&]+) $2;
+}
+
+map $http_cookie $browser_session_id_cookie {
+  default "";
+  "~*(?:^|;\\s*)browserSessionId=([^;]+)" $1;
+}
+
+map $http_cookie $browser_access_token_cookie {
+  default "";
+  "~*(?:^|;\\s*)browserAccessToken=([^;]+)" $1;
+}
+
+map $browser_session_id_query $browser_session_id {
+  default $browser_session_id_query;
+  "" $browser_session_id_cookie;
+}
+
+map $browser_access_token_query $browser_access_token {
+  default $browser_access_token_query;
+  "" $browser_access_token_cookie;
 }
 
 server {
@@ -141,6 +161,8 @@ server {
     set $auth_session_id $browser_session_id;
     set $auth_access_token $browser_access_token;
     auth_request /internal/browser-access/authorize;
+    add_header Set-Cookie "browserSessionId=$browser_session_id; Max-Age=900; Path=/internal/browser/$browser_worker_id/; HttpOnly; SameSite=Strict" always;
+    add_header Set-Cookie "browserAccessToken=$browser_access_token; Max-Age=900; Path=/internal/browser/$browser_worker_id/; HttpOnly; SameSite=Strict" always;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;

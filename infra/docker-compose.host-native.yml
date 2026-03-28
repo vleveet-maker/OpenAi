@@ -1,0 +1,15 @@
+services:
+  control-api:
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      - worker-wife
+      - worker-shared-1
+    environment:
+      NODE_OPTIONS: --dns-result-order=ipv4first
+      WORKER_DEFINITIONS: >-
+        [
+          {"workerId":"dad","displayName":"Dad","containerName":"host-dad","profilePath":"D:/OpenAi/infra/data/host-profiles/dad","agentBaseUrl":"http://host.docker.internal:4021","runtimeType":"host","defaultStatus":"starting"},
+          {"workerId":"wife","displayName":"Wife","containerName":"host-wife","profilePath":"D:/OpenAi/infra/data/host-profiles/wife","agentBaseUrl":"http://host.docker.internal:4022","runtimeType":"host","defaultStatus":"starting"},
+          {"workerId":"shared-1","displayName":"Shared 1","containerName":"host-shared-1","profilePath":"D:/OpenAi/infra/data/host-profiles/shared-1","agentBaseUrl":"http://host.docker.internal:4023","runtimeType":"host","defaultStatus":"starting"}
+        ]

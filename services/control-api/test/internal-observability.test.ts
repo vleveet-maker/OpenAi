@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ChatRelayTransport } from "../src/chat/chat-types.js";
 import type { ControlApiConfig } from "../src/config.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
+import { createReadyBootstrapTransport } from "./test-bootstrap-transport.js";
 
 const tempDirectories: string[] = [];
 const cleanupCallbacks: Array<() => void> = [];
@@ -33,6 +34,7 @@ function createTestRuntime(
       stopHealthMonitor: ReturnType<typeof vi.fn>;
       runHealthSweep: ReturnType<typeof vi.fn>;
     };
+    bootstrapTransport?: ReturnType<typeof createReadyBootstrapTransport>;
   } = {}
 ) {
   const root = mkdtempSync(join(tmpdir(), "control-api-observability-"));
@@ -43,6 +45,9 @@ function createTestRuntime(
     host: "127.0.0.1",
     port: 0,
     internalAdminToken: INTERNAL_ADMIN_TOKEN,
+    hostControllerBaseUrl: undefined,
+    hostControllerToken: undefined,
+    autoStartHostWorkers: false,
     sessionDatabasePath: join(root, "session-routing.sqlite"),
     sessionDurationMinutes: 60,
     sessionSweepIntervalMs: 5_000,
@@ -70,7 +75,10 @@ function createTestRuntime(
     ]
   };
 
-  const runtime = createControlApiRuntime(config, options);
+  const runtime = createControlApiRuntime(config, {
+    bootstrapTransport: createReadyBootstrapTransport(),
+    ...options
+  });
   const app = createControlApiApp(runtime);
 
   return {
@@ -80,6 +88,11 @@ function createTestRuntime(
 }
 
 async function flushQueuedHandlers() {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+async function flushBootstrap() {
   await Promise.resolve();
   await Promise.resolve();
 }
@@ -106,7 +119,9 @@ afterEach(() => {
 
 describe("internal observability and guardrails", () => {
   it("requires the internal admin token and renders the operator page", async () => {
-    const { app, runtime } = createTestRuntime();
+    const { app, runtime } = createTestRuntime({
+      bootstrapTransport: createReadyBootstrapTransport()
+    });
     cleanupCallbacks.push(() => {
       runtime.dispose();
     });
@@ -126,7 +141,9 @@ describe("internal observability and guardrails", () => {
   });
 
   it("returns minimal health and readiness responses with hardening headers", async () => {
-    const { app, runtime } = createTestRuntime();
+    const { app, runtime } = createTestRuntime({
+      bootstrapTransport: createReadyBootstrapTransport()
+    });
     cleanupCallbacks.push(() => {
       runtime.dispose();
     });
@@ -173,7 +190,8 @@ describe("internal observability and guardrails", () => {
         })
     } satisfies ChatRelayTransport;
     const { app, runtime } = createTestRuntime({
-      relayTransport
+      relayTransport,
+      bootstrapTransport: createReadyBootstrapTransport()
     });
     cleanupCallbacks.push(() => {
       runtime.dispose();
@@ -183,6 +201,7 @@ describe("internal observability and guardrails", () => {
       "Retry Session",
       new Date("2026-03-27T10:00:00.000Z")
     );
+    await flushBootstrap();
     runtime.chatRelayService.sendMessage(
       retrySession.session.sessionId,
       "Hello retry",
@@ -194,6 +213,7 @@ describe("internal observability and guardrails", () => {
       "Fatal Session",
       new Date("2026-03-27T10:00:01.000Z")
     );
+    await flushBootstrap();
     runtime.chatRelayService.sendMessage(
       fatalSession.session.sessionId,
       "Hello fatal",

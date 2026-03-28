@@ -3,4 +3,5 @@ services/control-api/dist/
 workers/agent/dist/
 apps/session-client/dist/
 infra/data/
+infra/tools/
 *.sqlite

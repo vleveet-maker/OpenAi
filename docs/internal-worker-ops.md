@@ -2,6 +2,13 @@
 
 This document is for the household operator only. Worker browsers stay internal-only, browser access is time-bounded, and manual ChatGPT login is the rule for both first setup and later reauthentication.
 
+## Fresh Chat Policy
+
+- Every newly activated user session now prepares a fresh chat boundary before the first send is allowed.
+- The worker should prefer `Temporary Chat` so the conversation stays out of history and does not create or use memories.
+- The worker should also prefer the latest configured reasoning model. The current default is `GPT-5.4 Thinking`.
+- Public sending stays blocked while chat bootstrap is `pending`, and the shared-screen UI will surface `Preparing Fresh Chat` or `Chat Setup Failed` instead of silently failing.
+
 ## Setup
 
 - Start the stack from `infra/docker-compose.yml`.
@@ -20,12 +27,14 @@ This document is for the household operator only. Worker browsers stay internal-
 - Browser access sessions expire after `15 minutes`. If the viewer stops authorizing, start a new browser access session from `/internal/admin`.
 - `http://<host>:8080/internal/browser/...` must stay unavailable from the public edge.
 - `http://127.0.0.1:8081/internal/browser/...` is internal-only and is the only supported path for the live worker viewer.
+- If ChatGPT changed its UI and `Temporary Chat` or the preferred model can no longer be selected automatically, the session should remain blocked until the selector map is updated.
 
 ## First Login
 
 - From `/internal/admin`, press `Open browser` on the worker you want to initialize.
 - Complete ChatGPT login manually inside the browser access viewer.
 - Wait for the authenticated ChatGPT page to stabilize.
+- Confirm that a clean `Temporary Chat` can be opened and that the preferred reasoning model is still available.
 - Return to `/internal/admin` and press `Complete login/reauth`.
 - Confirm the worker returns to `ready`.
 - Treat the durable browser profile as the persistence layer; do not copy credentials into sidecar files or environment variables.
@@ -38,6 +47,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - Return to `/internal/admin` and press `Complete login/reauth`.
 - Confirm the worker returns to `ready`.
 - If reauth fails repeatedly, leave the worker in `reauth_required` or `disconnected` instead of pretending it is safe to route sessions there.
+- If a worker logs in successfully but fresh chat bootstrap still fails, treat that as a selector/runtime issue rather than a healthy ready state.
 
 ## Restart Workflow
 
@@ -56,6 +66,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - `reauth_required`: do not debug automation first; assume manual login is needed and open the browser access path.
 - Use `/internal/admin` to inspect recent worker lifecycle events and session failures before restarting several workers at once.
 - Repeated profile corruption: preserve the existing profile directory for investigation before replacing it.
+- Phase 8 selector defaults live behind `WORKER_PREFERRED_REASONING_MODEL_LABELS`; if you need to pin a different latest reasoning model, update that env var instead of hardcoding a different label in the UI.
 
 ## Smoke Checklist
 

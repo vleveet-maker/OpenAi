@@ -1,4 +1,4 @@
-import type { WorkerDefinition } from "../config.js";
+import type { WorkerDefinition, WorkerRuntimeType } from "../config.js";
 import {
   createWorkerStatusRecord,
   type WorkerStatus,
@@ -11,6 +11,7 @@ export interface WorkerRecord {
   containerName: string;
   profilePath: string;
   agentBaseUrl: string;
+  runtimeType: WorkerRuntimeType;
   status: WorkerStatusRecord;
   runtimeStatus?: WorkerStatus;
   assignedSessionId?: string;
@@ -53,6 +54,7 @@ export class WorkerRegistry {
         containerName: definition.containerName,
         profilePath: definition.profilePath,
         agentBaseUrl: definition.agentBaseUrl,
+        runtimeType: definition.runtimeType ?? "docker",
         status: createWorkerStatusRecord(definition.defaultStatus, "registry bootstrap"),
         runtimeStatus: definition.defaultStatus,
         lastSeenAt: now

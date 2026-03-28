@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { WorkerDefinition } from "../src/config.js";
+import type { SessionChatBootstrapRecord } from "../src/chat/chat-bootstrap-types.js";
 import { ChatStore } from "../src/chat/chat-store.js";
 import {
   ChatRelayService,
@@ -53,11 +54,32 @@ function createTestRuntime(relayTransport?: ChatRelayTransport) {
   const sessionStore = new SessionStore(databasePath);
   const chatStore = new ChatStore(databasePath);
   const workerRegistry = createWorkerRegistry(WORKERS);
+  const bootstrapRecords = new Map<string, SessionChatBootstrapRecord>();
   const sessionService = new SessionService({
     store: sessionStore,
     workerRegistry,
     sessionDurationMinutes: 60,
-    sweepIntervalMs: 5_000
+    sweepIntervalMs: 5_000,
+    getChatBootstrap(sessionId) {
+      return bootstrapRecords.get(sessionId) ?? null;
+    },
+    onSessionActivated(snapshot, now) {
+      if (!snapshot.session.workerId) {
+        return;
+      }
+
+      bootstrapRecords.set(snapshot.session.sessionId, {
+        sessionId: snapshot.session.sessionId,
+        workerId: snapshot.session.workerId,
+        status: "ready",
+        conversationMode: "temporary",
+        modelLabel: "GPT-5.4 Thinking",
+        failureCode: null,
+        requestedAt: now.toISOString(),
+        completedAt: now.toISOString(),
+        updatedAt: now.toISOString()
+      });
+    }
   });
 
   sessionService.bootstrap(new Date("2026-03-27T10:00:00.000Z"));
@@ -74,6 +96,12 @@ function createTestRuntime(relayTransport?: ChatRelayTransport) {
   return {
     chatRelayService,
     sessionService,
+    setBootstrapRecord(
+      sessionId: string,
+      record: SessionChatBootstrapRecord
+    ) {
+      bootstrapRecords.set(sessionId, record);
+    },
     dispose() {
       chatRelayService.stopBackgroundRetrySweep();
       sessionService.close();
@@ -482,5 +510,36 @@ describe("ChatRelayService", () => {
       failureCode: "selector_not_found"
     });
     expect(snapshot?.relay.status).toBe("failed");
+  });
+
+  it("blocks sending when fresh chat bootstrap failed", () => {
+    const runtime = createTestRuntime();
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    const session = runtime.sessionService.createSession(
+      "Bootstrap Failed",
+      new Date("2026-03-27T10:00:00.000Z")
+    );
+
+    runtime.setBootstrapRecord(session.session.sessionId, {
+      sessionId: session.session.sessionId,
+      workerId: "dad",
+      status: "failed",
+      conversationMode: "unknown",
+      modelLabel: null,
+      failureCode: "temporary_chat_unavailable",
+      requestedAt: "2026-03-27T10:00:00.000Z",
+      completedAt: "2026-03-27T10:00:01.000Z",
+      updatedAt: "2026-03-27T10:00:01.000Z"
+    });
+
+    expect(() =>
+      runtime.chatRelayService.sendMessage(session.session.sessionId, "Hello")
+    ).toThrowError(
+      expect.objectContaining<Partial<ChatRelayServiceError>>({
+        code: "chat_bootstrap_failed"
+      })
+    );
   });
 });

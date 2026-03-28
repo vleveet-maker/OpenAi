@@ -6,8 +6,13 @@ import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ChatRelayTransport } from "../src/chat/chat-types.js";
+import type { ChatBootstrapTransport } from "../src/chat/chat-bootstrap-types.js";
 import type { ControlApiConfig } from "../src/config.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
+import {
+  createPendingBootstrapTransport,
+  createReadyBootstrapTransport
+} from "./test-bootstrap-transport.js";
 
 const tempDirectories: string[] = [];
 const cleanupCallbacks: Array<() => void> = [];
@@ -20,7 +25,10 @@ function createPendingRelayTransport(): ChatRelayTransport {
   };
 }
 
-function createTestRuntime(relayTransport: ChatRelayTransport = createPendingRelayTransport()) {
+function createTestRuntime(options: {
+  relayTransport?: ChatRelayTransport;
+  bootstrapTransport?: ChatBootstrapTransport;
+} = {}) {
   const root = mkdtempSync(join(tmpdir(), "control-api-public-chat-"));
   tempDirectories.push(root);
 
@@ -29,6 +37,9 @@ function createTestRuntime(relayTransport: ChatRelayTransport = createPendingRel
     host: "127.0.0.1",
     port: 0,
     internalAdminToken: "secret",
+    hostControllerBaseUrl: undefined,
+    hostControllerToken: undefined,
+    autoStartHostWorkers: false,
     sessionDatabasePath: join(root, "session-routing.sqlite"),
     sessionDurationMinutes: 60,
     sessionSweepIntervalMs: 5_000,
@@ -57,7 +68,8 @@ function createTestRuntime(relayTransport: ChatRelayTransport = createPendingRel
   };
 
   const runtime = createControlApiRuntime(config, {
-    relayTransport
+    relayTransport: options.relayTransport ?? createPendingRelayTransport(),
+    bootstrapTransport: options.bootstrapTransport ?? createReadyBootstrapTransport()
   });
   const app = createControlApiApp(runtime);
 
@@ -65,6 +77,11 @@ function createTestRuntime(relayTransport: ChatRelayTransport = createPendingRel
     runtime,
     app
   };
+}
+
+async function flushBootstrap() {
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 afterEach(() => {
@@ -97,6 +114,7 @@ describe("public chat routes", () => {
       "Active Chat",
       new Date("2026-03-27T10:00:00.000Z")
     );
+    await flushBootstrap();
 
     runtime.chatRelayService.sendMessage(session.session.sessionId, "Hello");
 
@@ -108,6 +126,11 @@ describe("public chat routes", () => {
     expect(response.body.messages).toHaveLength(2);
     expect(response.body.pendingAssistantMessageId).toBeDefined();
     expect(response.body.worker.displayName).toBe("Dad");
+    expect(response.body.chatBootstrap).toMatchObject({
+      status: "ready",
+      conversationMode: "temporary",
+      modelLabel: "GPT-5.4 Thinking"
+    });
     expect(response.body.relay).toMatchObject({
       status: "dispatching",
       attemptCount: 1,
@@ -124,6 +147,7 @@ describe("public chat routes", () => {
       "Send Route",
       new Date("2026-03-27T10:00:00.000Z")
     );
+    await flushBootstrap();
 
     const response = await request(app)
       .post(`/api/sessions/${session.session.sessionId}/messages`)
@@ -137,6 +161,7 @@ describe("public chat routes", () => {
     expect(response.body.messages[0].body).toBe("Hello from route");
     expect(response.body.worker.profilePath).toBeUndefined();
     expect(response.body.worker.recoveryUrl).toBeUndefined();
+    expect(response.body.chatBootstrap.status).toBe("ready");
     expect(response.body.relay).toMatchObject({
       status: "dispatching",
       attemptCount: 1,
@@ -153,6 +178,7 @@ describe("public chat routes", () => {
       "Validation",
       new Date("2026-03-27T10:00:00.000Z")
     );
+    await flushBootstrap();
 
     const response = await request(app)
       .post(`/api/sessions/${session.session.sessionId}/messages`)
@@ -173,6 +199,7 @@ describe("public chat routes", () => {
       "Inactive",
       new Date("2026-03-27T10:00:00.000Z")
     );
+    await flushBootstrap();
 
     runtime.sessionService.endActiveSession(
       session.session.sessionId,
@@ -203,7 +230,9 @@ describe("public chat routes", () => {
           })
         )
     } satisfies ChatRelayTransport;
-    const { app, runtime } = createTestRuntime(relayTransport);
+    const { app, runtime } = createTestRuntime({
+      relayTransport
+    });
     cleanupCallbacks.push(() => {
       runtime.dispose();
     });
@@ -211,6 +240,7 @@ describe("public chat routes", () => {
       "Retry Snapshot",
       new Date("2026-03-27T10:00:00.000Z")
     );
+    await flushBootstrap();
 
     runtime.chatRelayService.sendMessage(session.session.sessionId, "Hello");
     await Promise.resolve();
@@ -226,5 +256,28 @@ describe("public chat routes", () => {
       maxAttempts: 3,
       lastFailureCode: "worker_relay_unreachable"
     });
+  });
+
+  it("blocks sending while fresh chat bootstrap is still pending", async () => {
+    const { app, runtime } = createTestRuntime({
+      relayTransport: createPendingRelayTransport(),
+      bootstrapTransport: createPendingBootstrapTransport()
+    });
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    const session = runtime.sessionService.createSession(
+      "Pending Bootstrap",
+      new Date("2026-03-27T10:00:00.000Z")
+    );
+
+    const response = await request(app)
+      .post(`/api/sessions/${session.session.sessionId}/messages`)
+      .send({
+        bodyText: "Blocked while preparing"
+      })
+      .expect(409);
+
+    expect(response.body.error).toBe("chat_bootstrap_pending");
   });
 });

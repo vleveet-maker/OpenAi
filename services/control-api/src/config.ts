@@ -6,12 +6,15 @@ import {
   type WorkerStatus
 } from "./workers/worker-status.js";
 
+export type WorkerRuntimeType = "docker" | "host";
+
 export interface WorkerDefinition {
   workerId: string;
   displayName: string;
   containerName: string;
   profilePath: string;
   agentBaseUrl: string;
+  runtimeType?: WorkerRuntimeType;
   defaultStatus: WorkerStatus;
 }
 
@@ -20,6 +23,9 @@ export interface ControlApiConfig {
   host: string;
   port: number;
   internalAdminToken?: string;
+  hostControllerBaseUrl?: string;
+  hostControllerToken?: string;
+  autoStartHostWorkers: boolean;
   sessionDatabasePath: string;
   sessionDurationMinutes: number;
   sessionSweepIntervalMs: number;
@@ -53,6 +59,7 @@ const DEFAULT_WORKERS: WorkerDefinition[] = [
     containerName: "worker-dad",
     profilePath: "/srv/chatgpt-workers/profiles/dad",
     agentBaseUrl: "http://worker-dad:4020",
+    runtimeType: "docker",
     defaultStatus: "starting"
   },
   {
@@ -61,6 +68,7 @@ const DEFAULT_WORKERS: WorkerDefinition[] = [
     containerName: "worker-wife",
     profilePath: "/srv/chatgpt-workers/profiles/wife",
     agentBaseUrl: "http://worker-wife:4020",
+    runtimeType: "docker",
     defaultStatus: "starting"
   },
   {
@@ -69,6 +77,7 @@ const DEFAULT_WORKERS: WorkerDefinition[] = [
     containerName: "worker-shared-1",
     profilePath: "/srv/chatgpt-workers/profiles/shared-1",
     agentBaseUrl: "http://worker-shared-1:4020",
+    runtimeType: "docker",
     defaultStatus: "starting"
   }
 ];
@@ -80,6 +89,15 @@ function parseInteger(value: string | undefined, fallback: number): number {
 
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (!value) {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
 function parseWorkerDefinitions(raw: string | undefined): WorkerDefinition[] | null {
@@ -106,6 +124,7 @@ function parseWorkerDefinitions(raw: string | undefined): WorkerDefinition[] | n
       agentBaseUrl:
         entry.agentBaseUrl ??
         `http://worker-${workerId}:4020`,
+      runtimeType: entry.runtimeType === "host" ? "host" : "docker",
       defaultStatus: normalizeWorkerStatus(entry.defaultStatus, "starting")
     };
   });
@@ -117,6 +136,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ControlApiConf
     host: env.CONTROL_API_HOST ?? "0.0.0.0",
     port: parseInteger(env.CONTROL_API_PORT, 4010),
     internalAdminToken: env.INTERNAL_ADMIN_TOKEN,
+    hostControllerBaseUrl: env.HOST_CONTROLLER_BASE_URL,
+    hostControllerToken: env.HOST_CONTROLLER_TOKEN,
+    autoStartHostWorkers: parseBoolean(env.AUTO_START_HOST_WORKERS, true),
     sessionDatabasePath:
       env.SESSION_DB_PATH ?? DEFAULT_SESSION_DATABASE_PATH,
     sessionDurationMinutes: parseInteger(env.SESSION_DURATION_MINUTES, 60),

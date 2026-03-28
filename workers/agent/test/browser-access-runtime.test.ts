@@ -10,6 +10,7 @@ import { clearChromiumSingletonArtifacts } from "../src/browser-launch.js";
 import {
   createWorkerAgentApp,
   createWorkerAgentRuntime,
+  DEFAULT_PREFERRED_REASONING_MODEL_LABELS,
   loadWorkerAgentConfig
 } from "../src/server.js";
 
@@ -127,7 +128,7 @@ describe("worker browser access runtime", () => {
     deferred.resolve({
       close: vi.fn().mockResolvedValue(undefined)
     });
-    await Promise.resolve();
+    await runtime.getBrowserContext();
 
     const readyHealthResponse = await fetch(`${server.baseUrl}/health`);
     const readyHealth = await readyHealthResponse.json();
@@ -164,11 +165,66 @@ describe("worker browser access runtime", () => {
     deferred.resolve({
       close: vi.fn().mockResolvedValue(undefined)
     });
-    await Promise.resolve();
+    await runtime.getBrowserContext();
 
     expect(runtime.getHealthSnapshot().runtimeStatus).toBe("ready");
     expect(runtime.getBrowserAccessSnapshot().ready).toBe(true);
 
+    await runtime.dispose();
+  });
+
+  it("parses preferred reasoning model labels and exposes the bootstrap route", async () => {
+    const runtime = createWorkerAgentRuntime(loadWorkerAgentConfig({
+      WORKER_ID: "dad",
+      WORKER_DISPLAY_NAME: "Dad",
+      WORKER_CONTAINER_NAME: "worker-dad",
+      WORKER_AGENT_HOST: "127.0.0.1",
+      WORKER_AGENT_PORT: "0",
+      WORKER_PROFILE_PATH: "/profiles/dad",
+      WORKER_PREFERRED_REASONING_MODEL_LABELS: "[\"GPT-5.4 Thinking\",\"GPT-5.4\"]"
+    }), {
+      browserContextPromise: Promise.resolve({
+        close: vi.fn().mockResolvedValue(undefined)
+      } as never),
+      bootstrapHandler: vi.fn().mockResolvedValue({
+        status: "ready",
+        conversationMode: "temporary",
+        modelLabel: "GPT-5.4 Thinking",
+        failureCode: null,
+        pageUrl: "https://chatgpt.com/"
+      })
+    });
+
+    expect(runtime.config.preferredReasoningModelLabels).toEqual([
+      "GPT-5.4 Thinking",
+      "GPT-5.4"
+    ]);
+    expect(DEFAULT_PREFERRED_REASONING_MODEL_LABELS).toEqual([
+      "GPT-5.4 Thinking"
+    ]);
+
+    const app = createWorkerAgentApp(runtime);
+    const server = await startServer(app);
+
+    const response = await fetch(`${server.baseUrl}/internal/chat/bootstrap`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sessionId: "session-1"
+      })
+    });
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      status: "ready",
+      conversationMode: "temporary",
+      modelLabel: "GPT-5.4 Thinking"
+    });
+
+    await server.close();
     await runtime.dispose();
   });
 });

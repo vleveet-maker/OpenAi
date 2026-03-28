@@ -4,7 +4,18 @@ import { pathToFileURL } from "node:url";
 import express from "express";
 import type { BrowserContext } from "playwright";
 
-import { launchWorkerBrowser } from "./browser-launch.js";
+import {
+  launchWorkerBrowser,
+  type WorkerBrowserHandle
+} from "./browser-launch.js";
+import {
+  runTemporaryChatBootstrap,
+  toBootstrapBrowserContext
+} from "./chat-bootstrap/temporary-chat-runner.js";
+import type {
+  WorkerChatBootstrapRequest,
+  WorkerChatBootstrapResult
+} from "./chat-bootstrap/bootstrap-types.js";
 import {
   runRelay,
   toRelayBrowserContext
@@ -29,8 +40,11 @@ export interface WorkerAgentConfig {
   port: number;
   profilePath: string;
   browserChannel?: string;
+  browserExecutablePath?: string;
+  cdpEndpointUrl?: string;
   headless: boolean;
   startUrl: string;
+  preferredReasoningModelLabels: string[];
 }
 
 export interface WorkerHealthSnapshot {
@@ -46,6 +60,10 @@ export interface WorkerBrowserAccessSnapshot {
   httpPort: number;
   display: string;
 }
+
+export const DEFAULT_PREFERRED_REASONING_MODEL_LABELS = [
+  "GPT-5.4 Thinking"
+];
 
 function parsePort(value: string | undefined, fallback: number): number {
   if (!value) {
@@ -72,6 +90,40 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   }
 
   return fallback;
+}
+
+function parsePreferredReasoningModelLabels(
+  value: string | undefined
+): string[] {
+  if (!value || value.trim().length === 0) {
+    return [...DEFAULT_PREFERRED_REASONING_MODEL_LABELS];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+
+    if (Array.isArray(parsed)) {
+      const labels = parsed
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+
+      if (labels.length > 0) {
+        return labels;
+      }
+    }
+  } catch {
+    // Fall back to comma-separated parsing below.
+  }
+
+  const labels = value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+  return labels.length > 0
+    ? labels
+    : [...DEFAULT_PREFERRED_REASONING_MODEL_LABELS];
 }
 
 function resolveBrowserAccessSnapshot(
@@ -119,8 +171,13 @@ export function loadWorkerAgentConfig(
       env.WORKER_PROFILE_PATH ??
       `/srv/chatgpt-workers/profiles/${workerId}`,
     browserChannel: env.WORKER_BROWSER_CHANNEL,
+    browserExecutablePath: env.WORKER_BROWSER_EXECUTABLE_PATH,
+    cdpEndpointUrl: env.WORKER_CDP_ENDPOINT_URL,
     headless: parseBoolean(env.WORKER_HEADLESS, false),
-    startUrl: env.WORKER_START_URL ?? "https://chatgpt.com/"
+    startUrl: env.WORKER_START_URL ?? "https://chatgpt.com/",
+    preferredReasoningModelLabels: parsePreferredReasoningModelLabels(
+      env.WORKER_PREFERRED_REASONING_MODEL_LABELS
+    )
   };
 }
 
@@ -129,12 +186,21 @@ export interface WorkerAgentRuntime {
   getBrowserContext(): Promise<BrowserContext>;
   getHealthSnapshot(): WorkerHealthSnapshot;
   getBrowserAccessSnapshot(): WorkerBrowserAccessSnapshot;
+  bootstrapSessionChat(
+    request: WorkerChatBootstrapRequest
+  ): Promise<WorkerChatBootstrapResult>;
   relayMessage(request: WorkerRelayRequest): Promise<WorkerRelayResult>;
   dispose(): Promise<void>;
 }
 
 export interface WorkerAgentRuntimeOptions {
+  browserHandlePromise?: Promise<WorkerBrowserHandle>;
   browserContextPromise?: Promise<BrowserContext>;
+  bootstrapHandler?: (
+    request: WorkerChatBootstrapRequest,
+    browserContext: BrowserContext,
+    config: WorkerAgentConfig
+  ) => Promise<WorkerChatBootstrapResult>;
   relayHandler?: (
     request: WorkerRelayRequest,
     browserContext: BrowserContext
@@ -169,6 +235,22 @@ function parseRelayRequest(body: unknown): WorkerRelayRequest | null {
   };
 }
 
+function parseBootstrapRequest(body: unknown): WorkerChatBootstrapRequest | null {
+  if (typeof body !== "object" || body === null) {
+    return null;
+  }
+
+  const candidate = body as Record<string, unknown>;
+
+  if (!isNonEmptyString(candidate.sessionId)) {
+    return null;
+  }
+
+  return {
+    sessionId: candidate.sessionId.trim()
+  };
+}
+
 export function createWorkerAgentRuntime(
   config: WorkerAgentConfig = loadWorkerAgentConfig(),
   options: WorkerAgentRuntimeOptions = {}
@@ -179,20 +261,29 @@ export function createWorkerAgentRuntime(
     lastRelayAt: null,
     lastRelayFailureCode: null
   };
-  const browserContextPromise =
-    options.browserContextPromise ??
-    launchWorkerBrowser({
-      workerId: config.workerId,
-      profilePath: config.profilePath,
-      browserChannel: config.browserChannel,
-      headless: config.headless,
-      startUrl: config.startUrl
-    });
-  const instrumentedBrowserContextPromise = browserContextPromise
-    .then((browserContext) => {
+  const browserHandlePromise =
+    options.browserHandlePromise ??
+    (options.browserContextPromise
+      ? options.browserContextPromise.then((browserContext) => ({
+          browserContext,
+          async dispose() {
+            await browserContext.close();
+          }
+        }))
+      : launchWorkerBrowser({
+          workerId: config.workerId,
+          profilePath: config.profilePath,
+          browserChannel: config.browserChannel,
+          browserExecutablePath: config.browserExecutablePath,
+          cdpEndpointUrl: config.cdpEndpointUrl,
+          headless: config.headless,
+          startUrl: config.startUrl
+        }));
+  const instrumentedBrowserHandlePromise = browserHandlePromise
+    .then((browserHandle) => {
       runtimeState.browserContextReady = true;
       runtimeState.runtimeStatus = "ready";
-      return browserContext;
+      return browserHandle;
     })
     .catch((error: unknown) => {
       runtimeState.browserContextReady = false;
@@ -201,11 +292,12 @@ export function createWorkerAgentRuntime(
       throw error;
     });
   const relayHandler = options.relayHandler;
+  const bootstrapHandler = options.bootstrapHandler;
 
   return {
     config,
     async getBrowserContext() {
-      return instrumentedBrowserContextPromise;
+      return (await instrumentedBrowserHandlePromise).browserContext;
     },
     getHealthSnapshot() {
       return {
@@ -215,8 +307,28 @@ export function createWorkerAgentRuntime(
     getBrowserAccessSnapshot() {
       return resolveBrowserAccessSnapshot(process.env, runtimeState.browserContextReady);
     },
+    async bootstrapSessionChat(request: WorkerChatBootstrapRequest) {
+      const browserContext = (await instrumentedBrowserHandlePromise).browserContext;
+      const bootstrapResult = bootstrapHandler
+        ? await bootstrapHandler(request, browserContext, config)
+        : await runTemporaryChatBootstrap(
+            toBootstrapBrowserContext(browserContext),
+            {
+              lockKey: `${config.workerId}:${request.sessionId}`,
+              startUrl: config.startUrl,
+              preferredReasoningModelLabels: config.preferredReasoningModelLabels
+            }
+          );
+
+      runtimeState.runtimeStatus =
+        bootstrapResult.failureCode === "bootstrap_auth_required"
+          ? "reauth_required"
+          : "ready";
+
+      return bootstrapResult;
+    },
     async relayMessage(request: WorkerRelayRequest) {
-      const browserContext = await instrumentedBrowserContextPromise;
+      const browserContext = (await instrumentedBrowserHandlePromise).browserContext;
 
       try {
         const relayResult = relayHandler
@@ -240,8 +352,8 @@ export function createWorkerAgentRuntime(
       }
     },
     async dispose() {
-      const browserContext = await instrumentedBrowserContextPromise;
-      await browserContext.close();
+      const browserHandle = await instrumentedBrowserHandlePromise;
+      await browserHandle.dispose();
     }
   };
 }
@@ -298,6 +410,21 @@ export function createWorkerAgentApp(
 
     const relayResult = await runtime.relayMessage(relayRequest);
     response.json(relayResult);
+  });
+
+  app.post("/internal/chat/bootstrap", async (request, response) => {
+    const bootstrapRequest = parseBootstrapRequest(request.body);
+
+    if (!bootstrapRequest) {
+      response.status(400).json({
+        error: "invalid_chat_bootstrap_request",
+        detail: "sessionId must be a non-empty string"
+      });
+      return;
+    }
+
+    const bootstrapResult = await runtime.bootstrapSessionChat(bootstrapRequest);
+    response.json(bootstrapResult);
   });
 
   return app;

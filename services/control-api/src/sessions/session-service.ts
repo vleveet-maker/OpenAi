@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { WorkerRegistry, WorkerRecord } from "../workers/worker-registry.js";
 import { isWorkerRecoverable } from "../workers/worker-status.js";
+import type { SessionChatBootstrapRecord } from "../chat/chat-bootstrap-types.js";
 import { SessionStore } from "./session-store.js";
 import {
   getSessionStateForEndReason,
@@ -18,6 +19,8 @@ export interface SessionServiceOptions {
   sessionDurationMinutes: number;
   sweepIntervalMs: number;
   eventRecorder?: OperatorEventRecorder;
+  getChatBootstrap?: (sessionId: string) => SessionChatBootstrapRecord | null;
+  onSessionActivated?: (snapshot: SessionSnapshot, now: Date) => void;
 }
 
 export class SessionService {
@@ -68,6 +71,7 @@ export class SessionService {
         lastAssignedAt: session.startedAt ?? nowIso,
         lastSeenAt: nowIso
       });
+      this.notifySessionActivated(session.sessionId, now);
     }
 
     this.reconcileQueue(now);
@@ -128,8 +132,15 @@ export class SessionService {
     return {
       session,
       queuePosition: this.options.store.getQueuePosition(sessionId),
-      worker: this.getWorkerSummary(session)
+      worker: this.getWorkerSummary(session),
+      chatBootstrap: this.options.getChatBootstrap?.(sessionId) ?? null
     };
+  }
+
+  listActiveSessionSnapshots(): SessionSnapshot[] {
+    return this.options.store
+      .getActiveSessions()
+      .map((session) => this.requireSessionSnapshot(session.sessionId));
   }
 
   cancelQueuedSession(
@@ -275,6 +286,7 @@ export class SessionService {
       lastAssignedAt: startedAt,
       lastSeenAt: startedAt
     });
+    this.notifySessionActivated(updatedSession.sessionId, now);
   }
 
   private finalizeSession(
@@ -377,6 +389,16 @@ export class SessionService {
       displayName: worker.displayName,
       status: worker.status.status
     };
+  }
+
+  private notifySessionActivated(sessionId: string, now: Date): void {
+    const snapshot = this.getSessionSnapshot(sessionId);
+
+    if (!snapshot) {
+      return;
+    }
+
+    this.options.onSessionActivated?.(snapshot, now);
   }
 }
 

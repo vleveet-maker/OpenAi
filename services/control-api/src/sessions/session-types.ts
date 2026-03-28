@@ -1,4 +1,5 @@
 import type { WorkerStatus } from "../workers/worker-status.js";
+import type { SessionChatBootstrapRecord } from "../chat/chat-bootstrap-types.js";
 
 export const SESSION_STATES = [
   "queued",
@@ -41,6 +42,7 @@ export interface SessionSnapshot {
   session: SessionRecord;
   queuePosition: number | null;
   worker: PublicWorkerSummary | null;
+  chatBootstrap: SessionChatBootstrapRecord | null;
 }
 
 export function getSessionStateForEndReason(

@@ -6,14 +6,26 @@ import { pathToFileURL } from "node:url";
 import express from "express";
 
 import {
+  ChatBootstrapStore
+} from "./chat/chat-bootstrap-store.js";
+import {
+  createChatBootstrapService,
+  type ChatBootstrapService
+} from "./chat/chat-bootstrap-service.js";
+import {
   ChatStore
 } from "./chat/chat-store.js";
 import {
   createChatRelayService,
   type ChatRelayService
 } from "./chat/chat-relay-service.js";
+import type {
+  ChatBootstrapTransport,
+  SessionChatBootstrapRecord
+} from "./chat/chat-bootstrap-types.js";
 import type { ChatRelayTransport } from "./chat/chat-types.js";
 import { createWorkerRelayClient } from "./chat/worker-relay-client.js";
+import { createWorkerChatBootstrapClient } from "./chat/worker-chat-bootstrap-client.js";
 import { loadConfig, type ControlApiConfig } from "./config.js";
 import {
   createOperatorObservabilityService,
@@ -39,6 +51,7 @@ import {
   createSessionService,
   type SessionService
 } from "./sessions/session-service.js";
+import type { SessionSnapshot } from "./sessions/session-types.js";
 import { SessionStore } from "./sessions/session-store.js";
 import { requireInternalAdmin } from "./security/internal-admin-guard.js";
 import {
@@ -60,6 +73,8 @@ export interface ControlApiRuntime {
   browserAccessService: InternalBrowserAccessService;
   sessionStore: SessionStore;
   sessionService: SessionService;
+  chatBootstrapStore: ChatBootstrapStore;
+  chatBootstrapService: ChatBootstrapService;
   chatStore: ChatStore;
   chatRelayService: ChatRelayService;
   operatorEventStore: OperatorEventStore;
@@ -71,6 +86,7 @@ export interface ControlApiRuntime {
 
 export interface ControlApiRuntimeOptions {
   relayTransport?: ChatRelayTransport;
+  bootstrapTransport?: ChatBootstrapTransport;
   dockerEngineClient?: DockerEngineClient;
   healthMonitor?: WorkerHealthMonitor;
 }
@@ -81,23 +97,61 @@ export function createControlApiRuntime(
 ): ControlApiRuntime {
   const workerRegistry = createWorkerRegistry(config.workerDefinitions);
   const workerRelayClient = createWorkerRelayClient();
+  const workerChatBootstrapClient = createWorkerChatBootstrapClient();
   const sessionStore = new SessionStore(config.sessionDatabasePath);
+  const chatBootstrapStore = new ChatBootstrapStore(config.sessionDatabasePath);
   const operatorEventStore = new OperatorEventStore(config.sessionDatabasePath);
   const observabilityService = createOperatorObservabilityService({
     store: operatorEventStore,
     workerRegistry
   });
+  let getChatBootstrapHandler: (
+    sessionId: string
+  ) => SessionChatBootstrapRecord | null = () => null;
+  let scheduleChatBootstrapHandler: (
+    snapshot: SessionSnapshot,
+    now: Date
+  ) => void = () => {};
   const sessionService = createSessionService({
     store: sessionStore,
     workerRegistry,
     sessionDurationMinutes: config.sessionDurationMinutes,
     sweepIntervalMs: config.sessionSweepIntervalMs,
-    eventRecorder: observabilityService
+    eventRecorder: observabilityService,
+    getChatBootstrap(sessionId) {
+      return getChatBootstrapHandler(sessionId);
+    },
+    onSessionActivated(snapshot, now) {
+      scheduleChatBootstrapHandler(snapshot, now);
+    }
   });
+  const chatBootstrapService = createChatBootstrapService({
+    store: chatBootstrapStore,
+    sessionService,
+    eventRecorder: observabilityService,
+    transport:
+      options.bootstrapTransport ??
+      {
+        async bootstrap(request) {
+          const worker = workerRegistry.getWorker(request.workerId);
+
+          if (!worker) {
+            throw new Error(`Unknown worker for chat bootstrap: ${request.workerId}`);
+          }
+
+          return workerChatBootstrapClient.bootstrap(worker.agentBaseUrl, request);
+        }
+      }
+  });
+  getChatBootstrapHandler = (sessionId) => chatBootstrapService.getBootstrap(sessionId);
+  scheduleChatBootstrapHandler = (snapshot, now) => {
+    chatBootstrapService.scheduleBootstrapForSession(snapshot, now);
+  };
   const chatStore = new ChatStore(config.sessionDatabasePath);
   const chatRelayService = createChatRelayService({
     chatStore,
     sessionService,
+    chatBootstrapService,
     eventRecorder: observabilityService,
     relayTransport:
       options.relayTransport ??
@@ -132,6 +186,7 @@ export function createControlApiRuntime(
   });
 
   sessionService.bootstrap();
+  chatBootstrapService.scheduleBootstrapForActiveSessions();
 
   return {
     config,
@@ -139,6 +194,8 @@ export function createControlApiRuntime(
     browserAccessService,
     sessionStore,
     sessionService,
+    chatBootstrapStore,
+    chatBootstrapService,
     chatStore,
     chatRelayService,
     operatorEventStore,
@@ -150,6 +207,7 @@ export function createControlApiRuntime(
       chatRelayService.stopBackgroundRetrySweep();
       sessionService.close();
       chatStore.close();
+      chatBootstrapStore.close();
       operatorEventStore.close();
     }
   };

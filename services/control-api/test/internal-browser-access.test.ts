@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ControlApiConfig } from "../src/config.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
+import { createReadyBootstrapTransport } from "./test-bootstrap-transport.js";
 
 const tempDirectories: string[] = [];
 const cleanupCallbacks: Array<() => void> = [];
@@ -20,6 +21,9 @@ function createTestRuntime() {
     host: "127.0.0.1",
     port: 0,
     internalAdminToken: "secret",
+    hostControllerBaseUrl: undefined,
+    hostControllerToken: undefined,
+    autoStartHostWorkers: false,
     sessionDatabasePath: join(root, "session-routing.sqlite"),
     sessionDurationMinutes: 60,
     sessionSweepIntervalMs: 5_000,
@@ -50,7 +54,8 @@ function createTestRuntime() {
   };
   const runtime = createControlApiRuntime(config, {
     dockerEngineClient,
-    healthMonitor
+    healthMonitor,
+    bootstrapTransport: createReadyBootstrapTransport()
   });
   const app = createControlApiApp(runtime);
 
@@ -96,8 +101,10 @@ describe("internal browser access routes", () => {
     expect(response.body.workerId).toBe("dad");
     expect(response.body.manualLoginRequired).toBe(true);
     expect(response.body.browserAccess.mode).toBe("first_login");
-    expect(response.body.viewerPath).toContain("/internal/browser/dad/vnc.html");
-    expect(response.body.viewerPath).toContain("path=/internal/browser/dad/websockify");
+    expect(response.body.viewerPath).toContain("/internal/browser/dad/vnc_lite.html");
+    expect(response.body.viewerPath).toContain(
+      "path=internal%2Fbrowser%2Fdad%2Fwebsockify%3FsessionId%3D"
+    );
     expect(response.body.viewerPath).toContain("autoconnect=true");
     expect(response.body.viewerPath).toContain(`sessionId=${response.body.browserAccess.sessionId}`);
     expect(response.body.viewerPath).toContain(
@@ -220,7 +227,7 @@ describe("internal browser access routes", () => {
     expect(response.body.workerId).toBe("dad");
     expect(response.body.manualLoginRequired).toBe(true);
     expect(response.body.reauth.mode).toBe("reauth");
-    expect(response.body.viewerPath).toContain("/internal/browser/dad/vnc.html");
+    expect(response.body.viewerPath).toContain("/internal/browser/dad/vnc_lite.html");
     expect(runtime.workerRegistry.getWorker("dad")?.status.status).toBe("reauth_required");
   });
 });

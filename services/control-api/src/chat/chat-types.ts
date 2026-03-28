@@ -1,4 +1,5 @@
 import type { PublicWorkerSummary } from "../sessions/session-types.js";
+import type { SessionChatBootstrapRecord } from "./chat-bootstrap-types.js";
 
 export const CHAT_MESSAGE_ROLES = [
   "user",
@@ -96,6 +97,7 @@ export interface ConversationSnapshot {
   canSend: boolean;
   pendingAssistantMessageId: string | null;
   relay: RelayStatusSnapshot;
+  chatBootstrap: SessionChatBootstrapRecord | null;
   messages: SessionMessageRecord[];
 }
 

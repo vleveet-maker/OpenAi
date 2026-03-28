@@ -27,6 +27,22 @@ export interface SessionSnapshot {
   session: SessionRecord;
   queuePosition: number | null;
   worker: WorkerSummary | null;
+  chatBootstrap: SessionChatBootstrapRecord | null;
+}
+
+export type SessionChatBootstrapStatus = "pending" | "ready" | "failed";
+export type SessionChatMode = "temporary" | "standard" | "unknown";
+
+export interface SessionChatBootstrapRecord {
+  sessionId: string;
+  workerId: string;
+  status: SessionChatBootstrapStatus;
+  conversationMode: SessionChatMode;
+  modelLabel: string | null;
+  failureCode: string | null;
+  requestedAt: string;
+  completedAt: string | null;
+  updatedAt: string;
 }
 
 export type ChatMessageRole = "user" | "assistant";
@@ -61,6 +77,7 @@ export interface SessionConversationSnapshot {
   canSend: boolean;
   pendingAssistantMessageId: string | null;
   relay: RelayStatusSnapshot;
+  chatBootstrap: SessionChatBootstrapRecord | null;
   messages: SessionMessageRecord[];
 }
 
@@ -87,4 +104,34 @@ export function formatFailedAssistantMessage(
   }
 
   return `Reply failed: ${failureCode.replaceAll("_", " ")}`;
+}
+
+export function formatChatMode(mode: SessionChatMode | null | undefined): string {
+  switch (mode) {
+    case "temporary":
+      return "Temporary Chat";
+    case "standard":
+      return "Standard Chat";
+    default:
+      return "Preparing";
+  }
+}
+
+export function formatChatBootstrapFailure(
+  failureCode: string | null
+): string {
+  if (!failureCode) {
+    return "Fresh chat setup could not be completed";
+  }
+
+  switch (failureCode) {
+    case "bootstrap_auth_required":
+      return "ChatGPT needs manual login or reauthentication before a fresh chat can start";
+    case "temporary_chat_unavailable":
+      return "Temporary Chat could not be enabled on the assigned worker";
+    case "model_not_available":
+      return "The preferred reasoning model is not available on the assigned worker";
+    default:
+      return `Fresh chat setup failed: ${failureCode.replaceAll("_", " ")}`;
+  }
 }

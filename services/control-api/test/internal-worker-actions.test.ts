@@ -5,13 +5,14 @@ import { join } from "node:path";
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { ControlApiConfig } from "../src/config.js";
+import type { ControlApiConfig, WorkerRuntimeType } from "../src/config.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
+import { createReadyBootstrapTransport } from "./test-bootstrap-transport.js";
 
 const tempDirectories: string[] = [];
 const cleanupCallbacks: Array<() => void> = [];
 
-function createTestRuntime() {
+function createTestRuntime(runtimeType: WorkerRuntimeType = "docker") {
   const root = mkdtempSync(join(tmpdir(), "control-api-worker-actions-"));
   tempDirectories.push(root);
 
@@ -20,6 +21,9 @@ function createTestRuntime() {
     host: "127.0.0.1",
     port: 0,
     internalAdminToken: "secret",
+    hostControllerBaseUrl: undefined,
+    hostControllerToken: undefined,
+    autoStartHostWorkers: false,
     sessionDatabasePath: join(root, "session-routing.sqlite"),
     sessionDurationMinutes: 60,
     sessionSweepIntervalMs: 5_000,
@@ -31,9 +35,13 @@ function createTestRuntime() {
       {
         workerId: "dad",
         displayName: "Dad",
-        containerName: "worker-dad",
+        containerName: runtimeType === "host" ? "host-dad" : "worker-dad",
         profilePath: "/profiles/dad",
-        agentBaseUrl: "http://worker-dad:4020",
+        agentBaseUrl:
+          runtimeType === "host"
+            ? "http://host.docker.internal:4021"
+            : "http://worker-dad:4020",
+        runtimeType,
         defaultStatus: "ready"
       }
     ]
@@ -50,7 +58,8 @@ function createTestRuntime() {
   };
   const runtime = createControlApiRuntime(config, {
     dockerEngineClient,
-    healthMonitor
+    healthMonitor,
+    bootstrapTransport: createReadyBootstrapTransport()
   });
   const app = createControlApiApp(runtime);
 
@@ -120,6 +129,22 @@ describe("internal worker restart actions", () => {
 
     expect(response.body.error).toBe("worker_not_found");
     expect(dockerEngineClient.restartContainer).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when restart is requested for a host-native worker", async () => {
+    const { app, runtime, dockerEngineClient, healthMonitor } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/restart")
+      .set("x-internal-admin-token", "secret")
+      .expect(409);
+
+    expect(response.body.error).toBe("worker_restart_unsupported");
+    expect(dockerEngineClient.restartContainer).not.toHaveBeenCalled();
+    expect(healthMonitor.runHealthSweep).not.toHaveBeenCalled();
   });
 
   it("ends the active session as worker_unavailable when restart is requested", async () => {

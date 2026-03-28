@@ -1,0 +1,21 @@
+{
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 7897
+  },
+  "testUrl": "https://www.gstatic.com/generate_204",
+  "links": [
+    {
+      "tag": "proxy-1",
+      "url": "vless://REPLACE_ME"
+    },
+    {
+      "tag": "proxy-2",
+      "url": "ss://REPLACE_ME"
+    },
+    {
+      "tag": "proxy-3",
+      "url": "trojan://REPLACE_ME"
+    }
+  ]
+}
