@@ -19,8 +19,32 @@ export class WorkerRelayClientError extends Error {
   }
 }
 
+const GRANULAR_WORKER_RELAY_FAILURE_CODES = new Set([
+  "composer_selector_not_found",
+  "send_button_selector_not_found",
+  "assistant_turn_selector_not_found"
+]);
+
 function buildRelayUrl(agentBaseUrl: string): string {
   return new URL("/internal/relay/messages", `${agentBaseUrl}/`).toString();
+}
+
+function parseRelayFailureCode(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+
+  if (GRANULAR_WORKER_RELAY_FAILURE_CODES.has(trimmed)) {
+    return trimmed;
+  }
+
+  return trimmed;
 }
 
 export class FetchWorkerRelayClient implements WorkerRelayClient {
@@ -85,9 +109,7 @@ export class FetchWorkerRelayClient implements WorkerRelayClient {
           ? payload.completedAt
           : new Date().toISOString(),
       failureCode:
-        typeof payload.failureCode === "string"
-          ? payload.failureCode
-          : undefined,
+        parseRelayFailureCode(payload.failureCode),
       failureClass:
         payload.failureClass === "transient" ||
         payload.failureClass === "auth" ||

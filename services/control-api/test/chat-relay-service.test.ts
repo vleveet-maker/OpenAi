@@ -311,11 +311,12 @@ describe("ChatRelayService", () => {
     const relayTransport = {
       deliver: vi
         .fn<ChatRelayTransport["deliver"]>()
-        .mockRejectedValueOnce(
-          Object.assign(new Error("worker down"), {
-            code: "worker_relay_unreachable"
-          })
-        )
+        .mockResolvedValueOnce({
+          failureCode: "composer_selector_not_found",
+          failureClass: "transient",
+          failureStage: "dispatch",
+          completedAt: "2026-03-27T10:00:00.000Z"
+        })
         .mockResolvedValueOnce({
           assistantText: "Recovered answer",
           completedAt: "2026-03-27T10:00:03.000Z",
@@ -353,7 +354,8 @@ describe("ChatRelayService", () => {
     expect(retryingSnapshot?.relay).toMatchObject({
       status: "retrying",
       attemptCount: 1,
-      maxAttempts: 3
+      maxAttempts: 3,
+      lastFailureCode: "composer_selector_not_found"
     });
 
     vi.setSystemTime(new Date("2026-03-27T10:00:02.000Z"));
@@ -480,9 +482,10 @@ describe("ChatRelayService", () => {
   it("leaves one failed assistant message visible after a terminal failure", async () => {
     const relayTransport = {
       deliver: vi.fn().mockResolvedValue({
-        failureCode: "selector_not_found",
+        failureCode: "assistant_turn_selector_not_found",
         failureClass: "fatal",
-        failureStage: "dispatch",
+        failureStage: "submitted",
+        submittedAt: "2026-03-27T10:00:00.100Z",
         completedAt: "2026-03-27T10:00:01.000Z"
       })
     } satisfies ChatRelayTransport;
@@ -507,9 +510,12 @@ describe("ChatRelayService", () => {
     expect(snapshot?.messages.at(-1)).toMatchObject({
       role: "assistant",
       state: "failed",
-      failureCode: "selector_not_found"
+      failureCode: "assistant_turn_selector_not_found"
     });
-    expect(snapshot?.relay.status).toBe("failed");
+    expect(snapshot?.relay).toMatchObject({
+      status: "failed",
+      lastFailureCode: "assistant_turn_selector_not_found"
+    });
   });
 
   it("blocks sending when fresh chat bootstrap failed", () => {

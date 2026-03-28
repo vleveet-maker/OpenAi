@@ -1,11 +1,11 @@
 import type { BrowserContext, Page } from "playwright";
 
 import {
-  assistantTurnSelectors,
-  composerSelectors,
-  generatingIndicators,
-  sendButtonSelectors,
-  type RelayLocatorCandidate,
+  assistantTurnSelectorCandidates,
+  composerSelectorCandidates,
+  generatingIndicatorSelectorCandidates,
+  sendButtonSelectorCandidates,
+  type RelayLocatorCandidateDefinition,
   type RelayLocatorLike,
   type RelayPageLike
 } from "./selector-map.js";
@@ -33,6 +33,7 @@ export interface RelayRunnerOptions {
 interface AssistantSnapshot {
   count: number;
   text: string;
+  selectorId: string | null;
 }
 
 const relayLocks = new Map<string, Promise<void>>();
@@ -62,17 +63,23 @@ async function withRelayLock<T>(
 
 async function resolveUsableLocator(
   page: RelayPageLike,
-  candidates: RelayLocatorCandidate[]
-): Promise<RelayLocatorLike | null> {
+  candidates: RelayLocatorCandidateDefinition[]
+): Promise<{
+  locator: RelayLocatorLike;
+  selectorId: string;
+} | null> {
   for (const candidate of candidates) {
-    const locator = candidate(page);
+    const locator = candidate.locate(page);
 
     if ((await locator.count()) === 0) {
       continue;
     }
 
     if (await locator.isVisible()) {
-      return locator;
+      return {
+        locator,
+        selectorId: candidate.id
+      };
     }
   }
 
@@ -82,8 +89,8 @@ async function resolveUsableLocator(
 async function readAssistantSnapshot(
   page: RelayPageLike
 ): Promise<AssistantSnapshot> {
-  for (const candidate of assistantTurnSelectors) {
-    const locator = candidate(page);
+  for (const candidate of assistantTurnSelectorCandidates) {
+    const locator = candidate.locate(page);
     const count = await locator.count();
 
     if (count === 0) {
@@ -94,19 +101,21 @@ async function readAssistantSnapshot(
 
     return {
       count,
-      text: latestText
+      text: latestText,
+      selectorId: candidate.id
     };
   }
 
   return {
     count: 0,
-    text: ""
+    text: "",
+    selectorId: null
   };
 }
 
 async function hasGeneratingIndicator(page: RelayPageLike): Promise<boolean> {
-  for (const candidate of generatingIndicators) {
-    const locator = candidate(page);
+  for (const candidate of generatingIndicatorSelectorCandidates) {
+    const locator = candidate.locate(page);
 
     if ((await locator.count()) === 0) {
       continue;
@@ -141,15 +150,44 @@ async function ensureChatPage(
   return page;
 }
 
-function pageRequiresAuth(page: RelayPageLike | null): boolean {
+async function pageShowsAuthEntry(page: RelayPageLike): Promise<boolean> {
+  for (const selector of [
+    "[data-testid='login-button']",
+    "[data-testid='signup-button']",
+    "button[data-testid='login-button']",
+    "button[data-testid='signup-button']"
+  ]) {
+    const locator = page.locator(selector).last();
+
+    if ((await locator.count()) === 0) {
+      continue;
+    }
+
+    if (await locator.isVisible()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function pageRequiresAuth(page: RelayPageLike | null): Promise<boolean> {
   const currentUrl = page?.url().toLowerCase() ?? "";
 
-  return (
+  if (
     currentUrl.includes("login") ||
     currentUrl.includes("signin") ||
     currentUrl.includes("auth") ||
     currentUrl.includes("challenge")
-  );
+  ) {
+    return true;
+  }
+
+  if (!page) {
+    return false;
+  }
+
+  return pageShowsAuthEntry(page);
 }
 
 function buildFailureResult(
@@ -187,33 +225,47 @@ export async function runRelay(
 
   return withRelayLock(options.lockKey, async () => {
     const page = await ensureChatPage(context, options.startUrl);
+    const authRequired = await pageRequiresAuth(page);
     const baselineAssistantSnapshot = await readAssistantSnapshot(page);
-    const composer = await resolveUsableLocator(page, composerSelectors);
+    const composer = await resolveUsableLocator(page, composerSelectorCandidates);
 
     if (!composer) {
       return buildFailureResult(
         page,
-        "selector_not_found",
-        pageRequiresAuth(page) ? "auth" : "transient",
+        "composer_selector_not_found",
+        authRequired ? "auth" : "transient",
         "dispatch",
         null
       );
     }
 
     try {
-      await composer.fill(request.bodyText);
-      const sendButton = await resolveUsableLocator(page, sendButtonSelectors);
+      await composer.locator.fill(request.bodyText);
+      const sendButton = await resolveUsableLocator(
+        page,
+        sendButtonSelectorCandidates
+      );
 
       if (sendButton) {
-        await sendButton.click();
+        await sendButton.locator.click();
       } else {
-        await composer.press("Enter");
+        try {
+          await composer.locator.press("Enter");
+        } catch {
+          return buildFailureResult(
+            page,
+            "send_button_selector_not_found",
+            authRequired ? "auth" : "transient",
+            "dispatch",
+            null
+          );
+        }
       }
     } catch {
       return buildFailureResult(
         page,
         "submit_failed",
-        pageRequiresAuth(page) ? "auth" : "transient",
+        authRequired ? "auth" : "transient",
         "dispatch",
         null
       );
@@ -224,6 +276,8 @@ export async function runRelay(
     let lastObservedText = "";
     let stabilizedAt: number | null = null;
     let assistantObserved = false;
+    let assistantSelectorDetected =
+      baselineAssistantSnapshot.selectorId !== null;
 
     while (now() - startedAt <= relayTimeoutMs) {
       let assistantSnapshot: AssistantSnapshot;
@@ -238,6 +292,10 @@ export async function runRelay(
           assistantObserved ? "capture" : "submitted",
           submittedAt
         );
+      }
+
+      if (assistantSnapshot.selectorId) {
+        assistantSelectorDetected = true;
       }
 
       const hasNewAssistantTurn =
@@ -275,6 +333,11 @@ export async function runRelay(
     }
 
     const latestSnapshot = await readAssistantSnapshot(page);
+    const assistantFailureStage = assistantObserved ? "capture" : "submitted";
+
+    if (latestSnapshot.selectorId) {
+      assistantSelectorDetected = true;
+    }
 
     if (
       latestSnapshot.count > baselineAssistantSnapshot.count &&
@@ -289,11 +352,21 @@ export async function runRelay(
       );
     }
 
+    if (!assistantSelectorDetected) {
+      return buildFailureResult(
+        page,
+        "assistant_turn_selector_not_found",
+        "fatal",
+        assistantFailureStage,
+        submittedAt
+      );
+    }
+
     return buildFailureResult(
       page,
       "reply_timeout",
       "fatal",
-      assistantObserved ? "capture" : "submitted",
+      assistantFailureStage,
       submittedAt
     );
   });

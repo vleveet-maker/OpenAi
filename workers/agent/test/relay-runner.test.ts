@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { runRelay } from "../src/chat-relay/relay-runner.js";
-import type {
-  WorkerRelayRequest
-} from "../src/chat-relay/relay-types.js";
+import type { WorkerRelayRequest } from "../src/chat-relay/relay-types.js";
 
 class FakeLocator {
   constructor(
@@ -52,14 +50,17 @@ class FakePage {
   private submitted = false;
   private step = 0;
   public lastFilledValue = "";
+  public lastFilledSelector: string | null = null;
   public sendClicks = 0;
   public composerPresses: string[] = [];
 
   constructor(
     private readonly options: {
       roleComposerAvailable?: boolean;
-      contentEditableFallbackAvailable?: boolean;
+      promptTextareaIdAvailable?: boolean;
       sendButtonAvailable?: boolean;
+      composerPressThrows?: boolean;
+      assistantSelectorsAvailable?: boolean;
       assistantSteps?: string[][];
       indicatorSteps?: boolean[];
       pageUrl?: string;
@@ -95,9 +96,14 @@ class FakePage {
         }),
         {
           fill: async (value) => {
+            this.lastFilledSelector = "role_textbox";
             this.lastFilledValue = value;
           },
           press: async (key) => {
+            if (this.options.composerPressThrows) {
+              throw new Error("press failed");
+            }
+
             this.composerPresses.push(key);
             this.submitted = true;
           }
@@ -129,26 +135,31 @@ class FakePage {
   }
 
   locator(selector: string): FakeLocator {
-    if (selector === "[contenteditable='true']") {
+    if (selector === "#prompt-textarea") {
       return new FakeLocator(
         () => ({
           count:
-            this.options.contentEditableFallbackAvailable === false
+            this.options.promptTextareaIdAvailable === false
               ? 0
               : this.options.roleComposerAvailable === false
                 ? 1
                 : 0,
           visible:
-            this.options.contentEditableFallbackAvailable === false
+            this.options.promptTextareaIdAvailable === false
               ? false
               : this.options.roleComposerAvailable === false,
           text: this.lastFilledValue
         }),
         {
           fill: async (value) => {
+            this.lastFilledSelector = "prompt_textarea_id";
             this.lastFilledValue = value;
           },
           press: async (key) => {
+            if (this.options.composerPressThrows) {
+              throw new Error("press failed");
+            }
+
             this.composerPresses.push(key);
             this.submitted = true;
           }
@@ -156,8 +167,19 @@ class FakePage {
       );
     }
 
-    if (selector.includes("assistant")) {
+    if (
+      selector.includes("assistant") ||
+      selector.includes("data-message-author-role='assistant'")
+    ) {
       return new FakeLocator(() => {
+        if (this.options.assistantSelectorsAvailable === false) {
+          return {
+            count: 0,
+            visible: false,
+            text: ""
+          };
+        }
+
         const assistantSteps =
           this.options.assistantSteps ??
           [
@@ -179,7 +201,7 @@ class FakePage {
       });
     }
 
-    if (selector.includes("stop-button") || selector.includes("typing-indicator")) {
+    if (selector.includes("stop-button") || selector.includes("Stop generating")) {
       return new FakeLocator(() => {
         const indicatorSteps =
           this.options.indicatorSteps ?? [false, true, true, false, false];
@@ -194,7 +216,10 @@ class FakePage {
       });
     }
 
-    if (selector.includes("aria-label*='Send'") || selector.includes("data-testid*='send'")) {
+    if (
+      selector.includes("aria-label*='Send'") ||
+      selector.includes("data-testid*='send'")
+    ) {
       return new FakeLocator(
         () => ({
           count: this.options.sendButtonAvailable === false ? 0 : 1,
@@ -266,7 +291,7 @@ describe("runRelay", () => {
     expect(page.sendClicks).toBe(1);
   });
 
-  it("uses selector fallback when the role-based composer is unavailable", async () => {
+  it("uses the #prompt-textarea fallback when the role-based composer is unavailable", async () => {
     const page = new FakePage({
       roleComposerAvailable: false
     });
@@ -286,15 +311,15 @@ describe("runRelay", () => {
     });
 
     expect(result.failureCode).toBeNull();
-    expect(result.submittedAt).toEqual(expect.any(String));
+    expect(page.lastFilledSelector).toBe("prompt_textarea_id");
     expect(page.lastFilledValue).toBe("Hello from relay");
     expect(page.sendClicks).toBe(1);
   });
 
-  it("classifies selector failures as transient dispatch failures", async () => {
+  it("classifies missing composer selectors explicitly", async () => {
     const page = new FakePage({
       roleComposerAvailable: false,
-      contentEditableFallbackAvailable: false
+      promptTextareaIdAvailable: false
     });
     const context = new FakeBrowserContext(page);
 
@@ -302,15 +327,32 @@ describe("runRelay", () => {
       lockKey: "dad"
     });
 
-    expect(result.failureCode).toBe("selector_not_found");
+    expect(result.failureCode).toBe("composer_selector_not_found");
     expect(result.failureClass).toBe("transient");
     expect(result.failureStage).toBe("dispatch");
     expect(result.submittedAt).toBeNull();
   });
 
-  it("returns reply_timeout as a submitted failure when no assistant response appears", async () => {
+  it("classifies a missing send path explicitly when Enter fallback fails", async () => {
     const page = new FakePage({
-      assistantSteps: [[], [], [], []],
+      sendButtonAvailable: false,
+      composerPressThrows: true
+    });
+    const context = new FakeBrowserContext(page);
+
+    const result = await runRelay(context, buildRequest(), {
+      lockKey: "dad"
+    });
+
+    expect(result.failureCode).toBe("send_button_selector_not_found");
+    expect(result.failureClass).toBe("transient");
+    expect(result.failureStage).toBe("dispatch");
+    expect(result.submittedAt).toBeNull();
+  });
+
+  it("classifies missing assistant turn selectors explicitly after submit", async () => {
+    const page = new FakePage({
+      assistantSelectorsAvailable: false,
       indicatorSteps: [false, false, false, false]
     });
     const context = new FakeBrowserContext(page);
@@ -328,14 +370,13 @@ describe("runRelay", () => {
       }
     });
 
-    expect(result.failureCode).toBe("reply_timeout");
+    expect(result.failureCode).toBe("assistant_turn_selector_not_found");
     expect(result.failureClass).toBe("fatal");
     expect(result.failureStage).toBe("submitted");
     expect(result.submittedAt).toEqual(expect.any(String));
-    expect(result.assistantText).toBeNull();
   });
 
-  it("classifies partial assistant output timeouts as capture failures", async () => {
+  it("keeps reply_timeout for partial assistant output that never stabilizes", async () => {
     const page = new FakePage({
       assistantSteps: [
         [],
