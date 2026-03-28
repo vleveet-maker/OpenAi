@@ -3,6 +3,8 @@ param(
   [string]$ProxyServer = "",
   [ValidateSet("VisibleAuth", "HiddenRuntime")]
   [string]$RuntimeMode = "HiddenRuntime",
+  [ValidateSet("CurrentExecutable", "ChannelMsedge")]
+  [string]$HiddenLaunchVariant = "CurrentExecutable",
   [ValidateSet("Normal", "Minimized")]
   [string]$BrowserWindowMode = "Minimized",
   [switch]$DetachAgent
@@ -18,6 +20,7 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\\..")).Path
   -ProfilePath (Join-Path $repoRoot "infra\\data\\host-profiles\\wife") `
   -ProxyServer $ProxyServer `
   -RuntimeMode $RuntimeMode `
+  -HiddenLaunchVariant $HiddenLaunchVariant `
   -BrowserWindowMode $BrowserWindowMode `
   -RepoRoot $repoRoot `
   -DetachAgent:$DetachAgent `

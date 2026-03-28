@@ -240,6 +240,7 @@ export class InternalBrowserAccessService {
           ? "operator finished manual reauth"
           : "operator finished manual login",
       runtimeStatus: "ready",
+      runtimeCapability: "reachable_but_unusable",
       recoverySessionId: null
     });
     this.options.sessionService.handleWorkerReady(now);

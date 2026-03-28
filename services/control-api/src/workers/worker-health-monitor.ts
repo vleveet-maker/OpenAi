@@ -1,7 +1,11 @@
 import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { SessionService } from "../sessions/session-service.js";
 import type { WorkerStatus } from "./worker-status.js";
-import type { WorkerRecord, WorkerRegistry } from "./worker-registry.js";
+import type {
+  WorkerRecord,
+  WorkerRegistry,
+  WorkerRuntimeCapability
+} from "./worker-registry.js";
 
 interface WorkerHealthPayload {
   runtimeStatus?: WorkerStatus;
@@ -20,6 +24,20 @@ export interface WorkerHealthMonitorOptions {
   pollIntervalMs: number;
   timeoutMs: number;
   eventRecorder?: OperatorEventRecorder;
+}
+
+function isChallengeOrAuthFailureCode(
+  failureCode: string | null | undefined
+): boolean {
+  if (!failureCode) {
+    return false;
+  }
+
+  return [
+    "bootstrap_auth_required",
+    "bootstrap_challenge_detected",
+    "bootstrap_surface_unusable"
+  ].includes(failureCode) || /auth|challenge|reauth|captcha|cloudflare/i.test(failureCode);
 }
 
 export class WorkerHealthMonitor {
@@ -65,6 +83,10 @@ export class WorkerHealthMonitor {
       const checkedAt = now.toISOString();
 
       this.consecutiveFailures.set(worker.workerId, 0);
+      const runtimeCapability = this.resolveRuntimeCapability(
+        payload,
+        nextStatus
+      );
       this.options.workerRegistry.updateWorker(worker.workerId, {
         status: nextStatus,
         reason: "worker health poll succeeded",
@@ -73,6 +95,10 @@ export class WorkerHealthMonitor {
         headless: payload.headless ?? null,
         cdpAttached: payload.cdpAttached ?? null,
         proxyServerConfigured: payload.proxyServerConfigured ?? null,
+        browserContextReady: payload.browserContextReady ?? null,
+        lastRelayAt: payload.lastRelayAt ?? null,
+        lastRelayFailureCode: payload.lastRelayFailureCode ?? null,
+        runtimeCapability,
         lastSeenAt: checkedAt
       });
 
@@ -128,7 +154,9 @@ export class WorkerHealthMonitor {
       this.options.workerRegistry.updateWorker(worker.workerId, {
         status: "disconnected",
         reason: "worker health poll failed twice",
-        runtimeStatus: "disconnected"
+        runtimeStatus: "disconnected",
+        browserContextReady: false,
+        runtimeCapability: "unreachable"
       });
 
       if (previousStatus !== "disconnected") {
@@ -170,6 +198,38 @@ export class WorkerHealthMonitor {
     }
 
     return payload.runtimeStatus ?? "ready";
+  }
+
+  private resolveRuntimeCapability(
+    payload: WorkerHealthPayload,
+    nextStatus: WorkerStatus
+  ): WorkerRuntimeCapability {
+    if (nextStatus === "disconnected" || payload.runtimeStatus === "disconnected") {
+      return "unreachable";
+    }
+
+    if (isChallengeOrAuthFailureCode(payload.lastRelayFailureCode)) {
+      return "reachable_but_unusable";
+    }
+
+    if (
+      payload.lastRelayAt &&
+      !payload.lastRelayFailureCode &&
+      nextStatus !== "reauth_required"
+    ) {
+      return "usable";
+    }
+
+    if (
+      payload.browserContextReady === true ||
+      payload.browserContextReady === false ||
+      nextStatus === "starting" ||
+      nextStatus === "reauth_required"
+    ) {
+      return "reachable_but_unusable";
+    }
+
+    return "unreachable";
   }
 
   private async fetchWorkerHealth(worker: WorkerRecord): Promise<WorkerHealthPayload> {

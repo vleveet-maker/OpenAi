@@ -45,6 +45,7 @@ class FakePage {
   constructor(
     private readonly options: {
       authUrl?: string;
+      pageTitle?: string;
       showAuthButtons?: boolean;
       newChatAvailable?: boolean;
       directTemporaryAvailable?: boolean;
@@ -67,6 +68,10 @@ class FakePage {
 
   url(): string {
     return this.currentUrl;
+  }
+
+  async title(): Promise<string> {
+    return this.options.pageTitle ?? "ChatGPT";
   }
 
   async goto(url: string): Promise<void> {
@@ -487,7 +492,9 @@ describe("runTemporaryChatBootstrap", () => {
       status: "ready",
       conversationMode: "temporary",
       modelLabel: "GPT-5.4 Thinking",
-      failureCode: null
+      failureCode: null,
+      challengeDetected: false,
+      runtimeUsability: "usable"
     });
     expect(page.newChatClicks).toBe(1);
     expect(page.temporaryChatClicks).toBe(1);
@@ -580,6 +587,7 @@ describe("runTemporaryChatBootstrap", () => {
     );
 
     expect(result.failureCode).toBe("bootstrap_auth_required");
+    expect(result.runtimeUsability).toBe("auth_required");
   });
 
   it("fails with bootstrap_auth_required when the current surface exposes login buttons", async () => {
@@ -601,7 +609,27 @@ describe("runTemporaryChatBootstrap", () => {
     expect(result.failureCode).toBe("bootstrap_auth_required");
   });
 
-  it("fails with new_chat_selector_not_found when New chat is missing", async () => {
+  it("fails with bootstrap_challenge_detected when ChatGPT lands on a challenge URL", async () => {
+    const page = new FakePage({
+      authUrl: "https://chatgpt.com/?__cf_chl_rt_tk=abc123",
+      pageTitle: "Just a moment..."
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext(page),
+      {
+        lockKey: "dad:session-challenge",
+        startUrl: "https://chatgpt.com/",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking"]
+      }
+    );
+
+    expect(result.failureCode).toBe("bootstrap_challenge_detected");
+    expect(result.challengeDetected).toBe(true);
+    expect(result.runtimeUsability).toBe("challenge_blocked");
+  });
+
+  it("fails with bootstrap_surface_unusable when New chat and model picker are both missing", async () => {
     const page = new FakePage({
       newChatAvailable: false,
       modelPickerAvailable: false
@@ -616,7 +644,9 @@ describe("runTemporaryChatBootstrap", () => {
       }
     );
 
-    expect(result.failureCode).toBe("new_chat_selector_not_found");
+    expect(result.failureCode).toBe("bootstrap_surface_unusable");
+    expect(result.challengeDetected).toBe(false);
+    expect(result.runtimeUsability).toBe("surface_unusable");
   });
 
   it("fails with temporary_entry_not_found when neither direct nor model-menu temporary entry exists", async () => {

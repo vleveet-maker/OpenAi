@@ -58,6 +58,7 @@ describe("worker health monitor", () => {
     const worker = workerRegistry.getWorker("dad");
     expect(worker?.status.status).toBe("disconnected");
     expect(worker?.runtimeStatus).toBe("disconnected");
+    expect(worker?.runtimeCapability).toBe("unreachable");
     expect(sessionService.handleWorkerStatusChange).toHaveBeenCalledWith(
       "dad",
       new Date("2026-03-27T10:00:05.000Z")
@@ -111,6 +112,7 @@ describe("worker health monitor", () => {
     const worker = workerRegistry.getWorker("dad");
     expect(worker?.status.status).toBe("ready");
     expect(worker?.runtimeStatus).toBe("ready");
+    expect(worker?.runtimeCapability).toBe("reachable_but_unusable");
     expect(worker?.lastSeenAt).toBe("2026-03-27T10:01:00.000Z");
     expect(sessionService.handleWorkerReady).toHaveBeenCalledWith(
       new Date("2026-03-27T10:01:00.000Z")
@@ -122,5 +124,42 @@ describe("worker health monitor", () => {
         workerId: "dad"
       })
     );
+  });
+
+  it("keeps a reachable worker as reachable_but_unusable when auth-like failure evidence exists", async () => {
+    const workerRegistry = createWorkerRegistry(WORKERS);
+    const eventRecorder = {
+      recordEvent: vi.fn()
+    };
+    const sessionService = {
+      handleWorkerReady: vi.fn(),
+      handleWorkerStatusChange: vi.fn()
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        createJsonResponse({
+          runtimeStatus: "ready",
+          browserContextReady: true,
+          lastRelayAt: "2026-03-27T10:02:00.000Z",
+          lastRelayFailureCode: "bootstrap_auth_required"
+        })
+      )
+    );
+
+    const monitor = createWorkerHealthMonitor({
+      workerRegistry,
+      sessionService,
+      pollIntervalMs: 5_000,
+      timeoutMs: 3_000,
+      eventRecorder
+    });
+
+    await monitor.runHealthSweep(new Date("2026-03-27T10:02:05.000Z"));
+
+    const worker = workerRegistry.getWorker("dad");
+    expect(worker?.runtimeCapability).toBe("reachable_but_unusable");
+    expect(worker?.lastRelayFailureCode).toBe("bootstrap_auth_required");
   });
 });

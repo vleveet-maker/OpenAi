@@ -6,6 +6,8 @@ services:
       - worker-wife
       - worker-shared-1
     environment:
+      HOST_CONTROLLER_BASE_URL: http://host.docker.internal:4040
+      HOST_CONTROLLER_TOKEN: local-host-controller-token
       NODE_OPTIONS: --dns-result-order=ipv4first
       WORKER_DEFINITIONS: >-
         [

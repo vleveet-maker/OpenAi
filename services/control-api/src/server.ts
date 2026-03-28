@@ -206,7 +206,8 @@ export function createControlApiRuntime(
     eventRecorder: observabilityService
   });
   const hostPoolService = createHostPoolService({
-    hostControllerClient
+    hostControllerClient,
+    workerRegistry
   });
 
   sessionService.bootstrap();

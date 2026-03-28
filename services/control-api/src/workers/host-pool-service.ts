@@ -3,6 +3,10 @@ import type {
   HostControllerHealthSnapshot,
   HostControllerWorkerStatus
 } from "./host-controller-client.js";
+import type {
+  WorkerRegistry,
+  WorkerRuntimeCapability
+} from "./worker-registry.js";
 
 export type HostPoolStatus =
   | "idle"
@@ -20,11 +24,16 @@ export interface HostPoolSnapshot {
   proxyServerUrl: string | null;
   updatedAt: string;
   lastError: string | null;
-  workers: HostControllerWorkerStatus[];
+  workers: Array<
+    HostControllerWorkerStatus & {
+      runtimeCapability: WorkerRuntimeCapability;
+    }
+  >;
 }
 
 export interface HostPoolServiceOptions {
   hostControllerClient: HostControllerClient;
+  workerRegistry?: WorkerRegistry;
 }
 
 export class HostPoolServiceError extends Error {
@@ -50,6 +59,27 @@ function hasAnyReachableWorker(health: HostControllerHealthSnapshot): boolean {
   return health.workers.some(
     (worker) => worker.agentListening || worker.browserListening
   );
+}
+
+function deriveRuntimeCapabilityFromControllerRow(
+  worker: HostControllerWorkerStatus,
+  workerRegistry: WorkerRegistry | undefined
+): WorkerRuntimeCapability {
+  const registryWorker = workerRegistry?.getWorker(worker.workerId);
+
+  if (!worker.agentListening || worker.runtimeStatus === "disconnected") {
+    return "unreachable";
+  }
+
+  if (registryWorker?.runtimeCapability === "usable") {
+    return "usable";
+  }
+
+  if (worker.agentListening || worker.browserListening) {
+    return "reachable_but_unusable";
+  }
+
+  return "unreachable";
 }
 
 export class HostPoolService {
@@ -157,11 +187,16 @@ export class HostPoolService {
   async refresh(now: Date = new Date()): Promise<HostPoolSnapshot> {
     try {
       const health = await this.options.hostControllerClient.getHealth();
-      const observedStatus = this.resolveStatus(health);
-      const nextStatus =
-        this.activeAction === null && this.snapshot.status === "failed"
-          ? "failed"
-          : observedStatus;
+      const freshWorkers = health.workers.map((worker) => ({
+        ...worker,
+        runtimeCapability: deriveRuntimeCapabilityFromControllerRow(
+          worker,
+          this.options.workerRegistry
+        )
+      }));
+      const nextWorkers =
+        freshWorkers.length > 0 ? freshWorkers : this.snapshot.workers;
+      const nextStatus = this.resolveStatus(health);
 
       if (
         this.activeAction === "starting" &&
@@ -184,7 +219,7 @@ export class HostPoolService {
         updatedAt: now.toISOString(),
         lastError:
           nextStatus === "failed" ? this.snapshot.lastError : null,
-        workers: health.workers
+        workers: nextWorkers
       };
     } catch (error: unknown) {
       this.activeAction = null;

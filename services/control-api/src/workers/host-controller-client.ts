@@ -1,9 +1,16 @@
+export type HostControllerWorkerStartupStatus =
+  | "already_running"
+  | "started"
+  | "startup_timeout";
+
 export interface HostControllerWorkerStatus {
   workerId: string;
   displayName?: string;
   agentPort?: number;
   cdpPort?: number;
   proxyServer?: string;
+  status?: HostControllerWorkerStartupStatus;
+  startupStatus?: HostControllerWorkerStartupStatus | null;
   agentListening: boolean;
   browserListening: boolean;
   runtimeMode?: "visible_auth" | "hidden_runtime" | null;

@@ -17,7 +17,13 @@ export function createInternalHostPoolRouter(
   router.get("/internal/host-pool", async (_request, response) => {
     const snapshot = await options.hostPoolService.refresh();
     response.json({
-      pool: snapshot
+      pool: {
+        ...snapshot,
+        workers: snapshot.workers.map((worker) => ({
+          ...worker,
+          runtimeCapability: worker.runtimeCapability
+        }))
+      }
     });
   });
 
@@ -26,7 +32,13 @@ export function createInternalHostPoolRouter(
       const snapshot = await options.hostPoolService.startPool();
       response.status(202).json({
         action: "start_requested",
-        pool: snapshot
+        pool: {
+          ...snapshot,
+          workers: snapshot.workers.map((worker) => ({
+            ...worker,
+            runtimeCapability: worker.runtimeCapability
+          }))
+        }
       });
     } catch (error: unknown) {
       if (error instanceof HostPoolServiceError) {
@@ -46,7 +58,13 @@ export function createInternalHostPoolRouter(
       const snapshot = await options.hostPoolService.stopPool();
       response.status(202).json({
         action: "stop_requested",
-        pool: snapshot
+        pool: {
+          ...snapshot,
+          workers: snapshot.workers.map((worker) => ({
+            ...worker,
+            runtimeCapability: worker.runtimeCapability
+          }))
+        }
       });
     } catch (error: unknown) {
       if (error instanceof HostPoolServiceError) {

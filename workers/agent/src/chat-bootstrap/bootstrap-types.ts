@@ -3,6 +3,8 @@ export type WorkerConversationMode = "temporary" | "standard" | "unknown";
 export type WorkerChatBootstrapFailureCode =
   | "bootstrap_navigation_failed"
   | "bootstrap_auth_required"
+  | "bootstrap_challenge_detected"
+  | "bootstrap_surface_unusable"
   | "bootstrap_selector_not_found"
   | "new_chat_selector_not_found"
   | "temporary_chat_unavailable"
@@ -21,5 +23,12 @@ export interface WorkerChatBootstrapResult {
   conversationMode: WorkerConversationMode;
   modelLabel: string | null;
   failureCode: WorkerChatBootstrapFailureCode | null;
+  challengeDetected: boolean;
+  pageTitle: string | null;
+  runtimeUsability:
+    | "usable"
+    | "auth_required"
+    | "challenge_blocked"
+    | "surface_unusable";
   pageUrl: string | null;
 }

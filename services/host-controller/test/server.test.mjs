@@ -126,7 +126,15 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
           proxyListening: true,
           proxyServerUrl: "http://127.0.0.1:7897",
           poolStatus: "degraded",
-          workers: [{ workerId: "dad", status: "start_requested", runtimeMode: runtimeMode ?? "hidden_runtime" }]
+          workers: [{
+            workerId: "dad",
+            status: "started",
+            startupStatus: "started",
+            runtimeMode: runtimeMode ?? "hidden_runtime",
+            agentListening: true,
+            browserListening: false,
+            runtimeStatus: "starting"
+          }]
         };
       },
       async stopPool() {
@@ -158,6 +166,7 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
       assert.equal(startBody.poolStatus, "degraded");
       assert.equal(startBody.proxyListening, true);
       assert.equal(startBody.proxyServerUrl, "http://127.0.0.1:7897");
+      assert.equal(startBody.workers[0].startupStatus, "started");
 
       const stopResponse = await fetch(`${baseUrl}/pool/stop`, {
         method: "POST",
@@ -195,8 +204,12 @@ test("POST /workers/:id/start forwards explicit runtimeMode", async () => {
 
         return {
           workerId,
-          status: "start_requested",
-          runtimeMode
+          status: "started",
+          startupStatus: "started",
+          runtimeMode,
+          agentListening: true,
+          browserListening: true,
+          runtimeStatus: "ready"
         };
       }
     },
@@ -216,10 +229,47 @@ test("POST /workers/:id/start forwards explicit runtimeMode", async () => {
       const body = await response.json();
       assert.equal(body.workerId, "dad");
       assert.equal(body.runtimeMode, "visible_auth");
+      assert.equal(body.startupStatus, "started");
       assert.deepEqual(calls, [{
         workerId: "dad",
         runtimeMode: "visible_auth"
       }]);
+    }
+  );
+});
+
+test("POST /workers/:id/start exposes startup_timeout when startup never reaches health JSON", async () => {
+  await withServer(
+    {
+      async startWorker(workerId, runtimeMode) {
+        return {
+          workerId,
+          status: "startup_timeout",
+          startupStatus: "startup_timeout",
+          runtimeMode,
+          agentListening: true,
+          browserListening: false,
+          runtimeStatus: null
+        };
+      }
+    },
+    async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/workers/dad/start`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-host-controller-token": "secret"
+        },
+        body: JSON.stringify({
+          runtimeMode: "hidden_runtime"
+        })
+      });
+
+      assert.equal(response.status, 202);
+      const body = await response.json();
+      assert.equal(body.startupStatus, "startup_timeout");
+      assert.equal(body.runtimeStatus, null);
+      assert.equal(body.agentListening, true);
     }
   );
 });

@@ -7,6 +7,7 @@ export interface BootstrapLocatorLike {
 
 export interface BootstrapPageLike {
   url(): string;
+  title?(): Promise<string>;
   getByRole(
     role: string,
     options?: {

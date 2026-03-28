@@ -126,6 +126,7 @@ describe("internal host pool routes", () => {
     expect(idleResponse.body.pool.status).toBe("idle");
     expect(idleResponse.body.pool.proxyListening).toBe(false);
     expect(idleResponse.body.pool.workers[0].workerId).toBe("dad");
+    expect(idleResponse.body.pool.workers[0].runtimeCapability).toBe("unreachable");
 
     health = {
       proxyListening: true,
@@ -148,6 +149,7 @@ describe("internal host pool routes", () => {
 
     expect(degradedResponse.body.pool.status).toBe("degraded");
     expect(degradedResponse.body.pool.proxyListening).toBe(true);
+    expect(degradedResponse.body.pool.workers[0].runtimeCapability).toBe("reachable_but_unusable");
   });
 
   it("returns 202 for start and stop and reflects ready then idle states", async () => {
@@ -226,6 +228,7 @@ describe("internal host pool routes", () => {
     expect(startResponse.body.action).toBe("start_requested");
     expect(startResponse.body.pool.status).toBe("ready");
     expect(startResponse.body.pool.proxyListening).toBe(true);
+    expect(startResponse.body.pool.workers[0].runtimeCapability).toBe("reachable_but_unusable");
 
     const stopResponse = await request(app)
       .post("/internal/host-pool/stop")
@@ -236,6 +239,7 @@ describe("internal host pool routes", () => {
     expect(stopResponse.body.action).toBe("stop_requested");
     expect(stopResponse.body.pool.status).toBe("idle");
     expect(stopResponse.body.pool.proxyListening).toBe(false);
+    expect(stopResponse.body.pool.workers[0].runtimeCapability).toBe("unreachable");
   });
 
   it("rejects concurrent actions with host_pool_busy", async () => {
@@ -308,7 +312,7 @@ describe("internal host pool routes", () => {
     expect(firstResponse.status).toBe(202);
   });
 
-  it("stores failed status and lastError when the host controller throws", async () => {
+  it("returns to truthful idle state after a failed action if controller health recovers", async () => {
     const { app, runtime } = createTestRuntime({
       async startWorker() {},
       async stopWorker() {},
@@ -356,7 +360,88 @@ describe("internal host pool routes", () => {
       .set("x-internal-admin-token", "secret")
       .expect(200);
 
-    expect(snapshotResponse.body.pool.status).toBe("failed");
-    expect(snapshotResponse.body.pool.lastError).toContain("controller offline");
+    expect(snapshotResponse.body.pool.status).toBe("idle");
+    expect(snapshotResponse.body.pool.lastError).toBeNull();
+  });
+
+  it("preserves controller worker rows instead of collapsing workers to empty while reachable", async () => {
+    let callCount = 0;
+
+    const { app, runtime } = createTestRuntime({
+      async startWorker() {},
+      async stopWorker() {},
+      async startPool() {
+        return {
+          action: "pool_start_requested",
+          proxyListening: true,
+          proxyServerUrl: "http://127.0.0.1:7897",
+          poolStatus: "degraded",
+          workers: [
+            {
+              workerId: "dad",
+              displayName: "Dad",
+              agentListening: true,
+              browserListening: false
+            }
+          ]
+        };
+      },
+      async stopPool() {
+        return {
+          action: "pool_stop_requested",
+          proxyListening: false,
+          proxyServerUrl: "http://127.0.0.1:7897",
+          poolStatus: "idle",
+          workers: []
+        };
+      },
+      async getHealth() {
+        callCount += 1;
+
+        return callCount === 1
+          ? {
+              proxyListening: true,
+              proxyServerUrl: "http://127.0.0.1:7897",
+              poolStatus: "degraded",
+              workers: [
+                {
+                  workerId: "dad",
+                  displayName: "Dad",
+                  agentListening: true,
+                  browserListening: false
+                }
+              ]
+            }
+          : {
+              proxyListening: true,
+              proxyServerUrl: "http://127.0.0.1:7897",
+              poolStatus: "idle",
+              workers: []
+            };
+      },
+      async listWorkers() {
+        return {
+          proxyListening: true,
+          proxyServerUrl: "http://127.0.0.1:7897",
+          poolStatus: "degraded",
+          workers: []
+        };
+      }
+    });
+    cleanupCallbacks.push(() => runtime.dispose());
+
+    await request(app)
+      .get("/internal/host-pool")
+      .set("x-internal-admin-token", "secret")
+      .expect(200);
+
+    const secondResponse = await request(app)
+      .get("/internal/host-pool")
+      .set("x-internal-admin-token", "secret")
+      .expect(200);
+
+    expect(secondResponse.body.pool.controllerReachable).toBe(true);
+    expect(secondResponse.body.pool.workers).toHaveLength(1);
+    expect(secondResponse.body.pool.workers[0].workerId).toBe("dad");
   });
 });

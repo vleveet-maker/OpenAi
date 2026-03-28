@@ -93,17 +93,224 @@ function Test-ListeningPort {
   return $null -ne $listeners
 }
 
-function New-HiddenRuntimeAuthError {
-  param([string]$Detail = "")
+function Resolve-WorkerSettings {
+  param([string]$Id)
 
-  $suffix =
-    if ([string]::IsNullOrWhiteSpace($Detail)) {
-      ""
-    } else {
-      " Original detail: $Detail"
+  $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\\..")).Path
+
+  switch ($Id) {
+    "dad" {
+      return @{
+        WorkerId = "dad"
+        DisplayName = "Dad"
+        AgentPort = 4021
+        CdpPort = 9222
+        StartScriptPath = (Join-Path $PSScriptRoot "start-dad-host-worker.ps1")
+        ProfilePath = (Join-Path $repoRoot "infra\\data\\host-profiles\\dad")
+        RepoRoot = $repoRoot
+      }
+    }
+    "wife" {
+      return @{
+        WorkerId = "wife"
+        DisplayName = "Wife"
+        AgentPort = 4022
+        CdpPort = 9223
+        StartScriptPath = (Join-Path $PSScriptRoot "start-wife-host-worker.ps1")
+        ProfilePath = (Join-Path $repoRoot "infra\\data\\host-profiles\\wife")
+        RepoRoot = $repoRoot
+      }
+    }
+    "shared-1" {
+      return @{
+        WorkerId = "shared-1"
+        DisplayName = "Shared 1"
+        AgentPort = 4023
+        CdpPort = 9224
+        StartScriptPath = (Join-Path $PSScriptRoot "start-shared-1-host-worker.ps1")
+        ProfilePath = (Join-Path $repoRoot "infra\\data\\host-profiles\\shared-1")
+        RepoRoot = $repoRoot
+      }
+    }
+    default {
+      throw "Unsupported worker '$Id' for hidden runtime transition probe."
+    }
+  }
+}
+
+function Write-RuntimeMatrixRow {
+  param(
+    [Parameter(Mandatory = $true)]
+    [hashtable]$Row,
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot
+  )
+
+  $logDirectory = Join-Path $RepoRoot "infra\\data\\host-worker-logs"
+  $matrixPath = Join-Path $logDirectory "runtime-matrix.jsonl"
+  $null = New-Item -ItemType Directory -Force -Path $logDirectory
+  Add-Content -Path $matrixPath -Value ($Row | ConvertTo-Json -Depth 8 -Compress) -Encoding utf8
+}
+
+function Start-WorkerVariant {
+  param(
+    [Parameter(Mandatory = $true)]
+    [hashtable]$WorkerSettings,
+    [Parameter(Mandatory = $true)]
+    [string]$LaunchVariant,
+    [Parameter(Mandatory = $true)]
+    [string]$ProxyServer
+  )
+
+  & (Join-Path $PSScriptRoot "stop-host-native-worker.ps1") `
+    -WorkerId $WorkerSettings.WorkerId `
+    -AgentPort $WorkerSettings.AgentPort `
+    -CdpPort $WorkerSettings.CdpPort `
+    -ProfilePath $WorkerSettings.ProfilePath `
+    -RepoRoot $WorkerSettings.RepoRoot
+
+  Start-Sleep -Seconds 2
+
+  & $WorkerSettings.StartScriptPath `
+    -SkipInstall `
+    -DetachAgent `
+    -ProxyServer $ProxyServer `
+    -RuntimeMode HiddenRuntime `
+    -HiddenLaunchVariant $LaunchVariant `
+    -BrowserWindowMode Minimized
+}
+
+function Invoke-HiddenRuntimeAttempt {
+  param(
+    [Parameter(Mandatory = $true)]
+    [hashtable]$WorkerSettings,
+    [Parameter(Mandatory = $true)]
+    [string]$LaunchVariant,
+    [Parameter(Mandatory = $true)]
+    [string]$ProxyServer,
+    [Parameter(Mandatory = $true)]
+    [hashtable]$HostControllerHeaders,
+    [Parameter(Mandatory = $true)]
+    [hashtable]$InternalHeaders,
+    [Parameter(Mandatory = $true)]
+    [string]$RelayProbePath
+  )
+
+  $internalStatus = $null
+  $hostSnapshot = $null
+  $probeResult = $null
+
+  try {
+    Start-WorkerVariant -WorkerSettings $WorkerSettings -LaunchVariant $LaunchVariant -ProxyServer $ProxyServer
+
+    $hostSnapshot = Wait-Until -Description "host controller health for $($WorkerSettings.WorkerId) after $LaunchVariant" -Condition {
+      $snapshot = Invoke-JsonRequest -Method "GET" -Url "$HostControllerBaseUrl/health" -Headers $HostControllerHeaders
+      $worker = @($snapshot.workers | Where-Object { $_.workerId -eq $WorkerSettings.WorkerId })[0]
+
+      if ($null -eq $worker) {
+        throw "Target worker $($WorkerSettings.WorkerId) is missing from host controller health."
+      }
+
+      if ($worker.agentListening) {
+        return @{
+          Snapshot = $snapshot
+          Worker = $worker
+        }
+      }
+
+      return $null
     }
 
-  return "hidden_runtime_auth_unstable: hidden runtime loses auth after manual login; runtime architecture review required.$suffix"
+    $internalStatus = Wait-Until -Description "control-api hidden runtime status for $($WorkerSettings.WorkerId)" -Condition {
+      $status = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$($WorkerSettings.WorkerId)/status" -Headers $InternalHeaders
+
+      if ($status.runtimeMode -eq "hidden_runtime") {
+        return $status
+      }
+
+      return $null
+    }
+
+    $probeResult = & $RelayProbePath `
+      -WorkerId $WorkerSettings.WorkerId `
+      -PublicBaseUrl $PublicBaseUrl `
+      -InternalBaseUrl $InternalBaseUrl `
+      -InternalAdminToken $InternalAdminToken `
+      -HostControllerBaseUrl $HostControllerBaseUrl `
+      -HostControllerToken $HostControllerToken `
+      -TimeoutSeconds $TimeoutSeconds `
+      -PollIntervalMs $PollIntervalMs `
+      -ReturnJson
+  } catch {
+    $probeResult = [pscustomobject]@{
+      workerId = $WorkerSettings.WorkerId
+      sessionId = $null
+      outcome = "probe_failed"
+      runtimeUsability = $null
+      challengeDetected = $false
+      pageUrl = $null
+      failureCode = "startup_timeout"
+      assistantBody = $null
+      detail = "$_"
+    }
+
+    try {
+      $internalStatus = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$($WorkerSettings.WorkerId)/status" -Headers $InternalHeaders
+    } catch {}
+  }
+
+  $hostWorker =
+    if ($hostSnapshot) {
+      $hostSnapshot.Worker
+    } else {
+      $null
+    }
+
+  $runtimeUsability =
+    if ($probeResult.runtimeUsability) {
+      $probeResult.runtimeUsability
+    } elseif ($internalStatus -and $internalStatus.runtimeStatus -eq "reauth_required") {
+      "auth_required"
+    } elseif ($probeResult.challengeDetected) {
+      "challenge_blocked"
+    } else {
+      "surface_unusable"
+    }
+
+  $row = @{
+    workerId = $WorkerSettings.WorkerId
+    runtimeClass = "host_hidden_runtime"
+    launchVariant = $LaunchVariant
+    processReachable = [bool]($hostWorker -and $hostWorker.agentListening)
+    browserContextReady =
+      if ($internalStatus) {
+        [bool]$internalStatus.browserContextReady
+      } else {
+        $false
+      }
+    runtimeUsability = $runtimeUsability
+    challengeDetected = [bool]$probeResult.challengeDetected
+    pageUrl = $probeResult.pageUrl
+    failureCode = $probeResult.failureCode
+    checkedAt = (Get-Date).ToString("o")
+  }
+
+  Write-RuntimeMatrixRow -Row $row -RepoRoot $WorkerSettings.RepoRoot
+
+  return [pscustomobject]@{
+    workerId = $WorkerSettings.WorkerId
+    runtimeClass = "host_hidden_runtime"
+    launchVariant = $LaunchVariant
+    processReachable = $row.processReachable
+    browserContextReady = $row.browserContextReady
+    runtimeUsability = $row.runtimeUsability
+    challengeDetected = $row.challengeDetected
+    pageUrl = $row.pageUrl
+    failureCode = $row.failureCode
+    checkedAt = $row.checkedAt
+    outcome = $probeResult.outcome
+    detail = $probeResult.detail
+  }
 }
 
 $hostControllerHeaders = @{
@@ -113,73 +320,42 @@ $internalHeaders = @{
   "x-internal-admin-token" = $InternalAdminToken
 }
 $relayProbePath = Join-Path $PSScriptRoot "test-host-worker-relay.ps1"
+$workerSettings = Resolve-WorkerSettings -Id $WorkerId
+$proxyHealth = Invoke-JsonRequest -Method "GET" -Url "$HostControllerBaseUrl/health" -Headers $hostControllerHeaders
+$proxyServerUrl = $proxyHealth.proxyServerUrl
 
-$targetWorker = Wait-Until -Description "host controller health for $WorkerId" -Condition {
-  $snapshot = Invoke-JsonRequest -Method "GET" -Url "$HostControllerBaseUrl/health" -Headers $hostControllerHeaders
-  $worker = @($snapshot.workers | Where-Object { $_.workerId -eq $WorkerId })[0]
+$firstAttempt = Invoke-HiddenRuntimeAttempt `
+  -WorkerSettings $workerSettings `
+  -LaunchVariant "CurrentExecutable" `
+  -ProxyServer $proxyServerUrl `
+  -HostControllerHeaders $hostControllerHeaders `
+  -InternalHeaders $internalHeaders `
+  -RelayProbePath $relayProbePath
 
-  if ($null -eq $worker) {
-    throw "Target worker $WorkerId is missing from host controller health."
-  }
-
-  if ($worker.agentListening) {
-    return $worker
-  }
-
-  return $null
-}
-
-$workerStatus = Wait-Until -Description "control-api hidden runtime status for $WorkerId" -Condition {
-  $status = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$WorkerId/status" -Headers $internalHeaders
-
-  if ($status.runtimeMode -eq "hidden_runtime") {
-    return $status
-  }
-
-  return $null
-}
-
-if ($workerStatus.runtimeMode -ne "hidden_runtime") {
-  throw "Expected runtimeMode hidden_runtime for $WorkerId but received '$($workerStatus.runtimeMode)'."
-}
+$finalAttempt = $firstAttempt
 
 if (
-  $workerStatus.status -eq "reauth_required" -or
-  $workerStatus.runtimeStatus -eq "reauth_required"
+  $firstAttempt.failureCode -eq "bootstrap_challenge_detected" -or
+  $firstAttempt.failureCode -eq "bootstrap_surface_unusable"
 ) {
-  throw (New-HiddenRuntimeAuthError -Detail "reauth_required")
+  Write-Host "[phase-10.2] Running one bounded rescue attempt with ChannelMsedge for $WorkerId..."
+
+  $finalAttempt = Invoke-HiddenRuntimeAttempt `
+    -WorkerSettings $workerSettings `
+    -LaunchVariant "ChannelMsedge" `
+    -ProxyServer $proxyServerUrl `
+    -HostControllerHeaders $hostControllerHeaders `
+    -InternalHeaders $internalHeaders `
+    -RelayProbePath $relayProbePath
 }
 
-if (-not $targetWorker.cdpPort) {
-  throw "Worker $WorkerId did not report a CDP port."
+if ($finalAttempt.runtimeUsability -eq "usable") {
+  Write-Host "[phase-10.2] Hidden runtime for $WorkerId is usable with launch variant $($finalAttempt.launchVariant)."
+  return
 }
 
-if (Test-ListeningPort -Port $targetWorker.cdpPort) {
-  throw "Expected hidden runtime for $WorkerId to run without any visible desktop browser, but CDP port $($targetWorker.cdpPort) is still listening."
+if ($finalAttempt.runtimeUsability -eq "auth_required") {
+  throw "hidden_runtime_auth_unstable: hidden runtime lost auth after manual login for $WorkerId. This requires runtime architecture review."
 }
 
-try {
-  & $relayProbePath `
-    -WorkerId $WorkerId `
-    -PublicBaseUrl $PublicBaseUrl `
-    -InternalBaseUrl $InternalBaseUrl `
-    -InternalAdminToken $InternalAdminToken `
-    -HostControllerBaseUrl $HostControllerBaseUrl `
-    -HostControllerToken $HostControllerToken `
-    -TimeoutSeconds $TimeoutSeconds `
-    -PollIntervalMs $PollIntervalMs
-
-  if ($LASTEXITCODE -ne 0) {
-    throw "Relay probe exited with code $LASTEXITCODE."
-  }
-} catch {
-  $detail = "$_"
-
-  if ($detail -match "bootstrap_auth_required" -or $detail -match "reauth_required") {
-    throw (New-HiddenRuntimeAuthError -Detail $detail)
-  }
-
-  throw
-}
-
-Write-Host "[phase-10.1] Hidden runtime transition for $WorkerId is live-complete without any visible desktop browser."
+throw "hidden_runtime_unusable_after_bounded_rescue: $WorkerId remained non-usable in hidden runtime. Final launch variant=$($finalAttempt.launchVariant); failureCode=$($finalAttempt.failureCode); runtimeUsability=$($finalAttempt.runtimeUsability)."

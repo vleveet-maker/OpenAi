@@ -91,7 +91,13 @@ export function createHostControllerServer(
         const result = await controller.startPool(
           parseRuntimeModeFromBody(body)
         );
-        sendJson(response, 202, result);
+        sendJson(response, 202, {
+          ...result,
+          workers: result.workers.map((worker) => ({
+            ...worker,
+            startupStatus: worker.startupStatus ?? worker.status ?? null
+          }))
+        });
         return;
       }
 
@@ -108,13 +114,17 @@ export function createHostControllerServer(
         const body = await readRequestBody(request);
 
         if (workerAction.action === "start") {
+          const result = await controller.startWorker(
+            workerAction.workerId,
+            parseRuntimeModeFromBody(body)
+          );
           sendJson(
             response,
             202,
-            await controller.startWorker(
-              workerAction.workerId,
-              parseRuntimeModeFromBody(body)
-            )
+            {
+              ...result,
+              startupStatus: result.startupStatus ?? result.status ?? null
+            }
           );
           return;
         }

@@ -7,6 +7,7 @@ import type { BrowserContext } from "playwright";
 import {
   launchWorkerBrowser,
   type WorkerRuntimeMode,
+  type WorkerRuntimeClass,
   type WorkerBrowserHandle
 } from "./browser-launch.js";
 import {
@@ -41,6 +42,7 @@ export interface WorkerAgentConfig {
   port: number;
   profilePath: string;
   runtimeMode: WorkerRuntimeMode;
+  runtimeClass: WorkerRuntimeClass;
   browserChannel?: string;
   browserExecutablePath?: string;
   cdpEndpointUrl?: string;
@@ -55,7 +57,16 @@ export interface WorkerHealthSnapshot {
   browserContextReady: boolean;
   lastRelayAt: string | null;
   lastRelayFailureCode: string | null;
+  runtimeUsability:
+    | "usable"
+    | "auth_required"
+    | "challenge_blocked"
+    | "surface_unusable"
+    | null;
+  challengeDetected: boolean;
+  pageTitle: string | null;
   runtimeMode: WorkerRuntimeMode;
+  runtimeClass: WorkerRuntimeClass;
   headless: boolean;
   cdpAttached: boolean;
   proxyServerConfigured: boolean;
@@ -72,6 +83,30 @@ export const DEFAULT_PREFERRED_REASONING_MODEL_LABELS = [
   "GPT-5.4 Thinking",
   "GPT-5.4"
 ];
+
+function parseWorkerRuntimeClass(
+  value: string | undefined,
+  runtimeMode: WorkerRuntimeMode,
+  env: NodeJS.ProcessEnv
+): WorkerRuntimeClass {
+  if (
+    value === "host_hidden_runtime" ||
+    value === "host_visible_auth" ||
+    value === "docker_headed_xvfb"
+  ) {
+    return value;
+  }
+
+  if (runtimeMode === "visible_auth") {
+    return "host_visible_auth";
+  }
+
+  if ((env.DISPLAY ?? "").trim().length > 0 && parsePort(env.BROWSER_ACCESS_HTTP_PORT, 0) > 0) {
+    return "docker_headed_xvfb";
+  }
+
+  return "host_hidden_runtime";
+}
 
 export function parseWorkerRuntimeMode(
   value: string | undefined,
@@ -183,8 +218,15 @@ export function loadWorkerAgentConfig(
     env.WORKER_RUNTIME_MODE,
     env.WORKER_CDP_ENDPOINT_URL ? "visible_auth" : "hidden_runtime"
   );
+  const runtimeClass = parseWorkerRuntimeClass(
+    env.WORKER_RUNTIME_CLASS,
+    runtimeMode,
+    env
+  );
   const headless =
-    runtimeMode === "hidden_runtime"
+    runtimeClass === "docker_headed_xvfb"
+      ? false
+      : runtimeMode === "hidden_runtime"
       ? true
       : parseBoolean(env.WORKER_HEADLESS, false);
 
@@ -198,6 +240,7 @@ export function loadWorkerAgentConfig(
       env.WORKER_PROFILE_PATH ??
       `/srv/chatgpt-workers/profiles/${workerId}`,
     runtimeMode,
+    runtimeClass,
     browserChannel: env.WORKER_BROWSER_CHANNEL,
     browserExecutablePath: env.WORKER_BROWSER_EXECUTABLE_PATH,
     cdpEndpointUrl: env.WORKER_CDP_ENDPOINT_URL,
@@ -289,7 +332,11 @@ export function createWorkerAgentRuntime(
     browserContextReady: false,
     lastRelayAt: null,
     lastRelayFailureCode: null,
+    runtimeUsability: null,
+    challengeDetected: false,
+    pageTitle: null,
     runtimeMode: config.runtimeMode,
+    runtimeClass: config.runtimeClass,
     headless: config.headless,
     cdpAttached: Boolean(config.cdpEndpointUrl),
     proxyServerConfigured: Boolean(config.proxyServer)
@@ -307,6 +354,7 @@ export function createWorkerAgentRuntime(
           workerId: config.workerId,
           profilePath: config.profilePath,
           runtimeMode: config.runtimeMode,
+          runtimeClass: config.runtimeClass,
           browserChannel: config.browserChannel,
           browserExecutablePath: config.browserExecutablePath,
           cdpEndpointUrl: config.cdpEndpointUrl,
@@ -324,6 +372,8 @@ export function createWorkerAgentRuntime(
       runtimeState.browserContextReady = false;
       runtimeState.runtimeStatus = "disconnected";
       runtimeState.lastRelayFailureCode = resolveRuntimeFailureCode(error);
+      runtimeState.runtimeUsability = "surface_unusable";
+      runtimeState.challengeDetected = false;
       throw error;
     });
   const relayHandler = options.relayHandler;
@@ -359,6 +409,10 @@ export function createWorkerAgentRuntime(
         bootstrapResult.failureCode === "bootstrap_auth_required"
           ? "reauth_required"
           : "ready";
+      runtimeState.challengeDetected = bootstrapResult.challengeDetected;
+      runtimeState.pageTitle = bootstrapResult.pageTitle;
+      runtimeState.runtimeUsability = bootstrapResult.runtimeUsability;
+      runtimeState.lastRelayFailureCode = bootstrapResult.failureCode;
 
       return bootstrapResult;
     },
@@ -377,12 +431,17 @@ export function createWorkerAgentRuntime(
         runtimeState.lastRelayFailureCode = relayResult.failureCode;
         runtimeState.runtimeStatus =
           relayResult.failureClass === "auth" ? "reauth_required" : "ready";
+        runtimeState.runtimeUsability =
+          relayResult.failureClass === "auth" ? "auth_required" : "usable";
+        runtimeState.challengeDetected = false;
 
         return relayResult;
       } catch (error: unknown) {
         runtimeState.lastRelayAt = new Date().toISOString();
         runtimeState.lastRelayFailureCode = resolveRuntimeFailureCode(error);
         runtimeState.runtimeStatus = "disconnected";
+        runtimeState.runtimeUsability = "surface_unusable";
+        runtimeState.challengeDetected = false;
         throw error;
       }
     },
@@ -412,6 +471,7 @@ export function createWorkerAgentApp(
       containerName: config.containerName,
       profilePath: config.profilePath,
       runtimeMode: healthSnapshot.runtimeMode,
+      runtimeClass: healthSnapshot.runtimeClass,
       headless: healthSnapshot.headless,
       cdpAttached: healthSnapshot.cdpAttached,
       proxyServerConfigured: healthSnapshot.proxyServerConfigured,
@@ -419,6 +479,9 @@ export function createWorkerAgentApp(
       browserContextReady: healthSnapshot.browserContextReady,
       lastRelayAt: healthSnapshot.lastRelayAt,
       lastRelayFailureCode: healthSnapshot.lastRelayFailureCode,
+      runtimeUsability: healthSnapshot.runtimeUsability,
+      challengeDetected: healthSnapshot.challengeDetected,
+      pageTitle: healthSnapshot.pageTitle,
       browserAccess
     });
   });

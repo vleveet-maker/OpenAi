@@ -22,7 +22,11 @@ export function createInternalWorkersRouter(
         runtimeMode: worker.runtimeMode ?? null,
         headless: worker.headless ?? null,
         cdpAttached: worker.cdpAttached ?? null,
-        proxyServerConfigured: worker.proxyServerConfigured ?? null
+        proxyServerConfigured: worker.proxyServerConfigured ?? null,
+        runtimeCapability: worker.runtimeCapability ?? "unreachable",
+        browserContextReady: worker.browserContextReady ?? null,
+        lastRelayAt: worker.lastRelayAt ?? null,
+        lastRelayFailureCode: worker.lastRelayFailureCode ?? null
       }))
     });
   });
@@ -45,7 +49,11 @@ export function createInternalWorkersRouter(
       runtimeMode: worker.runtimeMode ?? null,
       headless: worker.headless ?? null,
       cdpAttached: worker.cdpAttached ?? null,
-      proxyServerConfigured: worker.proxyServerConfigured ?? null
+      proxyServerConfigured: worker.proxyServerConfigured ?? null,
+      runtimeCapability: worker.runtimeCapability ?? "unreachable",
+      browserContextReady: worker.browserContextReady ?? null,
+      lastRelayAt: worker.lastRelayAt ?? null,
+      lastRelayFailureCode: worker.lastRelayFailureCode ?? null
     });
   });
 
@@ -68,7 +76,11 @@ export function createInternalWorkersRouter(
       runtimeMode: worker.runtimeMode ?? null,
       headless: worker.headless ?? null,
       cdpAttached: worker.cdpAttached ?? null,
-      proxyServerConfigured: worker.proxyServerConfigured ?? null
+      proxyServerConfigured: worker.proxyServerConfigured ?? null,
+      runtimeCapability: worker.runtimeCapability ?? "unreachable",
+      browserContextReady: worker.browserContextReady ?? null,
+      lastRelayAt: worker.lastRelayAt ?? null,
+      lastRelayFailureCode: worker.lastRelayFailureCode ?? null
     });
   });
 

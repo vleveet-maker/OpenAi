@@ -56,6 +56,23 @@ function isWorkerReachable(workerStatus) {
   return Boolean(workerStatus.agentListening) && Boolean(workerStatus.browserListening);
 }
 
+function hasWorkerHealth(workerStatus) {
+  return Boolean(workerStatus.agentListening) && workerStatus.runtimeStatus !== null;
+}
+
+function withStartupFields(
+  workerStatus,
+  startupStatus,
+  fallbackRuntimeMode = null
+) {
+  return {
+    ...workerStatus,
+    status: startupStatus,
+    startupStatus,
+    runtimeMode: workerStatus.runtimeMode ?? fallbackRuntimeMode
+  };
+}
+
 export class HostController {
   constructor(config) {
     this.config = config;
@@ -73,31 +90,33 @@ export class HostController {
 
   async getWorkerStatuses() {
     return Promise.all(
-      this.config.workers.map(async (worker) => {
-        const agentListening = await testLocalPort(worker.agentPort);
-        const health =
-          agentListening
-            ? await this.fetchWorkerHealth(worker.agentPort)
-            : null;
-
-        return {
-          workerId: worker.workerId,
-          displayName: worker.displayName,
-          agentPort: worker.agentPort,
-          cdpPort: worker.cdpPort,
-          proxyServer: this.config.proxyServerUrl,
-          agentListening,
-          browserListening: health
-            ? Boolean(health.browserContextReady)
-            : await testLocalPort(worker.cdpPort),
-          runtimeMode: health?.runtimeMode ?? null,
-          headless: health?.headless ?? null,
-          cdpAttached: health?.cdpAttached ?? null,
-          proxyServerConfigured: health?.proxyServerConfigured ?? null,
-          runtimeStatus: health?.runtimeStatus ?? null
-        };
-      })
+      this.config.workers.map((worker) => this.getWorkerStatus(worker))
     );
+  }
+
+  async getWorkerStatus(worker, runtimeModeFallback = null) {
+    const agentListening = await testLocalPort(worker.agentPort);
+    const health =
+      agentListening
+        ? await this.fetchWorkerHealth(worker.agentPort)
+        : null;
+
+    return {
+      workerId: worker.workerId,
+      displayName: worker.displayName,
+      agentPort: worker.agentPort,
+      cdpPort: worker.cdpPort,
+      proxyServer: this.config.proxyServerUrl,
+      agentListening,
+      browserListening: health
+        ? Boolean(health.browserContextReady)
+        : await testLocalPort(worker.cdpPort),
+      runtimeMode: health?.runtimeMode ?? runtimeModeFallback,
+      headless: health?.headless ?? null,
+      cdpAttached: health?.cdpAttached ?? null,
+      proxyServerConfigured: health?.proxyServerConfigured ?? null,
+      runtimeStatus: health?.runtimeStatus ?? null
+    };
   }
 
   async fetchWorkerHealth(agentPort) {
@@ -194,99 +213,41 @@ export class HostController {
       this.config.defaultWorkerRuntimeMode ?? "hidden_runtime"
     );
 
-    if (await testLocalPort(worker.agentPort)) {
+    const existingStatus = await this.getWorkerStatus(
+      worker,
+      resolvedRuntimeMode
+    );
+
+    if (hasWorkerHealth(existingStatus)) {
       return {
+        ...withStartupFields(
+          existingStatus,
+          "already_running",
+          resolvedRuntimeMode
+        ),
         workerId,
-        status: "already_running",
-        proxyServerUrl: proxyRuntime.proxyServerUrl,
-        runtimeMode: resolvedRuntimeMode
+        proxyServerUrl: proxyRuntime.proxyServerUrl
       };
     }
 
-    const escapedArguments = [
-      "-ExecutionPolicy",
-      "Bypass",
-      "-File",
-      worker.startScriptPath,
-      "-SkipInstall",
-      "-DetachAgent",
-      "-ProxyServer",
-      proxyRuntime.proxyServerUrl,
-      "-RuntimeMode",
-      toPowerShellRuntimeMode(resolvedRuntimeMode),
-      "-BrowserWindowMode",
-      this.config.browserWindowMode
-    ].map((value) => `'${String(value).replaceAll("'", "''")}'`);
-    const command = `$argList = @(${escapedArguments.join(", ")}); Start-Process -FilePath '${POWERSHELL_EXE}' -ArgumentList $argList -WindowStyle Hidden`;
-    const child = spawn(
-      POWERSHELL_EXE,
-      [
-        "-NoProfile",
-        "-Command",
-        command
-      ],
-      {
-        windowsHide: true,
-        stdio: "ignore"
-      }
+    await this.requestWorkerStart(worker, resolvedRuntimeMode, proxyRuntime.proxyServerUrl);
+
+    const startedStatus = await this.observeWorkerStartup(
+      worker,
+      resolvedRuntimeMode
     );
 
-    await new Promise((resolve, reject) => {
-      child.once("exit", (code) => {
-        if (code === 0 || code === null) {
-          resolve();
-          return;
-        }
-
-        reject(new Error(`start_worker_failed:${worker.workerId}:${code}`));
-      });
-      child.once("error", reject);
-    });
-
     return {
+      ...startedStatus,
       workerId,
-      status: "start_requested",
       proxyServerUrl: proxyRuntime.proxyServerUrl,
-      runtimeMode: resolvedRuntimeMode
+      runtimeMode: startedStatus.runtimeMode ?? resolvedRuntimeMode
     };
   }
 
   async stopWorker(workerId) {
     const worker = this.requireWorker(workerId);
-
-    const child = spawn(
-      POWERSHELL_EXE,
-      [
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        this.config.stopWorkerScriptPath,
-        "-WorkerId",
-        worker.workerId,
-        "-AgentPort",
-        String(worker.agentPort),
-        "-CdpPort",
-        String(worker.cdpPort),
-        "-ProfilePath",
-        worker.profilePath
-      ],
-      {
-        windowsHide: true,
-        stdio: "ignore"
-      }
-    );
-
-    await new Promise((resolve, reject) => {
-      child.once("exit", (code) => {
-        if (code === 0 || code === null) {
-          resolve();
-          return;
-        }
-
-        reject(new Error(`stop_worker_failed:${worker.workerId}:${code}`));
-      });
-      child.once("error", reject);
-    });
+    await this.requestWorkerStop(worker);
 
     return {
       workerId,
@@ -316,6 +277,27 @@ export class HostController {
       poolStatus: health.poolStatus,
       workers: results
     };
+  }
+
+  async observeWorkerStartup(
+    worker,
+    runtimeMode,
+    timeoutMs = 20_000,
+    pollIntervalMs = 1_000
+  ) {
+    const deadline = Date.now() + timeoutMs;
+    let latestStatus = await this.getWorkerStatus(worker, runtimeMode);
+
+    while (Date.now() < deadline) {
+      if (hasWorkerHealth(latestStatus)) {
+        return withStartupFields(latestStatus, "started", runtimeMode);
+      }
+
+      await sleep(pollIntervalMs);
+      latestStatus = await this.getWorkerStatus(worker, runtimeMode);
+    }
+
+    return withStartupFields(latestStatus, "startup_timeout", runtimeMode);
   }
 
   async stopProxyRuntime() {
@@ -439,5 +421,83 @@ export class HostController {
         this.config.proxyConfigPath
       ]
     );
+  }
+
+  async requestWorkerStart(worker, runtimeMode, proxyServerUrl) {
+    const escapedArguments = [
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      worker.startScriptPath,
+      "-SkipInstall",
+      "-DetachAgent",
+      "-ProxyServer",
+      proxyServerUrl,
+      "-RuntimeMode",
+      toPowerShellRuntimeMode(runtimeMode),
+      "-BrowserWindowMode",
+      this.config.browserWindowMode
+    ].map((value) => `'${String(value).replaceAll("'", "''")}'`);
+    const command = `$argList = @(${escapedArguments.join(", ")}); Start-Process -FilePath '${POWERSHELL_EXE}' -ArgumentList $argList -WindowStyle Hidden`;
+    const child = spawn(
+      POWERSHELL_EXE,
+      [
+        "-NoProfile",
+        "-Command",
+        command
+      ],
+      {
+        windowsHide: true,
+        stdio: "ignore"
+      }
+    );
+
+    await new Promise((resolve, reject) => {
+      child.once("exit", (code) => {
+        if (code === 0 || code === null) {
+          resolve();
+          return;
+        }
+
+        reject(new Error(`start_worker_failed:${worker.workerId}:${code}`));
+      });
+      child.once("error", reject);
+    });
+  }
+
+  async requestWorkerStop(worker) {
+    const child = spawn(
+      POWERSHELL_EXE,
+      [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        this.config.stopWorkerScriptPath,
+        "-WorkerId",
+        worker.workerId,
+        "-AgentPort",
+        String(worker.agentPort),
+        "-CdpPort",
+        String(worker.cdpPort),
+        "-ProfilePath",
+        worker.profilePath
+      ],
+      {
+        windowsHide: true,
+        stdio: "ignore"
+      }
+    );
+
+    await new Promise((resolve, reject) => {
+      child.once("exit", (code) => {
+        if (code === 0 || code === null) {
+          resolve();
+          return;
+        }
+
+        reject(new Error(`stop_worker_failed:${worker.workerId}:${code}`));
+      });
+      child.once("error", reject);
+    });
   }
 }

@@ -52,6 +52,8 @@ export function createInternalWorkerActionsRouter(
       runtimeMode,
       headless: runtimeMode === "hidden_runtime",
       cdpAttached: runtimeMode === "visible_auth",
+      browserContextReady: false,
+      runtimeCapability: "unreachable",
       lastSeenAt: now
     });
   }
@@ -147,7 +149,8 @@ export function createInternalWorkerActionsRouter(
       status: "ready",
       reason: "internal operator marked worker ready",
       runtimeStatus: "ready",
-      recoverySessionId: null
+      recoverySessionId: null,
+      runtimeCapability: "reachable_but_unusable"
     });
     options.sessionService.handleWorkerReady();
 

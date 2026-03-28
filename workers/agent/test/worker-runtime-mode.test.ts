@@ -67,4 +67,17 @@ describe("worker runtime mode", () => {
       })
     ).rejects.toThrow("hidden_runtime_requires_no_cdp_endpoint");
   });
+
+  it("supports hidden_runtime ChannelMsedge launches without WORKER_BROWSER_EXECUTABLE_PATH", () => {
+    const launchOptions = createPersistentLaunchOptions({
+      workerId: "wife",
+      runtimeMode: "hidden_runtime",
+      browserChannel: "msedge",
+      headless: true
+    });
+
+    expect(launchOptions.headless).toBe(true);
+    expect(launchOptions.channel).toBe("msedge");
+    expect(launchOptions.executablePath).toBeUndefined();
+  });
 });

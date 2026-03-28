@@ -43,6 +43,14 @@ const bootstrapLocks = new Map<string, Promise<void>>();
 const TRANSIENT_UI_POLL_INTERVAL_MS = 150;
 const TEMPORARY_CONFIRMATION_TIMEOUT_MS = 3_000;
 const TEMPORARY_ONBOARDING_TIMEOUT_MS = 1_500;
+const CHALLENGE_MARKERS = [
+  "__cf_chl_rt_tk",
+  "cf_challenge",
+  "cloudflare",
+  "verify you are human",
+  "just a moment",
+  "challenge"
+];
 
 async function withBootstrapLock<T>(
   lockKey: string,
@@ -178,8 +186,7 @@ async function pageRequiresAuth(page: BootstrapPageLike | null): Promise<boolean
   if (
     currentUrl.includes("login") ||
     currentUrl.includes("signin") ||
-    currentUrl.includes("auth") ||
-    currentUrl.includes("challenge")
+    currentUrl.includes("auth")
   ) {
     return true;
   }
@@ -191,15 +198,61 @@ async function pageRequiresAuth(page: BootstrapPageLike | null): Promise<boolean
   return pageShowsAuthEntry(page);
 }
 
-function buildFailureResult(
+async function getPageTitle(page: BootstrapPageLike | null): Promise<string | null> {
+  if (!page || typeof page.title !== "function") {
+    return null;
+  }
+
+  try {
+    return await page.title();
+  } catch {
+    return null;
+  }
+}
+
+function detectChallengeMarkers(value: string | null | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return CHALLENGE_MARKERS.some((marker) => normalized.includes(marker));
+}
+
+async function pageShowsChallenge(page: BootstrapPageLike | null): Promise<boolean> {
+  if (!page) {
+    return false;
+  }
+
+  return (
+    detectChallengeMarkers(page.url()) ||
+    detectChallengeMarkers(await getPageTitle(page))
+  );
+}
+
+async function buildFailureResult(
   page: BootstrapPageLike | null,
   failureCode: WorkerChatBootstrapFailureCode
-): WorkerChatBootstrapResult {
+): Promise<WorkerChatBootstrapResult> {
+  const challengeDetected =
+    failureCode === "bootstrap_challenge_detected" ||
+    (await pageShowsChallenge(page));
+
+  const runtimeUsability =
+    failureCode === "bootstrap_auth_required"
+      ? "auth_required"
+      : challengeDetected
+        ? "challenge_blocked"
+        : "surface_unusable";
+
   return {
     status: "failed",
     conversationMode: "unknown",
     modelLabel: null,
     failureCode,
+    challengeDetected,
+    pageTitle: await getPageTitle(page),
+    runtimeUsability,
     pageUrl: page?.url() ?? null
   };
 }
@@ -332,6 +385,10 @@ export async function runTemporaryChatBootstrap(
       return buildFailureResult(page, "bootstrap_navigation_failed");
     }
 
+    if (await pageShowsChallenge(page)) {
+      return buildFailureResult(page, "bootstrap_challenge_detected");
+    }
+
     if (await pageRequiresAuth(page)) {
       return buildFailureResult(page, "bootstrap_auth_required");
     }
@@ -347,7 +404,7 @@ export async function runTemporaryChatBootstrap(
       );
 
       if (!currentSurfacePicker) {
-        return buildFailureResult(page, "new_chat_selector_not_found");
+        return buildFailureResult(page, "bootstrap_surface_unusable");
       }
     }
 
@@ -382,6 +439,9 @@ export async function runTemporaryChatBootstrap(
       conversationMode: "temporary",
       modelLabel: modelSelection.selectedModel,
       failureCode: null,
+      challengeDetected: false,
+      pageTitle: await getPageTitle(page),
+      runtimeUsability: "usable",
       pageUrl: page.url()
     };
   });

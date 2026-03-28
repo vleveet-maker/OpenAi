@@ -9,7 +9,8 @@ param(
   [string]$HostControllerBaseUrl = "http://127.0.0.1:4040",
   [string]$HostControllerToken = "local-host-controller-token",
   [int]$TimeoutSeconds = 120,
-  [int]$PollIntervalMs = 1500
+  [int]$PollIntervalMs = 1500,
+  [switch]$ReturnJson
 )
 
 $ErrorActionPreference = "Stop"
@@ -96,6 +97,20 @@ function Wait-Until {
   throw "Timed out waiting for $Description."
 }
 
+function Get-SessionMessagesSnapshot {
+  param([string]$SessionId)
+
+  if ([string]::IsNullOrWhiteSpace($SessionId)) {
+    return $null
+  }
+
+  try {
+    return Invoke-JsonRequest -Method "GET" -Url "$PublicBaseUrl/api/sessions/$SessionId/messages"
+  } catch {
+    return $null
+  }
+}
+
 $hostControllerHeaders = @{
   "x-host-controller-token" = $HostControllerToken
 }
@@ -104,6 +119,7 @@ $internalHeaders = @{
 }
 $stoppedWorkers = New-Object System.Collections.Generic.List[string]
 $sessionId = $null
+$probeResult = $null
 
 try {
   Write-Host "[phase-10] Ensuring host pool is started..."
@@ -178,7 +194,7 @@ try {
   }
 
   Write-Host "[phase-10] Waiting for fresh chat bootstrap on $WorkerId..."
-  $null = Wait-Until -Description "fresh chat bootstrap to become ready" -Condition {
+  $bootstrapSnapshot = Wait-Until -Description "fresh chat bootstrap to become ready" -Condition {
     $snapshot = Invoke-JsonRequest -Method "GET" -Url "$PublicBaseUrl/api/sessions/$sessionId/messages"
 
     if ($snapshot.chatBootstrap.status -eq "failed") {
@@ -225,7 +241,78 @@ try {
     throw "Expected assistant reply '$ExpectedReply' but received '$($finalAssistant.body)'."
   }
 
+  $probeResult = [pscustomobject]@{
+    workerId = $WorkerId
+    sessionId = $sessionId
+    outcome = "relay_complete"
+    runtimeUsability = $bootstrapSnapshot.chatBootstrap.runtimeUsability
+    challengeDetected = [bool]$bootstrapSnapshot.chatBootstrap.challengeDetected
+    pageUrl = $bootstrapSnapshot.chatBootstrap.pageUrl
+    failureCode = $null
+    assistantBody = $finalAssistant.body
+  }
+
   Write-Host "[phase-10] Relay probe succeeded on $WorkerId with reply '$ExpectedReply'."
+} catch {
+  if (-not $ReturnJson) {
+    throw
+  }
+
+  $snapshot = Get-SessionMessagesSnapshot -SessionId $sessionId
+  $assistantMessages =
+    if ($snapshot) {
+      @($snapshot.messages | Where-Object { $_.role -eq "assistant" })
+    } else {
+      @()
+    }
+  $lastAssistant =
+    if ($assistantMessages.Count -gt 0) {
+      $assistantMessages[-1]
+    } else {
+      $null
+    }
+
+  $outcome = "probe_failed"
+  $failureCode = $null
+  $runtimeUsability = $null
+  $challengeDetected = $false
+  $pageUrl = $null
+
+  if ($snapshot -and $snapshot.chatBootstrap) {
+    $failureCode = $snapshot.chatBootstrap.failureCode
+    $runtimeUsability = $snapshot.chatBootstrap.runtimeUsability
+    $challengeDetected = [bool]$snapshot.chatBootstrap.challengeDetected
+    $pageUrl = $snapshot.chatBootstrap.pageUrl
+
+    if ($snapshot.chatBootstrap.status -eq "failed") {
+      $outcome = "bootstrap_failed"
+    } elseif ($lastAssistant -and $lastAssistant.state -eq "failed") {
+      $outcome = "relay_failed"
+      $failureCode =
+        if ($lastAssistant.failureCode) {
+          $lastAssistant.failureCode
+        } else {
+          $failureCode
+        }
+    }
+  }
+
+  $probeResult = [pscustomobject]@{
+    workerId = $WorkerId
+    sessionId = $sessionId
+    outcome = $outcome
+    runtimeUsability = $runtimeUsability
+    challengeDetected = $challengeDetected
+    pageUrl = $pageUrl
+    failureCode = $failureCode
+    assistantBody =
+      if ($lastAssistant) {
+        $lastAssistant.body
+      } else {
+        $null
+      }
+    detail = "$_"
+  }
 } finally {
   if ($sessionId) {
     try {
@@ -243,4 +330,8 @@ try {
       Write-Warning "Failed to restart worker ${workerToRestart}: $_"
     }
   }
+}
+
+if ($ReturnJson) {
+  return $probeResult
 }

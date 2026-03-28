@@ -4,12 +4,17 @@ import { join } from "node:path";
 import { chromium, type BrowserContext } from "playwright";
 
 export type WorkerRuntimeMode = "visible_auth" | "hidden_runtime";
+export type WorkerRuntimeClass =
+  | "host_hidden_runtime"
+  | "host_visible_auth"
+  | "docker_headed_xvfb";
 
 export interface WorkerBrowserLaunchOptions {
   workerId: string;
   profilePath?: string;
   profileRoot?: string;
   runtimeMode?: WorkerRuntimeMode;
+  runtimeClass?: WorkerRuntimeClass;
   browserChannel?: string;
   browserExecutablePath?: string;
   headless?: boolean;
@@ -51,7 +56,9 @@ export function createPersistentLaunchOptions(
 ): LaunchPersistentContextOptions {
   const launchOptions: LaunchPersistentContextOptions = {
     headless:
-      options.runtimeMode === "hidden_runtime"
+      options.runtimeClass === "docker_headed_xvfb"
+        ? false
+        : options.runtimeMode === "hidden_runtime"
         ? true
         : options.headless ?? false,
     args: [

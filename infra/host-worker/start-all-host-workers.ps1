@@ -17,6 +17,7 @@ $scripts = @(
 
 $ProxyServer = "http://127.0.0.1:7897"
 $BrowserWindowMode = "Minimized"
+$HiddenLaunchVariant = "CurrentExecutable"
 
 foreach ($scriptName in $scripts) {
   Start-Process powershell -ArgumentList @(
@@ -27,6 +28,8 @@ foreach ($scriptName in $scripts) {
     "-SkipInstall",
     "-ProxyServer",
     $ProxyServer,
+    "-HiddenLaunchVariant",
+    $HiddenLaunchVariant,
     "-BrowserWindowMode",
     $BrowserWindowMode
   ) | Out-Null

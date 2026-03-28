@@ -5,6 +5,11 @@ import {
   type WorkerStatusRecord
 } from "./worker-status.js";
 
+export type WorkerRuntimeCapability =
+  | "unreachable"
+  | "reachable_but_unusable"
+  | "usable";
+
 export interface WorkerRecord {
   workerId: string;
   displayName: string;
@@ -23,6 +28,10 @@ export interface WorkerRecord {
   headless?: boolean;
   cdpAttached?: boolean;
   proxyServerConfigured?: boolean;
+  browserContextReady?: boolean;
+  lastRelayAt?: string | null;
+  lastRelayFailureCode?: string | null;
+  runtimeCapability?: WorkerRuntimeCapability;
 }
 
 export interface WorkerRegistryUpdate {
@@ -38,6 +47,18 @@ export interface WorkerRegistryUpdate {
   headless?: boolean | null;
   cdpAttached?: boolean | null;
   proxyServerConfigured?: boolean | null;
+  browserContextReady?: boolean | null;
+  lastRelayAt?: string | null;
+  lastRelayFailureCode?: string | null;
+  runtimeCapability?: WorkerRuntimeCapability | null;
+}
+
+function defaultRuntimeCapabilityForStatus(
+  status: WorkerStatus
+): WorkerRuntimeCapability {
+  return status === "disconnected"
+    ? "unreachable"
+    : "reachable_but_unusable";
 }
 
 function cloneWorkerRecord(record: WorkerRecord): WorkerRecord {
@@ -67,6 +88,7 @@ export class WorkerRegistry {
         runtimeStatus: definition.defaultStatus,
         runtimeMode:
           definition.runtimeType === "host" ? "hidden_runtime" : undefined,
+        runtimeCapability: defaultRuntimeCapabilityForStatus(definition.defaultStatus),
         lastSeenAt: now
       });
     }
@@ -143,7 +165,23 @@ export class WorkerRegistry {
       proxyServerConfigured:
         update.proxyServerConfigured === null
           ? undefined
-          : update.proxyServerConfigured ?? existing.proxyServerConfigured
+          : update.proxyServerConfigured ?? existing.proxyServerConfigured,
+      browserContextReady:
+        update.browserContextReady === null
+          ? undefined
+          : update.browserContextReady ?? existing.browserContextReady,
+      lastRelayAt:
+        update.lastRelayAt === null
+          ? undefined
+          : update.lastRelayAt ?? existing.lastRelayAt,
+      lastRelayFailureCode:
+        update.lastRelayFailureCode === null
+          ? undefined
+          : update.lastRelayFailureCode ?? existing.lastRelayFailureCode,
+      runtimeCapability:
+        update.runtimeCapability === null
+          ? undefined
+          : update.runtimeCapability ?? existing.runtimeCapability
     };
 
     this.workers.set(workerId, updated);

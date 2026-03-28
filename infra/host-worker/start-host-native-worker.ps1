@@ -9,6 +9,8 @@ param(
   [string]$ProxyServer = "",
   [ValidateSet("VisibleAuth", "HiddenRuntime")]
   [string]$RuntimeMode = "HiddenRuntime",
+  [ValidateSet("CurrentExecutable", "ChannelMsedge")]
+  [string]$HiddenLaunchVariant = "CurrentExecutable",
   [ValidateSet("Normal", "Minimized")]
   [string]$BrowserWindowMode = "Minimized",
   [string]$RepoRoot = "",
@@ -106,12 +108,17 @@ $env:WORKER_CONTAINER_NAME = "host-$WorkerId"
 $env:WORKER_AGENT_HOST = "127.0.0.1"
 $env:WORKER_AGENT_PORT = "$AgentPort"
 $env:WORKER_PROFILE_PATH = $resolvedProfilePath
-$env:WORKER_BROWSER_EXECUTABLE_PATH = $resolvedBrowserExecutable
 $env:WORKER_RUNTIME_MODE =
   if ($RuntimeMode -eq "VisibleAuth") {
     "visible_auth"
   } else {
     "hidden_runtime"
+  }
+$env:WORKER_RUNTIME_CLASS =
+  if ($RuntimeMode -eq "VisibleAuth") {
+    "host_visible_auth"
+  } else {
+    "host_hidden_runtime"
   }
 $env:WORKER_HEADLESS =
   if ($RuntimeMode -eq "HiddenRuntime") {
@@ -128,6 +135,14 @@ $env:WORKER_CDP_ENDPOINT_URL =
   }
 $env:WORKER_START_URL = $StartUrl
 $env:BROWSER_ACCESS_HTTP_PORT = "0"
+
+if ($RuntimeMode -eq "HiddenRuntime" -and $HiddenLaunchVariant -eq "ChannelMsedge") {
+  Remove-Item Env:WORKER_BROWSER_EXECUTABLE_PATH -ErrorAction SilentlyContinue
+  $env:WORKER_BROWSER_CHANNEL = "msedge"
+} else {
+  $env:WORKER_BROWSER_EXECUTABLE_PATH = $resolvedBrowserExecutable
+  Remove-Item Env:WORKER_BROWSER_CHANNEL -ErrorAction SilentlyContinue
+}
 
 if ($DetachAgent) {
   $agentArguments = @(
@@ -149,6 +164,8 @@ if ($DetachAgent) {
     $StartUrl,
     "-RuntimeMode",
     $RuntimeMode,
+    "-HiddenLaunchVariant",
+    $HiddenLaunchVariant,
     "-ProxyServer",
     $ProxyServer,
     "-CdpEndpointUrl",
@@ -173,6 +190,7 @@ if ($DetachAgent) {
   -ProfilePath $resolvedProfilePath `
   -StartUrl $StartUrl `
   -RuntimeMode $RuntimeMode `
+  -HiddenLaunchVariant $HiddenLaunchVariant `
   -ProxyServer $ProxyServer `
   -CdpEndpointUrl $env:WORKER_CDP_ENDPOINT_URL `
   -RepoRoot $resolvedRepoRoot `
