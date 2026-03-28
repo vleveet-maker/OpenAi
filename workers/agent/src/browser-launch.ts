@@ -1,3 +1,6 @@
+import { rmSync } from "node:fs";
+import { join } from "node:path";
+
 import { chromium, type BrowserContext } from "playwright";
 
 export interface WorkerBrowserLaunchOptions {
@@ -11,6 +14,11 @@ export interface WorkerBrowserLaunchOptions {
 }
 
 export const WORKER_PROFILE_ROOT = "/srv/chatgpt-workers/profiles";
+const CHROMIUM_SINGLETON_ARTIFACTS = [
+  "SingletonCookie",
+  "SingletonLock",
+  "SingletonSocket"
+] as const;
 
 type LaunchPersistentContextOptions =
   Parameters<typeof chromium.launchPersistentContext>[1];
@@ -20,6 +28,15 @@ export function getWorkerProfilePath(
   profileRoot: string = WORKER_PROFILE_ROOT
 ): string {
   return `${profileRoot}/${workerId}`;
+}
+
+export function clearChromiumSingletonArtifacts(profilePath: string): void {
+  for (const artifact of CHROMIUM_SINGLETON_ARTIFACTS) {
+    rmSync(join(profilePath, artifact), {
+      force: true,
+      recursive: true
+    });
+  }
 }
 
 export async function launchWorkerBrowser(
@@ -36,6 +53,8 @@ export async function launchWorkerBrowser(
       "--no-default-browser-check"
     ]
   };
+
+  clearChromiumSingletonArtifacts(profilePath);
 
   const context = await chromium.launchPersistentContext(
     profilePath,

@@ -1,8 +1,12 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { clearChromiumSingletonArtifacts } from "../src/browser-launch.js";
 import {
   createWorkerAgentApp,
   createWorkerAgentRuntime,
@@ -56,6 +60,29 @@ afterEach(() => {
 });
 
 describe("worker browser access runtime", () => {
+  it("clears stale chromium singleton artifacts before launch", () => {
+    const profilePath = mkdtempSync(join(tmpdir(), "worker-profile-"));
+
+    try {
+      for (const artifact of [
+        "SingletonCookie",
+        "SingletonLock",
+        "SingletonSocket"
+      ]) {
+        writeFileSync(join(profilePath, artifact), "stale");
+      }
+
+      clearChromiumSingletonArtifacts(profilePath);
+
+      expect(() => clearChromiumSingletonArtifacts(profilePath)).not.toThrow();
+    } finally {
+      rmSync(profilePath, {
+        force: true,
+        recursive: true
+      });
+    }
+  });
+
   it("includes browserAccess metadata on health and internal worker routes", async () => {
     const deferred = createDeferred<unknown>();
     const runtime = createWorkerAgentRuntime(loadWorkerAgentConfig({
