@@ -5,19 +5,74 @@
 - [x] **v1.0 Household MVP** - shipped 2026-03-28, phases `1 -> 6`, archived in [.planning/milestones/v1.0-ROADMAP.md](/d:/OpenAi/.planning/milestones/v1.0-ROADMAP.md)
 - [x] **v1.1 Household Rollout Hardening** - shipped 2026-03-28, phases `7 -> 8`, archived in [.planning/milestones/v1.1-ROADMAP.md](/d:/OpenAi/.planning/milestones/v1.1-ROADMAP.md)
 
-## Current State
+## Active Milestone
 
-- No active milestone is open right now.
-- The last shipped milestone proved host-native fallback, proxy-backed on-demand launch, and per-chat clean `Temporary Chat` bootstrap.
-- The remaining known debt is rollout-specific rather than core-product missing scope.
+- [ ] **v1.2 Rollout Stability** - active, focused on internal host-pool orchestration, ChatGPT UI drift hardening, and repeatable rollout confidence
 
-## Carry-Forward Debt
+## Overview
 
-- `dad` still has one observed proxied relay `selector_not_found` issue that looks like worker-specific ChatGPT DOM drift.
-- Live smoke against the current production ChatGPT `Temporary Chat` and model-picker UI is still worth repeating when the next milestone begins.
-- One-click internal-admin orchestration for host-native workers remains a future ergonomics improvement, not a shipping blocker.
+The `v1.2` milestone stays tightly focused on rollout stability. The core household product already works, but the operator path still depends on scripts, and the most drift-sensitive ChatGPT UI behaviors still need another hardening pass before the system feels routine and low-stress. Instead of expanding product scope, this milestone makes host-native operation more controllable, selector maintenance more deliberate, and rollout readiness easier to confirm before real use.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases continue from the previous milestone (`9`, `10`, `11`)
+- Decimal phases (`9.1`, `10.1`) remain available for urgent insertions
+
+- [ ] **Phase 9: Internal host-pool orchestration** - Move proxied host-native pool lifecycle control into the internal admin surface with clearer failure reporting
+- [ ] **Phase 10: ChatGPT UI drift hardening** - Harden relay and fresh-chat bootstrap against the current ChatGPT UI until all three workers behave predictably
+- [ ] **Phase 11: Rollout smoke confidence** - Add a repeatable operator smoke path and visible readiness evidence before real household use
+
+## Phase Details
+
+### Phase 9: Internal host-pool orchestration
+
+**Goal:** Let the household operator start and stop the proxied host-native pool from the internal admin UI while keeping lifecycle visibility and failure reporting explicit.
+**Depends on:** Archived milestone `v1.1 Household Rollout Hardening`
+**Requirements:** ORCH-01, ORCH-02, ORCH-03
+**Success Criteria** (what must be TRUE):
+  1. Internal admin can trigger proxied host-pool start without dropping into PowerShell manually.
+  2. Internal admin can trigger proxied host-pool stop and the resulting worker states are visible.
+  3. Lifecycle failures show actionable status instead of leaving the operator guessing whether the failure is in the controller, browser, or worker layer.
+
+### Phase 10: ChatGPT UI drift hardening
+
+**Goal:** Bring relay and fresh-chat bootstrap back to a predictable state against the current ChatGPT UI, including the residual `dad` edge case.
+**Depends on:** Phase 9
+**Requirements:** STAB-01, STAB-02, STAB-03
+**Success Criteria** (what must be TRUE):
+  1. Relay succeeds on all three household workers against the current ChatGPT UI, including `dad`.
+  2. Fresh-chat bootstrap still reaches `Temporary Chat` plus the preferred reasoning model on a logged-in worker.
+  3. Selector updates for relay and bootstrap live in centralized, maintainable code paths instead of fragmented browser-specific patches.
+
+### Phase 11: Rollout smoke confidence
+
+**Goal:** Give the operator a repeatable confidence check before the household begins using the pool after changes or drift.
+**Depends on:** Phase 10
+**Requirements:** CONF-01, CONF-02
+**Success Criteria** (what must be TRUE):
+  1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
+  2. The latest smoke result is visible in operator surfaces or logs without digging through raw process output.
+  3. The rollout confidence path is documented clearly enough that it can be rerun whenever ChatGPT UI drift is suspected.
+
+## Progress
+
+**Execution Order:**
+Current milestone execution order: 9 -> 10 -> 11
+
+| Phase | Requirements | Status | Completed |
+|-------|--------------|--------|-----------|
+| 9. Internal host-pool orchestration | ORCH-01, ORCH-02, ORCH-03 | Not started | - |
+| 10. ChatGPT UI drift hardening | STAB-01, STAB-02, STAB-03 | Not started | - |
+| 11. Rollout smoke confidence | CONF-01, CONF-02 | Not started | - |
+
+## Current Status
+
+- Active milestone: `v1.2 Rollout Stability`
+- Current next action: discuss or plan `Phase 9`
+- Carry-forward debt from `v1.1`: `dad` selector drift, current ChatGPT `Temporary Chat`/model-picker live recheck, and script-only host-pool orchestration
 
 ## Next Up
 
-- `$gsd-new-milestone`
-- or review the archived v1.1 scope in [.planning/milestones/v1.1-ROADMAP.md](/d:/OpenAi/.planning/milestones/v1.1-ROADMAP.md) before choosing the next milestone theme
+- `$gsd-discuss-phase 9`
+- `$gsd-plan-phase 9`
