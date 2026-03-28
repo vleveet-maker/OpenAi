@@ -33,11 +33,14 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] The proxied host-native household pool can be stopped again cleanly so browsers do not remain open when the pool is idle.
 - [x] Each newly activated shared-screen chat can now be blocked behind explicit fresh-chat bootstrap state until `Temporary Chat` and preferred-model selection are ready or have failed clearly.
 
-## Next Milestone Goals
+## Current Milestone: v1.2 Rollout Stability
 
-- Decide whether the next milestone should keep hardening household rollout debt or shift back to product-facing expansion.
-- If rollout hardening continues, target the remaining live ChatGPT selector drift risk and the `dad` proxied relay edge case first.
-- If product expansion resumes, build on the now-proven host-native fallback and fresh-chat isolation rather than reopening the earlier Docker-only assumptions.
+**Goal:** Make household rollout predictable enough for routine use by removing the remaining operator friction and ChatGPT UI drift tails left after `v1.1`.
+
+**Target features:**
+- Start and stop the proxied host-native household pool from the internal admin surface instead of relying only on PowerShell scripts.
+- Harden relay and fresh-chat bootstrap against the current ChatGPT UI so all three workers, including `dad`, can be trusted more evenly.
+- Add a repeatable rollout smoke path so the operator can confirm readiness before the family starts using the pool again.
 
 ## Out of Scope
 
@@ -56,6 +59,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Fresh-chat behavior now prefers ChatGPT `Temporary Chat` so the dialog does not land in history and does not use or create memories.
 - The current default model policy for a fresh chat is "latest available reasoning model", implemented through `WORKER_PREFERRED_REASONING_MODEL_LABELS` with `GPT-5.4 Thinking` as of 2026-03-28.
 - The largest remaining real-world risks are worker-specific ChatGPT DOM drift and the ergonomics of running native browser windows on the host only when needed.
+- `v1.2` intentionally keeps scope on rollout reliability rather than adding billing, entitlements, or broader product expansion yet.
 
 ## Key Decisions
 
@@ -74,5 +78,22 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Prefer `Temporary Chat` for fresh dialogs | The new chat should stay out of history and avoid using or creating memories | - Implemented in v1.1 |
 | Prefer the latest ChatGPT reasoning model for a new chat | Fresh dialogs should start on the strongest current reasoning default instead of a stale model selection | - Implemented in v1.1 |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition:**
+1. Requirements invalidated? -> Move to Out of Scope with reason
+2. Requirements validated? -> Move to Validated with phase reference
+3. New requirements emerged? -> Add to active milestone scope
+4. Decisions to log? -> Add to Key Decisions
+5. "What This Is" still accurate? -> Update if drifted
+
+**After each milestone:**
+1. Full review of all sections
+2. Core Value check - still the right priority?
+3. Audit Out of Scope - reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-03-28 after shipping v1.1 Household Rollout Hardening*
+*Last updated: 2026-03-28 after starting v1.2 Rollout Stability*
