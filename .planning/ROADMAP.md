@@ -23,8 +23,8 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [ ] **Phase 10: ChatGPT UI drift hardening** - active; selector hardening landed, but live hidden-runtime validation now shows all three workers falling into Cloudflare challenge instead of stable ChatGPT bootstrap
 - [x] **Phase 10.1: Hidden runtime after manual login** - (INSERTED) completed 2026-03-28; explicit visible-auth and hidden-runtime paths now exist, plus a canonical hidden-runtime validation probe
 - [x] **Phase 10.2: Hidden runtime reliability review and alternative browser runtime decision** - (INSERTED) completed 2026-03-28; control-plane truth is explicit, hidden-runtime evidence is recorded, and Phase 11 is now blocked by an explicit runtime decision
-- [ ] **Phase 10.3: Alternative non-visible native browser runtime design** - (INSERTED) urgent follow-up to replace the rejected hidden runtime assumptions before rollout smoke continues
-- [ ] **Phase 11: Rollout smoke confidence** - blocked pending Phase 10.3; rollout smoke must not proceed on the rejected hidden runtime assumptions
+- [x] **Phase 10.3: Alternative non-visible native browser runtime design** - (INSERTED) completed 2026-03-28; alternate desktop runtime foundation and control-plane integration landed, but no worker passed the bounded live proof
+- [ ] **Phase 11: Rollout smoke confidence** - blocked pending an alternate-desktop follow-up; rollout smoke must not proceed until a worker records `phase11Ready=true`
 
 ## Phase Details
 
@@ -47,7 +47,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
   1. Relay succeeds on all three household workers against the current ChatGPT UI, including `dad`.
   2. Fresh-chat bootstrap still reaches `Temporary Chat` plus the preferred reasoning model on a logged-in worker.
   3. Selector updates for relay and bootstrap live in centralized, maintainable code paths instead of fragmented browser-specific patches.
-**Current status:** Selector centralization is complete, but live validation now shows `visible_auth` reaching a normal logged-in ChatGPT page while `hidden_runtime` on the same durable profile lands in Cloudflare challenge flow on all three workers.
+**Current status:** Selector centralization is complete, but live validation still has one open ChatGPT UI tail: on the alternate-desktop runtime, `dad` currently needs reauth and `wife` reached `temporary_confirmation_not_found` during `Temporary Chat` bootstrap.
 
 ### Phase 10.3: Alternative non-visible native browser runtime design (INSERTED)
 
@@ -61,12 +61,13 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
   2. Internal operator flows can move a worker from `visible_auth` into that replacement runtime explicitly and report it truthfully.
   3. Phase 10.3 ends with a live accept/reject runtime decision that either unblocks Phase 11 or keeps it blocked with fresh evidence.
 
-**Current status:** Planned around `host_alternate_desktop` as the primary replacement candidate. Phase 11 stays blocked until Phase 10.3 execution records an explicit runtime decision.
+**Completed:** 2026-03-28
+**Current status:** Completed with decision `keep_phase_11_blocked_pending_alternate_desktop_followup`. `host_alternate_desktop` is now the leading non-visible native direction, but no worker produced `phase11Ready=true`; live evidence includes `dad -> bootstrap_auth_required`, `wife -> temporary_confirmation_not_found`, and `shared-1 -> assignment timeout`.
 
 Plans:
-- [ ] `10.3-01-PLAN.md` - alternate-desktop launcher contract and worker runtime foundation
-- [ ] `10.3-02-PLAN.md` - host-controller, control-api, and internal admin integration for the new runtime
-- [ ] `10.3-03-PLAN.md` - bounded live proof, operator docs, and final runtime decision artifact
+- [x] `10.3-01-PLAN.md` - alternate-desktop launcher contract and worker runtime foundation
+- [x] `10.3-02-PLAN.md` - host-controller, control-api, and internal admin integration for the new runtime
+- [x] `10.3-03-PLAN.md` - bounded live proof, operator docs, and final runtime decision artifact
 
 ### Phase 10.1: Hidden runtime after manual login (INSERTED)
 
@@ -117,7 +118,7 @@ Plans:
   1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
   2. The latest smoke result is visible in operator surfaces or logs without digging through raw process output.
   3. The rollout confidence path is documented clearly enough that it can be rerun whenever ChatGPT UI drift is suspected.
-**Current status:** Blocked by Phase 10.3. Rollout confidence resumes only after a replacement non-visible runtime is designed and chosen.
+**Current status:** Blocked after Phase 10.3. Rollout confidence resumes only after an alternate-desktop stabilization follow-up gets at least one worker to `phase11Ready=true`.
 
 ## Progress
 
@@ -130,16 +131,16 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 11
 | 10. ChatGPT UI drift hardening | STAB-01, STAB-02, STAB-03 | In progress | - |
 | 10.1 Hidden runtime after manual login | HIDE-01, HIDE-02, HIDE-03 | Complete | 2026-03-28 |
 | 10.2 Hidden runtime reliability review and alternative browser runtime decision | RREV-01, RREV-02, RREV-03 | Complete | 2026-03-28 |
-| 10.3 Alternative non-visible native browser runtime design | NVRT-01, NVRT-02, NVRT-03 | Planned | - |
+| 10.3 Alternative non-visible native browser runtime design | NVRT-01, NVRT-02, NVRT-03 | Complete | 2026-03-28 |
 | 11. Rollout smoke confidence | CONF-01, CONF-02 | Blocked | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: execute `Phase 10.3`
-- Carry-forward debt from `v1.1`: current ChatGPT `Temporary Chat`/model-picker live recheck is now joined by a harder blocker: the current non-visible runtime options are not rollout-safe yet
+- Current next action: insert an alternate-desktop stabilization follow-up before `Phase 11`
+- Carry-forward debt from `v1.1`: current ChatGPT `Temporary Chat`/model-picker live recheck is now joined by a harder blocker: the current non-visible runtime still has not produced `phase11Ready=true`
 
 ## Next Up
 
-- `$gsd-execute-phase 10.3`
-- then return to `Phase 11` only after `10.3` records an explicit runtime decision
+- `$gsd-insert-phase 10.4 "Alternate desktop auth and bootstrap stabilization"`
+- then return to `Phase 11` only after the follow-up proves `phase11Ready=true`

@@ -31,9 +31,9 @@
 
 ### Alternative Non-Visible Native Runtime
 
-- [ ] **NVRT-01**: A replacement steady-state native browser runtime can run outside the operator's main desktop while staying in the same Windows login context and reusing the same durable browser profile that was authenticated visibly
-- [ ] **NVRT-02**: Internal admin, control-api, and host-controller can transition a worker from `visible_auth` into the selected replacement non-visible native runtime instead of the rejected `hidden_runtime` path
-- [ ] **NVRT-03**: The project records a live evidence-backed accept/reject decision for the selected replacement non-visible native runtime before `Phase 11` rollout smoke resumes
+- [x] **NVRT-01**: A replacement steady-state native browser runtime can run outside the operator's main desktop while staying in the same Windows login context and reusing the same durable browser profile that was authenticated visibly
+- [x] **NVRT-02**: Internal admin, control-api, and host-controller can transition a worker from `visible_auth` into the selected replacement non-visible native runtime instead of the rejected `hidden_runtime` path
+- [x] **NVRT-03**: The project records a live evidence-backed accept/reject decision for the selected replacement non-visible native runtime before `Phase 11` rollout smoke resumes
 
 ### Rollout Confidence
 
@@ -75,9 +75,9 @@
 | RREV-01 | Phase 10.2 | Complete |
 | RREV-02 | Phase 10.2 | Complete |
 | RREV-03 | Phase 10.2 | Complete |
-| NVRT-01 | Phase 10.3 | Planned |
-| NVRT-02 | Phase 10.3 | Planned |
-| NVRT-03 | Phase 10.3 | Planned |
+| NVRT-01 | Phase 10.3 | Complete |
+| NVRT-02 | Phase 10.3 | Complete |
+| NVRT-03 | Phase 10.3 | Complete |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
@@ -88,4 +88,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after planning Phase 10.3 Alternative non-visible native browser runtime design*
+*Last updated: 2026-03-28 after completing Phase 10.3 Alternative non-visible native browser runtime design*

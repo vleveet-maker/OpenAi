@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
-status: ready_to_execute
-stopped_at: Phase 10.3 planned around a same-session alternate-desktop runtime; next step is `$gsd-execute-phase 10.3`
-last_updated: "2026-03-28T20:04:37+03:00"
-last_activity: 2026-03-28 -- planned Phase 10.3 as alternate-desktop runtime replacement after Phase 10.2 rejected current non-visible paths
+status: blocked
+stopped_at: Phase 10.3 completed with an alternate-desktop runtime decision that still keeps Phase 11 blocked; next step is `$gsd-insert-phase 10.4 "Alternate desktop auth and bootstrap stabilization"`
+last_updated: "2026-03-28T21:12:00+03:00"
+last_activity: 2026-03-28 -- completed Phase 10.3, selected alternate desktop as the leading non-visible direction, and kept Phase 11 blocked on live evidence
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 15
-  completed_plans: 12
-  percent: 65
+  completed_plans: 15
+  percent: 75
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Phase 10.3 - Alternative non-visible native browser runtime design
+**Current focus:** Follow-up needed after Phase 10.3 alternate-desktop proof
 
 ## Current Position
 
-Phase: 10.3 (Alternative non-visible native browser runtime design) - READY TO EXECUTE
-Plan: 0 of 3 complete
+Phase: 10.3 complete, Phase 11 blocked pending follow-up
+Plan: 3 of 3 complete
 Milestone: `v1.2 Rollout Stability`
-Status: Ready to execute Phase 10.3
-Last activity: 2026-03-28 -- planned Phase 10.3 as alternate-desktop runtime replacement after Phase 10.2
+Status: Blocked pending alternate-desktop stabilization follow-up
+Last activity: 2026-03-28 -- completed Phase 10.3 and kept Phase 11 blocked after bounded live proof failed to produce `phase11Ready=true`
 
-Progress: [######----] 65%
+Progress: [#######---] 75%
 
 ## Milestone Snapshot
 
-- Phases completed: `3 / 6`
-- Plans completed: `12 / 12`
+- Phases completed: `4 / 6`
+- Plans completed: `15 / 15`
 - Current roadmap:
   - `.planning/ROADMAP.md`
 - Current requirements:
@@ -50,22 +50,22 @@ Progress: [######----] 65%
 - Manual operator login and reauthentication remain the deliberate safety model.
 - Public and internal surfaces remain separated behind one edge and protected browser access flow.
 - Host-native Chromium workers remain the proven fallback when Docker/browser fingerprinting blocks real login or relay.
-- The proxied host-native pool can now be controlled from `/internal/admin` and defaults to hidden runtime for routine use.
+- The proxied host-native pool can now be controlled from `/internal/admin` and defaults to alternate desktop runtime for routine use.
 - Visible interactive browser use is now explicit and limited to `Start visible login` or `Start visible reauth`.
 - Hidden-runtime auth loss after manual login is now treated as `architecture review required`, not as a silent retry opportunity.
 - Phase 10.2 selected runtime decision `block_phase_11_pending_new_runtime_design`; the current selected runtime for Phase 11 is none because both reviewed non-visible runtime paths are rejected for rollout use.
-- Phase 10.3 now exists as the required runtime-design follow-up before Phase 11 can continue.
-- Phase 10.3 planning now selects a same-session alternate Windows desktop as the primary replacement runtime direction to try before any credentialed or second-user launch path.
+- Phase 10.3 is now complete and has moved routine host control to `alternate_desktop` / `host_alternate_desktop` as the leading non-visible runtime direction.
+- Phase 10.3 bounded live proof still did not produce `phase11Ready=true`, so Phase 11 remains blocked.
 - A fresh user chat still goes through explicit bootstrap state and prefers `Temporary Chat` plus the latest configured reasoning model.
 - The intended future user-facing shape remains a standard mobile chat UX with a chat list, create-new-chat, image attachment, and chat continuity across browser workers.
-- Live comparison now confirms that visible interactive auth and hidden runtime must be evaluated as separate runtime classes, not as equivalent views of the same reliable session state.
+- Live comparison now confirms that visible interactive auth and alternate desktop must be evaluated as separate runtime classes, not as equivalent views of the same reliable session state.
 
 ### Remaining Rollout Debt
 
 - Current host hidden runtime is rejected for rollout: live evidence includes Cloudflare challenge URLs and bounded hidden-runtime probe failure.
 - The explicit `docker_headed_xvfb` candidate is also rejected for Phase 11 as currently implemented: live bootstrap on `worker-dad` returned `bootstrap_challenge_detected`.
-- `/internal/workers` now exposes `runtimeCapability`, but Phase 11 stays blocked until Phase 10.3 defines a replacement runtime path.
-- Phase 9 still wants one end-to-end live smoke through `/internal/admin`, but that smoke is now downstream of the runtime-design blocker.
+- Alternate desktop is now the best non-visible native direction, but the bounded live proof still produced `dad -> bootstrap_auth_required`, `wife -> temporary_confirmation_not_found`, and `shared-1 -> assignment timeout`.
+- Phase 11 stays blocked until a follow-up stabilization step gets at least one worker to `phase11Ready=true`.
 
 ## Accumulated Context
 
@@ -81,9 +81,10 @@ Progress: [######----] 65%
 - Phase 10.2 executed: Wave 1 added truthful startup and runtime-capability semantics, Wave 2 recorded bounded hidden-runtime evidence, and Wave 3 compared the explicit Docker/Xvfb candidate before blocking Phase 11 on a new runtime design
 - Phase 10.3 inserted after Phase 10: Alternative non-visible native browser runtime design (URGENT)
 - Phase 10.3 planned: same-session alternate desktop is the primary replacement non-visible runtime candidate, and Phase 11 stays blocked until execution writes an explicit runtime decision
+- Phase 10.3 executed: alternate desktop launcher, control-plane integration, and live proof landed; the runtime is better than the rejected hidden path but still not rollout-ready, so the next required action is a stabilization follow-up before Phase 11
 
 ## Session Continuity
 
-Last session: 2026-03-28 20:04
-Stopped at: Phase 10.3 planned around a same-session alternate-desktop runtime; next step is `$gsd-execute-phase 10.3`
+Last session: 2026-03-28 21:12
+Stopped at: Phase 10.3 completed with an alternate-desktop runtime decision that still keeps Phase 11 blocked; next step is `$gsd-insert-phase 10.4 "Alternate desktop auth and bootstrap stabilization"`
 Resume file: .planning/ROADMAP.md

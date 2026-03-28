@@ -23,7 +23,7 @@ This document is for the household operator only. Worker browsers stay internal-
 ## Host Pool Control
 
 - Open `http://127.0.0.1:8081/internal/admin`.
-- Use `Start pool` to bring up the proxied host-native worker pool in hidden runtime only.
+- Use `Start pool` to bring up the proxied host-native worker pool in alternate desktop non-visible runtime.
 - Use `Stop pool` to shut the proxied host-native worker pool down again.
 - Pool lifecycle statuses mean:
   - `idle`: proxy and host workers are down.
@@ -34,7 +34,7 @@ This document is for the household operator only. Worker browsers stay internal-
   - `failed`: the last lifecycle action failed and the last error should be reviewed.
 - `degraded` is intentional visibility, not an automatic repair mode. This phase does not auto-rollback and does not auto-retry.
 - The PowerShell scripts remain fallback tools if `/internal/admin` is unavailable, but they are no longer the primary operator path.
-- Minimized windows are no longer an accepted steady-state behavior. Routine use should stay in hidden runtime without any visible desktop browser.
+- Minimized windows are no longer an accepted steady-state behavior. Routine use should stay in alternate desktop runtime without any visible desktop browser.
 
 ## Phase 10.2 Runtime Decision
 
@@ -54,6 +54,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - `http://127.0.0.1:8081/internal/browser/...` is internal-only and is the only supported path for the live worker viewer.
 - If ChatGPT changed its UI and `Temporary Chat` or the preferred model can no longer be selected automatically, the session should remain blocked until the selector map is updated.
 - Current bootstrap drift may show either a direct `Temporary` control or a model menu entry before the preferred model is selected.
+- Alternate desktop runtime metadata now lives under `infra/data/host-worker-state/<workerId>.json` and should match what `/internal/workers` reports for `runtimeDesktopName`.
 
 ## First Login
 
@@ -62,7 +63,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - Complete ChatGPT login manually inside the visible browser or protected viewer, depending on worker runtime.
 - Wait for the authenticated ChatGPT page to stabilize.
 - Confirm that a clean `Temporary Chat` can be opened and that the preferred reasoning model is still available.
-- Return to `/internal/admin` and press `Complete login -> hidden` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
+- Return to `/internal/admin` and press `Complete login -> non-visible runtime` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
 - Confirm the worker returns to `ready`.
 - Treat the durable browser profile as the persistence layer; do not copy credentials into sidecar files or environment variables.
 
@@ -72,11 +73,11 @@ This document is for the household operator only. Worker browsers stay internal-
 - When a host-native worker reaches `reauth_required`, press `Start visible reauth` on `/internal/admin`.
 - When a Docker-backed worker reaches `reauth_required`, press `Start reauth` on `/internal/admin`.
 - Complete the login, CAPTCHA, or challenge step manually in the visible browser or browser access viewer.
-- Return to `/internal/admin` and press `Complete login -> hidden` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
+- Return to `/internal/admin` and press `Complete login -> non-visible runtime` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
 - Confirm the worker returns to `ready`.
 - If reauth fails repeatedly, leave the worker in `reauth_required` or `disconnected` instead of pretending it is safe to route sessions there.
 - If a worker logs in successfully but fresh chat bootstrap still fails, treat that as a selector/runtime issue rather than a healthy ready state.
-- If hidden runtime loses auth after manual login, treat that as `architecture review required`, not as a signal to keep toggling modes invisibly.
+- If alternate desktop runtime loses auth after manual login, treat that as `architecture review required`, not as a signal to keep toggling modes invisibly.
 
 ## Restart Workflow
 
@@ -100,8 +101,9 @@ This document is for the household operator only. Worker browsers stay internal-
 - Repeated profile corruption: preserve the existing profile directory for investigation before replacing it.
 - Phase 8 selector defaults live behind `WORKER_PREFERRED_REASONING_MODEL_LABELS`; if you need to pin a different latest reasoning model, update that env var instead of hardcoding a different label in the UI.
 - `test-host-worker-relay.ps1` is a Phase 10 drift hardening probe for maintainers. Use it to isolate a specific host-native worker and verify current-ui relay behavior; do not treat it as the final operator smoke flow.
-- `test-hidden-runtime-transition.ps1` is the canonical hidden-runtime validation path. Use it after `Complete login -> hidden`.
-- If `test-hidden-runtime-transition.ps1` reports `hidden_runtime_auth_unstable`, stop patching around it and begin runtime architecture review.
+- `test-alternate-desktop-runtime.ps1` is the canonical alternate-desktop validation path. Use it after `Complete login -> non-visible runtime`.
+- Phase 11 remains blocked until `test-alternate-desktop-runtime.ps1` reports `phase11Ready=true` on at least one worker.
+- The current Phase 10.3 live result is still negative for rollout confidence: `dad` returned `bootstrap_auth_required`, `wife` returned `temporary_confirmation_not_found`, and `shared-1` timed out before a successful isolated proof completed.
 
 ## Smoke Checklist
 
@@ -110,5 +112,5 @@ This document is for the household operator only. Worker browsers stay internal-
 - `http://<host>:8080/internal/browser/...` is unavailable.
 - `/internal/admin` can open a worker browser access viewer.
 - Manual ChatGPT login completes inside the viewer.
-- `Complete login -> hidden` returns a host-native worker to hidden runtime.
-- `test-hidden-runtime-transition.ps1` passes before the worker is treated as live-complete.
+- `Complete login -> non-visible runtime` returns a host-native worker to alternate desktop runtime.
+- `test-alternate-desktop-runtime.ps1` passes with `phase11Ready=true` before the worker is treated as live-complete.
