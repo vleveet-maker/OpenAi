@@ -1,8 +1,8 @@
 param(
   [switch]$SkipInstall,
   [string]$ProxyServer = "",
-  [ValidateSet("VisibleAuth", "HiddenRuntime")]
-  [string]$RuntimeMode = "HiddenRuntime",
+  [ValidateSet("VisibleAuth", "HiddenRuntime", "AlternateDesktop")]
+  [string]$RuntimeMode = "AlternateDesktop",
   [ValidateSet("CurrentExecutable", "ChannelMsedge")]
   [string]$HiddenLaunchVariant = "CurrentExecutable",
   [ValidateSet("Normal", "Minimized")]

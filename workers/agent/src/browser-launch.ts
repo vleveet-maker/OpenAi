@@ -3,10 +3,14 @@ import { join } from "node:path";
 
 import { chromium, type BrowserContext } from "playwright";
 
-export type WorkerRuntimeMode = "visible_auth" | "hidden_runtime";
+export type WorkerRuntimeMode =
+  | "visible_auth"
+  | "hidden_runtime"
+  | "alternate_desktop";
 export type WorkerRuntimeClass =
   | "host_hidden_runtime"
   | "host_visible_auth"
+  | "host_alternate_desktop"
   | "docker_headed_xvfb";
 
 export interface WorkerBrowserLaunchOptions {
@@ -194,6 +198,13 @@ export async function launchWorkerBrowser(
     options.cdpEndpointUrl
   ) {
     throw new Error("hidden_runtime_requires_no_cdp_endpoint");
+  }
+
+  if (
+    options.runtimeMode === "alternate_desktop" &&
+    !options.cdpEndpointUrl
+  ) {
+    throw new Error("alternate_desktop_requires_cdp_endpoint");
   }
 
   if (resolveBrowserTransport(options) === "cdp") {

@@ -46,6 +46,7 @@ export interface WorkerAgentConfig {
   browserChannel?: string;
   browserExecutablePath?: string;
   cdpEndpointUrl?: string;
+  runtimeDesktopName?: string;
   headless: boolean;
   proxyServer?: string;
   startUrl: string;
@@ -67,6 +68,7 @@ export interface WorkerHealthSnapshot {
   pageTitle: string | null;
   runtimeMode: WorkerRuntimeMode;
   runtimeClass: WorkerRuntimeClass;
+  runtimeDesktopName: string | null;
   headless: boolean;
   cdpAttached: boolean;
   proxyServerConfigured: boolean;
@@ -92,6 +94,7 @@ function parseWorkerRuntimeClass(
   if (
     value === "host_hidden_runtime" ||
     value === "host_visible_auth" ||
+    value === "host_alternate_desktop" ||
     value === "docker_headed_xvfb"
   ) {
     return value;
@@ -99,6 +102,10 @@ function parseWorkerRuntimeClass(
 
   if (runtimeMode === "visible_auth") {
     return "host_visible_auth";
+  }
+
+  if (runtimeMode === "alternate_desktop") {
+    return "host_alternate_desktop";
   }
 
   if ((env.DISPLAY ?? "").trim().length > 0 && parsePort(env.BROWSER_ACCESS_HTTP_PORT, 0) > 0) {
@@ -112,7 +119,11 @@ export function parseWorkerRuntimeMode(
   value: string | undefined,
   fallback: WorkerRuntimeMode = "hidden_runtime"
 ): WorkerRuntimeMode {
-  if (value === "visible_auth" || value === "hidden_runtime") {
+  if (
+    value === "visible_auth" ||
+    value === "hidden_runtime" ||
+    value === "alternate_desktop"
+  ) {
     return value;
   }
 
@@ -244,6 +255,7 @@ export function loadWorkerAgentConfig(
     browserChannel: env.WORKER_BROWSER_CHANNEL,
     browserExecutablePath: env.WORKER_BROWSER_EXECUTABLE_PATH,
     cdpEndpointUrl: env.WORKER_CDP_ENDPOINT_URL,
+    runtimeDesktopName: env.WORKER_RUNTIME_DESKTOP_NAME,
     headless,
     proxyServer: env.WORKER_PROXY_SERVER,
     startUrl: env.WORKER_START_URL ?? "https://chatgpt.com/",
@@ -337,6 +349,7 @@ export function createWorkerAgentRuntime(
     pageTitle: null,
     runtimeMode: config.runtimeMode,
     runtimeClass: config.runtimeClass,
+    runtimeDesktopName: config.runtimeDesktopName ?? null,
     headless: config.headless,
     cdpAttached: Boolean(config.cdpEndpointUrl),
     proxyServerConfigured: Boolean(config.proxyServer)
@@ -472,6 +485,7 @@ export function createWorkerAgentApp(
       profilePath: config.profilePath,
       runtimeMode: healthSnapshot.runtimeMode,
       runtimeClass: healthSnapshot.runtimeClass,
+      runtimeDesktopName: healthSnapshot.runtimeDesktopName,
       headless: healthSnapshot.headless,
       cdpAttached: healthSnapshot.cdpAttached,
       proxyServerConfigured: healthSnapshot.proxyServerConfigured,
