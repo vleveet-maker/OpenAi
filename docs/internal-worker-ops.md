@@ -19,6 +19,21 @@ This document is for the household operator only. Worker browsers stay internal-
 - Confirm that each worker still uses its durable profile mount under `/srv/chatgpt-workers/profiles/<worker-name>`.
 - Never store plaintext ChatGPT usernames, passwords, or reusable login secrets in this repository, compose files, or control-api configuration.
 
+## Host Pool Control
+
+- Open `http://127.0.0.1:8081/internal/admin`.
+- Use `Start pool` to bring up the proxied host-native worker pool.
+- Use `Stop pool` to shut the proxied host-native worker pool down again.
+- Pool lifecycle statuses mean:
+  - `idle`: proxy and host workers are down.
+  - `starting`: start was requested and the proxy or workers are still coming online.
+  - `ready`: proxy is listening and all configured host workers are reachable.
+  - `degraded`: partial success. Some of the pool came up, but not all of it.
+  - `stopping`: stop was requested and shutdown is still in progress.
+  - `failed`: the last lifecycle action failed and the last error should be reviewed.
+- `degraded` is intentional visibility, not an automatic repair mode. This phase does not auto-rollback and does not auto-retry.
+- The PowerShell scripts remain fallback tools if `/internal/admin` is unavailable, but they are no longer the primary operator path.
+
 ## Browser Access
 
 - Open `http://127.0.0.1:8081/internal/admin`.
@@ -60,6 +75,9 @@ This document is for the household operator only. Worker browsers stay internal-
 
 ## Troubleshooting
 
+- `idle` when you expected browsers: use `Start pool` first, then confirm the proxy and host workers begin transitioning.
+- `degraded`: treat this as partial success, check recent lifecycle events on `/internal/admin`, and fix the missing worker or proxy issue manually.
+- `failed`: read the last error on `/internal/admin` before trying another lifecycle action.
 - `starting` for too long: inspect container logs and confirm the browser, `Xvfb`, `x11vnc`, and `websockify` processes are actually running.
 - Browser access expired: start a new browser access session; old viewer URLs stop authorizing after `15 minutes`.
 - `disconnected`: treat as runtime control failure first; restart the worker and verify the agent can reach the browser again.

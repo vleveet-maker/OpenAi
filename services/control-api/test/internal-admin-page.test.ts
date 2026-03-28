@@ -94,6 +94,11 @@ describe("internal admin page", () => {
       .set("x-internal-admin-token", "secret")
       .expect(200);
 
+    expect(response.text).toContain("Start pool");
+    expect(response.text).toContain("Stop pool");
+    expect(response.text).toContain("/internal/host-pool");
+    expect(response.text).toContain("degraded");
+    expect(response.text).toContain("failed");
     expect(response.text).toContain("Open browser");
     expect(response.text).toContain("Start reauth");
     expect(response.text).toContain("Complete login/reauth");

@@ -79,6 +79,25 @@ function renderInternalAdminPage(): string {
         margin: 0 0 18px;
       }
 
+      .pool-panel {
+        display: grid;
+        gap: 16px;
+      }
+
+      .pool-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .pool-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
       .count-card,
       .worker-card {
         padding: 14px;
@@ -219,6 +238,23 @@ function renderInternalAdminPage(): string {
 
       <div class="grid">
         <section>
+          <h2>Host pool lifecycle</h2>
+          <div class="pool-panel">
+            <div class="pool-row">
+              <div>
+                <div class="badge" id="host-pool-status-badge">idle</div>
+                <p id="host-pool-status-copy">Checking host-pool lifecycle...</p>
+              </div>
+              <div class="worker-actions">
+                <button id="host-pool-start" data-pool-action="start">Start pool</button>
+                <button id="host-pool-stop" class="secondary" data-pool-action="stop">Stop pool</button>
+              </div>
+            </div>
+            <div class="pool-meta" id="host-pool-meta"></div>
+          </div>
+        </section>
+
+        <section>
           <h2>Worker status summary</h2>
           <div class="counts" id="worker-summary"></div>
           <div class="worker-cards" id="worker-cards"></div>
@@ -250,9 +286,47 @@ function renderInternalAdminPage(): string {
       ]);
       const browserAccessByWorker = new Map();
       let pendingAction = null;
+      let pendingPoolAction = null;
+      let currentHostPool = null;
 
       function severityClass(severity) {
         return severity === "warn" || severity === "error" ? severity : "";
+      }
+
+      function poolStatusSeverity(status) {
+        if (status === "failed") {
+          return "error";
+        }
+
+        if (status === "degraded" || status === "starting" || status === "stopping") {
+          return "warn";
+        }
+
+        return "";
+      }
+
+      function describeHostPoolStatus(status) {
+        if (status === "idle") {
+          return "Pool is stopped. Start it when the household browsers are needed.";
+        }
+
+        if (status === "starting") {
+          return "Pool start is in progress. Waiting for proxy and workers to come online.";
+        }
+
+        if (status === "ready") {
+          return "Pool is ready. Proxy is listening and all configured host workers are reachable.";
+        }
+
+        if (status === "degraded") {
+          return "Pool is degraded. Partial success is visible here and this phase does not auto-rollback or auto-retry.";
+        }
+
+        if (status === "stopping") {
+          return "Pool stop is in progress. Waiting for workers and proxy to shut down cleanly.";
+        }
+
+        return "Pool action failed. Check the last error and recent events before trying again.";
       }
 
       function formatWhen(value) {
@@ -353,7 +427,7 @@ function renderInternalAdminPage(): string {
                 <span>Last seen: \${escapeHtml(worker.lastSeenAt || "n/a")}</span>
               </div>
               <div class="worker-actions">
-                \${worker.runtimeType === "docker" ? \`<button data-action="open-browser" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Open browser</button>\` : \`<span class="badge">Use local host launcher scripts</span>\`}
+                \${worker.runtimeType === "docker" ? \`<button data-action="open-browser" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Open browser</button>\` : \`<span class="badge">Managed by Start pool / Stop pool</span>\`}
                 \${worker.runtimeType === "docker" ? \`<button class="secondary" data-action="start-reauth" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start reauth</button>\` : ""}
                 <button class="secondary" data-action="mark-ready" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Mark ready</button>
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="warn" data-action="cancel-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Cancel access</button>\` : ""}
@@ -362,6 +436,42 @@ function renderInternalAdminPage(): string {
             </article>
           \`;
         }).join("");
+      }
+
+      function renderHostPool(pool) {
+        currentHostPool = pool;
+
+        const badge = document.getElementById("host-pool-status-badge");
+        badge.className = "badge " + poolStatusSeverity(pool.status);
+        badge.textContent = pool.status;
+
+        document.getElementById("host-pool-status-copy").textContent =
+          describeHostPoolStatus(pool.status);
+
+        const meta = [
+          ["Proxy listening", pool.proxyListening ? "yes" : "no"],
+          ["Controller reachable", pool.controllerReachable ? "yes" : "no"],
+          ["Last action", pool.lastAction || "none"],
+          ["Updated", formatWhen(pool.updatedAt)],
+          ["Workers tracked", String(pool.workers.length)],
+          ["Last error", pool.lastError || "none"]
+        ];
+
+        document.getElementById("host-pool-meta").innerHTML = meta.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+
+        const startButton = document.getElementById("host-pool-start");
+        const stopButton = document.getElementById("host-pool-stop");
+        const actionPending = pendingPoolAction !== null || pool.status === "starting" || pool.status === "stopping";
+
+        startButton.disabled =
+          actionPending || pool.status === "ready" || pool.status === "degraded";
+        stopButton.disabled =
+          actionPending || pool.status === "idle";
       }
 
       function renderEvents(targetId, events, emptyText) {
@@ -389,16 +499,18 @@ function renderInternalAdminPage(): string {
       }
 
       async function loadSnapshot() {
-        const [summaryResponse, eventsResponse, workersResponse] = await Promise.all([
+        const [poolResponse, summaryResponse, eventsResponse, workersResponse] = await Promise.all([
+          fetch("/internal/host-pool"),
           fetch("/internal/observability/summary"),
           fetch("/internal/observability/events?limit=50"),
           fetch("/internal/workers/")
         ]);
 
-        if (!summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok) {
+        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok) {
           throw new Error("Internal observability endpoints are unavailable");
         }
 
+        const poolPayload = await poolResponse.json();
         const summary = await summaryResponse.json();
         const events = await eventsResponse.json();
         const workersPayload = await workersResponse.json();
@@ -413,6 +525,7 @@ function renderInternalAdminPage(): string {
           browserAccessByWorker.set(workerId, browserAccess);
         }
 
+        renderHostPool(poolPayload.pool);
         renderWorkerSummary(summary, workers);
         renderEvents(
           "recent-failures",
@@ -446,6 +559,20 @@ function renderInternalAdminPage(): string {
         });
 
         window.open(result.viewerPath, "_blank", "noopener");
+      }
+
+      async function startPool() {
+        await fetchJson("/internal/host-pool/start", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+      }
+
+      async function stopPool() {
+        await fetchJson("/internal/host-pool/stop", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
       }
 
       async function startReauth(workerId) {
@@ -500,6 +627,25 @@ function renderInternalAdminPage(): string {
         }
       }
 
+      async function performPoolAction(action) {
+        pendingPoolAction = action;
+
+        try {
+          if (action === "start") {
+            await startPool();
+          } else if (action === "stop") {
+            await stopPool();
+          }
+
+          await refresh();
+        } finally {
+          pendingPoolAction = null;
+          if (currentHostPool) {
+            renderHostPool(currentHostPool);
+          }
+        }
+      }
+
       async function refresh() {
         try {
           await loadSnapshot();
@@ -523,6 +669,19 @@ function renderInternalAdminPage(): string {
         const button = target.closest("button[data-action]");
 
         if (!button) {
+          const poolButton = target.closest("button[data-pool-action]");
+
+          if (!poolButton) {
+            return;
+          }
+
+          const poolAction = poolButton.getAttribute("data-pool-action");
+
+          if (!poolAction) {
+            return;
+          }
+
+          void performPoolAction(poolAction);
           return;
         }
 
