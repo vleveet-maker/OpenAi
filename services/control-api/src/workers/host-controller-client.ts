@@ -13,7 +13,14 @@ export interface HostControllerWorkerStatus {
   startupStatus?: HostControllerWorkerStartupStatus | null;
   agentListening: boolean;
   browserListening: boolean;
-  runtimeMode?: "visible_auth" | "hidden_runtime" | null;
+  runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop" | null;
+  runtimeClass?:
+    | "host_visible_auth"
+    | "host_hidden_runtime"
+    | "host_alternate_desktop"
+    | "docker_headed_xvfb"
+    | null;
+  runtimeDesktopName?: string | null;
   headless?: boolean | null;
   cdpAttached?: boolean | null;
   proxyServerConfigured?: boolean | null;
@@ -29,13 +36,13 @@ export interface HostControllerHealthSnapshot {
 
 export interface HostControllerPoolResult extends HostControllerHealthSnapshot {
   action: string;
-  runtimeMode?: "visible_auth" | "hidden_runtime";
+  runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop";
 }
 
 export interface HostControllerClient {
   startWorker(
     workerId: string,
-    runtimeMode?: "visible_auth" | "hidden_runtime"
+    runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop"
   ): Promise<HostControllerPoolResult | Record<string, unknown>>;
   stopWorker(workerId: string): Promise<void>;
   startPool(): Promise<HostControllerPoolResult>;
@@ -146,13 +153,14 @@ export function createNoopHostControllerClient(): HostControllerClient {
   };
 
   return {
-    async startWorker(_workerId: string, _runtimeMode?: "visible_auth" | "hidden_runtime") {
+    async startWorker(_workerId: string, _runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop") {
       return {};
     },
     async stopWorker(_workerId: string) {},
     async startPool() {
       return {
         action: "pool_start_requested",
+        runtimeMode: "alternate_desktop",
         ...idleSnapshot
       };
     },

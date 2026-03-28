@@ -7,14 +7,22 @@ import { loadProxyShareLinks, writeSingBoxConfig } from "./proxy-links.mjs";
 
 const POWERSHELL_EXE = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
 
-function normalizeRuntimeMode(value, fallback = "hidden_runtime") {
-  return value === "visible_auth" || value === "hidden_runtime"
+function normalizeRuntimeMode(value, fallback = "alternate_desktop") {
+  return value === "visible_auth" || value === "hidden_runtime" || value === "alternate_desktop"
     ? value
     : fallback;
 }
 
 function toPowerShellRuntimeMode(runtimeMode) {
-  return runtimeMode === "visible_auth" ? "VisibleAuth" : "HiddenRuntime";
+  if (runtimeMode === "visible_auth") {
+    return "VisibleAuth";
+  }
+
+  if (runtimeMode === "alternate_desktop") {
+    return "AlternateDesktop";
+  }
+
+  return "HiddenRuntime";
 }
 
 function sleep(ms) {
@@ -112,6 +120,8 @@ export class HostController {
         ? Boolean(health.browserContextReady)
         : await testLocalPort(worker.cdpPort),
       runtimeMode: health?.runtimeMode ?? runtimeModeFallback,
+      runtimeClass: health?.runtimeClass ?? null,
+      runtimeDesktopName: health?.runtimeDesktopName ?? null,
       headless: health?.headless ?? null,
       cdpAttached: health?.cdpAttached ?? null,
       proxyServerConfigured: health?.proxyServerConfigured ?? null,
@@ -210,7 +220,7 @@ export class HostController {
     const proxyRuntime = await this.ensureProxyReady();
     const resolvedRuntimeMode = normalizeRuntimeMode(
       runtimeMode,
-      this.config.defaultWorkerRuntimeMode ?? "hidden_runtime"
+      this.config.defaultWorkerRuntimeMode ?? "alternate_desktop"
     );
 
     const existingStatus = await this.getWorkerStatus(
@@ -259,7 +269,7 @@ export class HostController {
     const results = [];
     const resolvedRuntimeMode = normalizeRuntimeMode(
       runtimeMode,
-      this.config.defaultWorkerRuntimeMode ?? "hidden_runtime"
+      this.config.defaultWorkerRuntimeMode ?? "alternate_desktop"
     );
 
     for (const worker of this.config.workers) {

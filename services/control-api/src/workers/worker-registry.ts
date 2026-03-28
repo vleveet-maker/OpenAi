@@ -24,7 +24,13 @@ export interface WorkerRecord {
   lastSeenAt?: string;
   lastAssignedAt?: string;
   recoverySessionId?: string;
-  runtimeMode?: "visible_auth" | "hidden_runtime";
+  runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop";
+  runtimeClass?:
+    | "host_visible_auth"
+    | "host_hidden_runtime"
+    | "host_alternate_desktop"
+    | "docker_headed_xvfb";
+  runtimeDesktopName?: string;
   headless?: boolean;
   cdpAttached?: boolean;
   proxyServerConfigured?: boolean;
@@ -43,7 +49,14 @@ export interface WorkerRegistryUpdate {
   lastSeenAt?: string;
   lastAssignedAt?: string | null;
   recoverySessionId?: string | null;
-  runtimeMode?: "visible_auth" | "hidden_runtime" | null;
+  runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop" | null;
+  runtimeClass?:
+    | "host_visible_auth"
+    | "host_hidden_runtime"
+    | "host_alternate_desktop"
+    | "docker_headed_xvfb"
+    | null;
+  runtimeDesktopName?: string | null;
   headless?: boolean | null;
   cdpAttached?: boolean | null;
   proxyServerConfigured?: boolean | null;
@@ -87,7 +100,11 @@ export class WorkerRegistry {
         status: createWorkerStatusRecord(definition.defaultStatus, "registry bootstrap"),
         runtimeStatus: definition.defaultStatus,
         runtimeMode:
-          definition.runtimeType === "host" ? "hidden_runtime" : undefined,
+          definition.runtimeType === "host" ? "alternate_desktop" : undefined,
+        runtimeClass:
+          definition.runtimeType === "host"
+            ? "host_alternate_desktop"
+            : undefined,
         runtimeCapability: defaultRuntimeCapabilityForStatus(definition.defaultStatus),
         lastSeenAt: now
       });
@@ -154,6 +171,14 @@ export class WorkerRegistry {
         update.runtimeMode === null
           ? undefined
           : update.runtimeMode ?? existing.runtimeMode,
+      runtimeClass:
+        update.runtimeClass === null
+          ? undefined
+          : update.runtimeClass ?? existing.runtimeClass,
+      runtimeDesktopName:
+        update.runtimeDesktopName === null
+          ? undefined
+          : update.runtimeDesktopName ?? existing.runtimeDesktopName,
       headless:
         update.headless === null
           ? undefined

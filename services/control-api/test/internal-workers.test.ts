@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import request from "supertest";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import type { ControlApiConfig } from "../src/config.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
@@ -13,7 +13,7 @@ const tempDirectories: string[] = [];
 const cleanupCallbacks: Array<() => void> = [];
 
 function createTestRuntime() {
-  const root = mkdtempSync(join(tmpdir(), "control-api-admin-page-"));
+  const root = mkdtempSync(join(tmpdir(), "control-api-internal-workers-"));
   tempDirectories.push(root);
 
   const config: ControlApiConfig = {
@@ -44,31 +44,28 @@ function createTestRuntime() {
     ]
   };
 
-  const dockerEngineClient = {
-    restartContainer: vi.fn().mockResolvedValue(undefined),
-    inspectContainer: vi.fn()
-  };
-  const healthMonitor = {
-    startHealthMonitor: vi.fn(),
-    stopHealthMonitor: vi.fn(),
-    runHealthSweep: vi.fn().mockResolvedValue(undefined)
-  };
   const runtime = createControlApiRuntime(config, {
-    dockerEngineClient,
-    healthMonitor,
     bootstrapTransport: createReadyBootstrapTransport()
   });
-  const app = createControlApiApp(runtime);
+  runtime.workerRegistry.updateWorker("dad", {
+    status: "ready",
+    reason: "test snapshot",
+    runtimeStatus: "ready",
+    runtimeMode: "alternate_desktop",
+    runtimeClass: "host_alternate_desktop",
+    runtimeDesktopName: "OWMCGPT-dad",
+    headless: false,
+    cdpAttached: true,
+    browserContextReady: true
+  });
 
   return {
     runtime,
-    app
+    app: createControlApiApp(runtime)
   };
 }
 
 afterEach(() => {
-  vi.restoreAllMocks();
-
   while (cleanupCallbacks.length > 0) {
     cleanupCallbacks.pop()?.();
   }
@@ -85,31 +82,21 @@ afterEach(() => {
   }
 });
 
-describe("internal admin page", () => {
-  it("renders alternate-desktop controls and observability endpoints", async () => {
+describe("internal workers routes", () => {
+  it("exposes host_alternate_desktop runtime details", async () => {
     const { app, runtime } = createTestRuntime();
-    cleanupCallbacks.push(() => runtime.dispose());
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
 
     const response = await request(app)
-      .get("/internal/admin")
+      .get("/internal/workers")
       .set("x-internal-admin-token", "secret")
       .expect(200);
 
-    expect(response.text).toContain("Start pool");
-    expect(response.text).toContain("Stop pool");
-    expect(response.text).toContain("alternate desktop non-visible runtime");
-    expect(response.text).toContain("Start visible login");
-    expect(response.text).toContain("Start visible reauth");
-    expect(response.text).toContain("Complete login -> non-visible runtime");
-    expect(response.text).toContain("Alternate desktop");
-    expect(response.text).toContain("Visible auth");
-    expect(response.text).toContain("architecture review required");
-    expect(response.text).toContain("/internal/host-pool");
-    expect(response.text).toContain("degraded");
-    expect(response.text).toContain("failed");
-    expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/start");
-    expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/complete");
-    expect(response.text).toContain("/internal/workers/");
-    expect(response.text).toContain("/internal/observability/summary");
+    expect(response.body.workers).toHaveLength(1);
+    expect(response.body.workers[0].runtimeMode).toBe("alternate_desktop");
+    expect(response.body.workers[0].runtimeClass).toBe("host_alternate_desktop");
+    expect(response.body.workers[0].runtimeDesktopName).toBe("OWMCGPT-dad");
   });
 });

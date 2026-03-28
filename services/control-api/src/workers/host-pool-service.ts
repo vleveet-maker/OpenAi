@@ -36,6 +36,9 @@ export interface HostPoolServiceOptions {
   workerRegistry?: WorkerRegistry;
 }
 
+const DEFAULT_HOST_ROUTINE_RUNTIME_MODE = "alternate_desktop";
+const DEFAULT_HOST_ROUTINE_RUNTIME_CLASS = "host_alternate_desktop";
+
 export class HostPoolServiceError extends Error {
   constructor(
     public readonly statusCode: number,
@@ -80,6 +83,38 @@ function deriveRuntimeCapabilityFromControllerRow(
   }
 
   return "unreachable";
+}
+
+function normalizeWorkerRow(
+  worker: HostControllerWorkerStatus,
+  workerRegistry: WorkerRegistry | undefined
+): HostControllerWorkerStatus & {
+  runtimeCapability: WorkerRuntimeCapability;
+} {
+  const registryWorker = workerRegistry?.getWorker(worker.workerId);
+  const runtimeMode =
+    worker.runtimeMode ??
+    (registryWorker?.runtimeType === "host"
+      ? DEFAULT_HOST_ROUTINE_RUNTIME_MODE
+      : null);
+  const runtimeClass =
+    worker.runtimeClass ??
+    (runtimeMode === "alternate_desktop"
+      ? DEFAULT_HOST_ROUTINE_RUNTIME_CLASS
+      : registryWorker?.runtimeClass ?? null);
+  const runtimeDesktopName =
+    worker.runtimeDesktopName ?? registryWorker?.runtimeDesktopName ?? null;
+
+  return {
+    ...worker,
+    runtimeMode,
+    runtimeClass,
+    runtimeDesktopName,
+    runtimeCapability: deriveRuntimeCapabilityFromControllerRow(
+      worker,
+      workerRegistry
+    )
+  };
 }
 
 export class HostPoolService {
@@ -187,13 +222,9 @@ export class HostPoolService {
   async refresh(now: Date = new Date()): Promise<HostPoolSnapshot> {
     try {
       const health = await this.options.hostControllerClient.getHealth();
-      const freshWorkers = health.workers.map((worker) => ({
-        ...worker,
-        runtimeCapability: deriveRuntimeCapabilityFromControllerRow(
-          worker,
-          this.options.workerRegistry
-        )
-      }));
+      const freshWorkers = health.workers.map((worker) =>
+        normalizeWorkerRow(worker, this.options.workerRegistry)
+      );
       const nextWorkers =
         freshWorkers.length > 0 ? freshWorkers : this.snapshot.workers;
       const nextStatus = this.resolveStatus(health);

@@ -37,7 +37,7 @@ export function createInternalWorkerActionsRouter(
 
   function buildHostTransitionUpdate(
     workerId: string,
-    runtimeMode: "visible_auth" | "hidden_runtime",
+    runtimeMode: "visible_auth" | "hidden_runtime" | "alternate_desktop",
     reason: string
   ) {
     const now = new Date().toISOString();
@@ -50,8 +50,15 @@ export function createInternalWorkerActionsRouter(
       assignedUserLabel: null,
       recoverySessionId: null,
       runtimeMode,
+      runtimeClass:
+        runtimeMode === "visible_auth"
+          ? "host_visible_auth"
+          : runtimeMode === "alternate_desktop"
+            ? "host_alternate_desktop"
+            : "host_hidden_runtime",
       headless: runtimeMode === "hidden_runtime",
-      cdpAttached: runtimeMode === "visible_auth",
+      cdpAttached:
+        runtimeMode === "visible_auth" || runtimeMode === "alternate_desktop",
       browserContextReady: false,
       runtimeCapability: "unreachable",
       lastSeenAt: now
@@ -235,7 +242,7 @@ export function createInternalWorkerActionsRouter(
     if (worker.runtimeType !== "host") {
       response.status(409).json({
         error: "manual_auth_unsupported",
-        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and does not support hidden-runtime promotion.`,
+        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and does not support non-visible runtime promotion.`,
         workerId: worker.workerId
       });
       return;
@@ -250,29 +257,29 @@ export function createInternalWorkerActionsRouter(
       await options.hostControllerClient.stopWorker(worker.workerId);
       const result = await options.hostControllerClient.startWorker(
         worker.workerId,
-        "hidden_runtime"
+        "alternate_desktop"
       );
 
       buildHostTransitionUpdate(
         worker.workerId,
-        "hidden_runtime",
-        "manual login completed; restarting worker in hidden runtime"
+        "alternate_desktop",
+        "manual login completed; restarting worker in alternate desktop runtime"
       );
       options.eventRecorder?.recordEvent({
         eventType: "worker_reauth_completed",
         severity: "info",
         workerId: worker.workerId,
-        summary: `Worker ${worker.workerId} completed manual login and restarted in hidden runtime`,
+        summary: `Worker ${worker.workerId} completed manual login and restarted in alternate desktop runtime`,
         detailJson: JSON.stringify({
-          runtimeMode: "hidden_runtime",
+          runtimeMode: "alternate_desktop",
           previousRuntimeMode: worker.runtimeMode ?? null
         })
       });
       void options.healthMonitor.runHealthSweep();
 
       response.status(202).json({
-        action: "manual_auth_completed_hidden_runtime_started",
-        runtimeMode: "hidden_runtime",
+        action: "manual_auth_completed_alternate_desktop_started",
+        runtimeMode: "alternate_desktop",
         hostController: result,
         worker: options.workerRegistry.getWorker(worker.workerId)
       });
@@ -282,7 +289,7 @@ export function createInternalWorkerActionsRouter(
         detail:
           error instanceof Error
             ? error.message
-            : "The host worker could not return to hidden runtime."
+            : "The host worker could not return to the alternate desktop runtime."
       });
     }
   });

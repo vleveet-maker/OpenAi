@@ -55,7 +55,7 @@ function createTestRuntime(runtimeType: WorkerRuntimeType = "docker") {
   const hostControllerClient: HostControllerClient = {
     startWorker: vi.fn().mockResolvedValue({
       action: "start_requested",
-      runtimeMode: "hidden_runtime",
+      runtimeMode: "alternate_desktop",
       proxyListening: true,
       proxyServerUrl: "http://127.0.0.1:7897",
       poolStatus: "degraded",
@@ -64,7 +64,7 @@ function createTestRuntime(runtimeType: WorkerRuntimeType = "docker") {
     stopWorker: vi.fn().mockResolvedValue(undefined),
     startPool: vi.fn().mockResolvedValue({
       action: "pool_start_requested",
-      runtimeMode: "hidden_runtime",
+      runtimeMode: "alternate_desktop",
       proxyListening: true,
       proxyServerUrl: "http://127.0.0.1:7897",
       poolStatus: "ready",
@@ -234,7 +234,7 @@ describe("internal worker manual auth transitions", () => {
     expect(response.body.worker.cdpAttached).toBe(true);
   });
 
-  it("completes manual auth by restarting the host worker in hidden_runtime", async () => {
+  it("completes manual auth by restarting the host worker in alternate_desktop", async () => {
     const { app, runtime, hostControllerClient, healthMonitor } = createTestRuntime("host");
     cleanupCallbacks.push(() => {
       runtime.dispose();
@@ -254,13 +254,14 @@ describe("internal worker manual auth transitions", () => {
       .expect(202);
 
     expect(hostControllerClient.stopWorker).toHaveBeenCalledWith("dad");
-    expect(hostControllerClient.startWorker).toHaveBeenCalledWith("dad", "hidden_runtime");
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith("dad", "alternate_desktop");
     expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
-    expect(response.body.action).toBe("manual_auth_completed_hidden_runtime_started");
-    expect(response.body.runtimeMode).toBe("hidden_runtime");
-    expect(response.body.worker.runtimeMode).toBe("hidden_runtime");
-    expect(response.body.worker.headless).toBe(true);
-    expect(response.body.worker.cdpAttached).toBe(false);
+    expect(response.body.action).toBe("manual_auth_completed_alternate_desktop_started");
+    expect(response.body.runtimeMode).toBe("alternate_desktop");
+    expect(response.body.worker.runtimeMode).toBe("alternate_desktop");
+    expect(response.body.worker.runtimeClass).toBe("host_alternate_desktop");
+    expect(response.body.worker.headless).toBe(false);
+    expect(response.body.worker.cdpAttached).toBe(true);
   });
 
   it("returns 409 for docker workers on manual auth transitions", async () => {

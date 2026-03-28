@@ -8,7 +8,7 @@ function createConfig() {
     proxyListenHost: "127.0.0.1",
     proxyMixedPort: 7897,
     proxyServerUrl: "http://127.0.0.1:7897",
-    defaultWorkerRuntimeMode: "hidden_runtime",
+    defaultWorkerRuntimeMode: "alternate_desktop",
     workers: [
       {
         workerId: "dad",
@@ -127,7 +127,7 @@ test("stopPool returns pool_stop_requested and stops proxy after worker shutdown
   assert.deepEqual(sequence, ["worker:dad", "worker:wife", "proxy"]);
 });
 
-test("startPool requests hidden_runtime for each configured worker by default", async () => {
+test("startPool requests alternate_desktop for each configured worker by default", async () => {
   const controller = new HostController(createConfig());
   const calls = [];
 
@@ -153,15 +153,15 @@ test("startPool requests hidden_runtime for each configured worker by default", 
   const result = await controller.startPool();
 
   assert.equal(result.action, "pool_start_requested");
-  assert.equal(result.runtimeMode, "hidden_runtime");
+  assert.equal(result.runtimeMode, "alternate_desktop");
   assert.deepEqual(calls, [
     {
       workerId: "dad",
-      runtimeMode: "hidden_runtime"
+      runtimeMode: "alternate_desktop"
     },
     {
       workerId: "wife",
-      runtimeMode: "hidden_runtime"
+      runtimeMode: "alternate_desktop"
     }
   ]);
 });
@@ -192,11 +192,11 @@ test("startWorker returns already_running when health JSON is already reachable"
     throw new Error("should_not_start_process");
   };
 
-  const result = await controller.startWorker("dad", "hidden_runtime");
+  const result = await controller.startWorker("dad", "alternate_desktop");
 
   assert.equal(result.status, "already_running");
   assert.equal(result.startupStatus, "already_running");
-  assert.equal(result.runtimeMode, "hidden_runtime");
+  assert.equal(result.runtimeMode, "alternate_desktop");
   assert.equal(result.agentListening, true);
   assert.equal(result.browserListening, true);
   assert.equal(result.runtimeStatus, "ready");
@@ -233,14 +233,14 @@ test("startWorker returns startup_timeout when the agent never becomes health-re
 
   const result = await controller.observeWorkerStartup(
     controller.requireWorker("dad"),
-    "hidden_runtime",
+    "alternate_desktop",
     5,
     0
   );
 
   assert.equal(result.status, "startup_timeout");
   assert.equal(result.startupStatus, "startup_timeout");
-  assert.equal(result.runtimeMode, "hidden_runtime");
+  assert.equal(result.runtimeMode, "alternate_desktop");
   assert.equal(result.agentListening, true);
   assert.equal(result.runtimeStatus, null);
 });
@@ -287,7 +287,7 @@ test("startPool aggregates per-worker startupStatus and fresh poolStatus", async
   assert.equal(result.workers[0].startupStatus, "started");
   assert.equal(result.workers[1].startupStatus, "startup_timeout");
   assert.deepEqual(calls, [
-    { workerId: "dad", runtimeMode: "hidden_runtime" },
-    { workerId: "wife", runtimeMode: "hidden_runtime" }
+    { workerId: "dad", runtimeMode: "alternate_desktop" },
+    { workerId: "wife", runtimeMode: "alternate_desktop" }
   ]);
 });

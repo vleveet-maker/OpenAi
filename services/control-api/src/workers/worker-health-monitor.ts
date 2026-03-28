@@ -12,7 +12,13 @@ interface WorkerHealthPayload {
   browserContextReady?: boolean;
   lastRelayAt?: string | null;
   lastRelayFailureCode?: string | null;
-  runtimeMode?: "visible_auth" | "hidden_runtime";
+  runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop";
+  runtimeClass?:
+    | "host_visible_auth"
+    | "host_hidden_runtime"
+    | "host_alternate_desktop"
+    | "docker_headed_xvfb";
+  runtimeDesktopName?: string | null;
   headless?: boolean;
   cdpAttached?: boolean;
   proxyServerConfigured?: boolean;
@@ -92,6 +98,8 @@ export class WorkerHealthMonitor {
         reason: "worker health poll succeeded",
         runtimeStatus: payload.runtimeStatus ?? nextStatus,
         runtimeMode: payload.runtimeMode ?? null,
+        runtimeClass: payload.runtimeClass ?? null,
+        runtimeDesktopName: payload.runtimeDesktopName ?? null,
         headless: payload.headless ?? null,
         cdpAttached: payload.cdpAttached ?? null,
         proxyServerConfigured: payload.proxyServerConfigured ?? null,
@@ -103,9 +111,10 @@ export class WorkerHealthMonitor {
       });
 
       if (nextStatus !== previousStatus) {
-        const hiddenRuntimeAuthLost =
+        const nonVisibleRuntimeAuthLost =
           nextStatus === "reauth_required" &&
-          payload.runtimeMode === "hidden_runtime";
+          (payload.runtimeMode === "hidden_runtime" ||
+            payload.runtimeMode === "alternate_desktop");
         this.options.eventRecorder?.recordEvent({
           eventType: "worker_status_changed",
           severity:
@@ -115,14 +124,16 @@ export class WorkerHealthMonitor {
                 ? "warn"
                 : "info",
           workerId: worker.workerId,
-          summary: hiddenRuntimeAuthLost
-            ? `Worker ${worker.workerId} hidden runtime lost auth after manual login; architecture review required`
+          summary: nonVisibleRuntimeAuthLost
+            ? `Worker ${worker.workerId} non-visible runtime lost auth after manual login; architecture review required`
             : `Worker ${worker.workerId} status changed from ${previousStatus} to ${nextStatus}`,
           detailJson: JSON.stringify({
             previousStatus,
             nextStatus,
             runtimeStatus: payload.runtimeStatus ?? nextStatus,
             runtimeMode: payload.runtimeMode ?? null,
+            runtimeClass: payload.runtimeClass ?? null,
+            runtimeDesktopName: payload.runtimeDesktopName ?? null,
             headless: payload.headless ?? null,
             cdpAttached: payload.cdpAttached ?? null,
             proxyServerConfigured: payload.proxyServerConfigured ?? null,

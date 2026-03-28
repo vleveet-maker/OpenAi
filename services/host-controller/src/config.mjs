@@ -64,7 +64,7 @@ export function loadHostControllerConfig(env = process.env) {
     stopWorkerScriptPath:
       env.HOST_WORKER_STOP_SCRIPT_PATH ??
       resolve(REPO_ROOT, "infra", "host-worker", "stop-host-native-worker.ps1"),
-    defaultWorkerRuntimeMode: env.HOST_WORKER_RUNTIME_MODE ?? "hidden_runtime",
+    defaultWorkerRuntimeMode: env.HOST_WORKER_RUNTIME_MODE ?? "alternate_desktop",
     browserWindowMode: env.HOST_BROWSER_WINDOW_MODE ?? "Minimized",
     proxyServerUrl:
       env.HOST_PROXY_SERVER_URL ??

@@ -230,8 +230,9 @@ function renderInternalAdminPage(): string {
         <h1>Operator Admin</h1>
         <p>
           Internal-only observability and browser access controls for the managed
-          ChatGPT worker pool. Start pool uses hidden runtime only, while visible
-          auth is reserved for explicit manual login or reauthentication.
+          ChatGPT worker pool. Start pool uses the alternate desktop non-visible
+          runtime, while visible auth is reserved for explicit manual login or
+          reauthentication.
         </p>
         <div class="status-bar" id="status-bar">Loading latest operator snapshot...</div>
       </header>
@@ -307,7 +308,7 @@ function renderInternalAdminPage(): string {
 
       function describeHostPoolStatus(status) {
         if (status === "idle") {
-          return "Pool is stopped. Start pool uses hidden runtime only when the household browsers are needed.";
+          return "Pool is stopped. Start pool uses the alternate desktop non-visible runtime when the household browsers are needed.";
         }
 
         if (status === "starting") {
@@ -348,6 +349,10 @@ function renderInternalAdminPage(): string {
       function runtimeModeLabel(worker) {
         if (worker.runtimeMode === "visible_auth") {
           return "Visible auth";
+        }
+
+        if (worker.runtimeMode === "alternate_desktop") {
+          return "Alternate desktop";
         }
 
         if (worker.runtimeMode === "hidden_runtime") {
@@ -421,7 +426,7 @@ function renderInternalAdminPage(): string {
           const busyForWorker = pendingAction === worker.workerId;
           const hiddenRuntimeAuthLost =
             worker.runtimeType === "host" &&
-            worker.runtimeMode === "hidden_runtime" &&
+            worker.runtimeMode === "alternate_desktop" &&
             worker.status.status === "reauth_required";
           const runtimeMode = runtimeModeLabel(worker);
           const runtimeFacts = [
@@ -449,7 +454,7 @@ function renderInternalAdminPage(): string {
                 \${runtimeFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
                 \${worker.runtimeType === "docker" ? \`<span>Browser access: \${escapeHtml(browserAccessLabel)}</span>\` : \`<span>Visible auth runs only when explicitly requested.</span>\`}
                 <span>Last seen: \${escapeHtml(worker.lastSeenAt || "n/a")}</span>
-                \${hiddenRuntimeAuthLost ? \`<span class="error">Hidden runtime lost auth after manual login; architecture review required.</span>\` : ""}
+                \${hiddenRuntimeAuthLost ? \`<span class="error">Non-visible runtime lost auth after manual login; architecture review required.</span>\` : ""}
               </div>
               <div class="worker-actions">
                 \${worker.runtimeType === "docker" ? \`<button data-action="open-browser" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Open browser</button>\` : \`<button data-action="manual-auth-start" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start visible login</button>\`}
@@ -457,7 +462,7 @@ function renderInternalAdminPage(): string {
                 <button class="secondary" data-action="mark-ready" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Mark ready</button>
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="warn" data-action="cancel-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Cancel access</button>\` : ""}
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="success" data-action="complete-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login/reauth</button>\` : ""}
-                \${worker.runtimeType === "host" ? \`<button class="success" data-action="manual-auth-complete" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login -> hidden</button>\` : ""}
+                \${worker.runtimeType === "host" ? \`<button class="success" data-action="manual-auth-complete" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login -> non-visible runtime</button>\` : ""}
               </div>
             </article>
           \`;

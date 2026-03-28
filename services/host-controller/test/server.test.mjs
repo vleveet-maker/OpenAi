@@ -122,7 +122,7 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
         });
         return {
           action: "pool_start_requested",
-          runtimeMode: runtimeMode ?? "hidden_runtime",
+          runtimeMode: runtimeMode ?? "alternate_desktop",
           proxyListening: true,
           proxyServerUrl: "http://127.0.0.1:7897",
           poolStatus: "degraded",
@@ -130,7 +130,7 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
             workerId: "dad",
             status: "started",
             startupStatus: "started",
-            runtimeMode: runtimeMode ?? "hidden_runtime",
+            runtimeMode: runtimeMode ?? "alternate_desktop",
             agentListening: true,
             browserListening: false,
             runtimeStatus: "starting"
@@ -156,13 +156,13 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
           "x-host-controller-token": "secret"
         },
         body: JSON.stringify({
-          runtimeMode: "hidden_runtime"
+          runtimeMode: "alternate_desktop"
         })
       });
       assert.equal(startResponse.status, 202);
       const startBody = await startResponse.json();
       assert.equal(startBody.action, "pool_start_requested");
-      assert.equal(startBody.runtimeMode, "hidden_runtime");
+      assert.equal(startBody.runtimeMode, "alternate_desktop");
       assert.equal(startBody.poolStatus, "degraded");
       assert.equal(startBody.proxyListening, true);
       assert.equal(startBody.proxyServerUrl, "http://127.0.0.1:7897");
@@ -185,7 +185,7 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
 
       assert.deepEqual(calls, [{
         action: "start",
-        runtimeMode: "hidden_runtime"
+        runtimeMode: "alternate_desktop"
       }, "stop"]);
     }
   );
@@ -261,7 +261,7 @@ test("POST /workers/:id/start exposes startup_timeout when startup never reaches
           "x-host-controller-token": "secret"
         },
         body: JSON.stringify({
-          runtimeMode: "hidden_runtime"
+          runtimeMode: "alternate_desktop"
         })
       });
 
