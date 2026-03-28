@@ -27,8 +27,10 @@
 ### Product Expansion
 
 - **BILL-01**: Household access rights and billing or entitlement rules can be enforced before a new timed session begins
-- **CHAT-01**: One active session can support more than one intentionally separate user chat when the product is ready to move beyond a single clean dialog per session
-- **MEDIA-01**: Voice, file, image, or richer attachment workflows can be added without breaking the bounded-session model
+- **CHAT-01**: The end-user app can present a standard mobile chat-bot UX with a chat list and a create-new-chat flow instead of only the current shared-session screen
+- **CHAT-02**: Starting a new app chat claims an available worker and opens a fresh `Temporary Chat`, while continuing an existing app chat stays pinned to its current underlying browser conversation
+- **MEDIA-01**: The end-user app can attach at least one image to a message and relay it into the active underlying browser conversation
+- **MEDIA-02**: Voice, file, or richer attachment workflows can be added later without breaking the bounded-session model
 
 ## Out of Scope
 

@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
 status: ready_to_plan
-stopped_at: Milestone initialized; next step is `$gsd-discuss-phase 9`
-last_updated: "2026-03-28T22:20:00+03:00"
-last_activity: 2026-03-28 -- Started v1.2 Rollout Stability with new requirements and roadmap for phases 9-11
+stopped_at: Phase 9 context gathered; next step is `$gsd-plan-phase 9`
+last_updated: "2026-03-28T22:55:00+03:00"
+last_activity: 2026-03-28 -- Gathered Phase 9 context and captured future mobile multi-chat plus image-attachment product direction
 progress:
   total_phases: 3
   completed_phases: 0
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Starting `v1.2 Rollout Stability`, beginning with `Phase 9: Internal host-pool orchestration`
+**Current focus:** `Phase 9: Internal host-pool orchestration` is ready for planning
 
 ## Current Position
 
 Milestone: `v1.2 Rollout Stability`
 Status: Ready to plan
-Last activity: 2026-03-28 - Defined v1.2 requirements and roadmap from v1.1 rollout debt
+Last activity: 2026-03-28 - Captured Phase 9 context and preserved future mobile multi-chat product direction
 
 Progress: [----------] 0%
 
@@ -51,6 +51,7 @@ Progress: [----------] 0%
 - The verified operator path for host-native rollout is script-driven start and stop through a local proxy pool, not yet a one-click in-app auto-start flow.
 - A fresh user chat now goes through explicit bootstrap state and is blocked until a clean `Temporary Chat` plus preferred-model selection is ready or failed clearly.
 - The current implementation defines "new chat" as the fresh conversation prepared for a newly active timed session, not yet several independent chats inside one active session.
+- The intended future user-facing shape is now explicit: standard mobile chat UX, chat list, create-new-chat, image attachment, and app-level chat continuity across browser workers.
 - `v1.2` intentionally prioritizes rollout reliability over new product surface area.
 
 ### Remaining Rollout Debt
@@ -72,9 +73,11 @@ Progress: [----------] 0%
 - Phase 8 validated: automated bootstrap coverage documented and live ChatGPT UI checks captured as manual-only
 - v1.1 milestone archived: roadmap, requirements, and audit moved into `.planning/milestones/`
 - v1.2 started: requirements and roadmap reset around internal orchestration, selector drift hardening, and rollout smoke confidence
+- Phase 9 context gathered: pool-level admin controls only, reuse existing admin page, and treat partial start as degraded without auto-rollback
+- Future product direction captured: mobile multi-chat UX with image attachment and chat-to-browser continuity preserved as seed material outside rollout scope
 
 ## Session Continuity
 
-Last session: 2026-03-28 22:20
-Stopped at: Milestone initialized; next step is `$gsd-discuss-phase 9`
-Resume file: None
+Last session: 2026-03-28 22:35
+Stopped at: Phase 9 context gathered; next step is `$gsd-plan-phase 9`
+Resume file: .planning/phases/09-internal-host-pool-orchestration/09-CONTEXT.md

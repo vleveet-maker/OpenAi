@@ -17,6 +17,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - A three-worker host-native pool can be launched only when needed and routed through a local sing-box mixed proxy built from several proxy share links with automatic outbound failover
 - Host-native worker profiles stay on durable host storage and can be stopped cleanly when the pool is idle
 - New session-backed chats now bootstrap through an explicit fresh-chat contract that prefers `Temporary Chat` and the latest configured reasoning model before the composer unlocks
+- The current shared-screen client is still an interim household surface, not the final user-facing mobile chat experience
 
 ## Validated
 
@@ -48,16 +49,20 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Automated login, CAPTCHA bypass, or unattended reauthentication - auth remains manual by design
 - Public multi-tenant SaaS scaling - the current target remains a small private household deployment
 - Billing, entitlements, voice, file upload, and image generation workflows - deferred beyond rollout hardening
+- The current shared-screen client is not yet the intended mobile multi-chat product UX
 
 ## Context
 
 - The product is not a new chatbot; it is a controlled relay around already logged-in ChatGPT web sessions.
 - The backend still owns browser automation, worker assignment, session timing, health monitoring, and recovery.
 - The client application should never expose raw browser controls, account credentials, or recovery tools.
+- The long-term user-facing product should feel like a standard mobile chat-bot app with a chat list, a create-new-chat action, a message composer, and an image-attachment entry point.
 - Host-native workers currently launch through a verified PowerShell operator path, not yet through a one-click `control-api` auto-start workflow.
 - A new chat should feel like a fresh dialog, not like a continuation of the previous household conversation on the same worker.
 - Fresh-chat behavior now prefers ChatGPT `Temporary Chat` so the dialog does not land in history and does not use or create memories.
 - The current default model policy for a fresh chat is "latest available reasoning model", implemented through `WORKER_PREFERRED_REASONING_MODEL_LABELS` with `GPT-5.4 Thinking` as of 2026-03-28.
+- Each app-level chat should map to one underlying browser conversation: a new chat should claim a free worker and start a fresh `Temporary Chat`, while continuing an existing chat should stay pinned to the same underlying browser conversation.
+- Image attachment belongs in the future user-facing app flow and should relay into the same active browser conversation rather than creating a separate hidden path.
 - The largest remaining real-world risks are worker-specific ChatGPT DOM drift and the ergonomics of running native browser windows on the host only when needed.
 - `v1.2` intentionally keeps scope on rollout reliability rather than adding billing, entitlements, or broader product expansion yet.
 
@@ -77,6 +82,8 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Treat each new user chat as a clean dialog boundary | Users should not get confused by inheriting previous thread context from the same worker | - Implemented in v1.1 |
 | Prefer `Temporary Chat` for fresh dialogs | The new chat should stay out of history and avoid using or creating memories | - Implemented in v1.1 |
 | Prefer the latest ChatGPT reasoning model for a new chat | Fresh dialogs should start on the strongest current reasoning default instead of a stale model selection | - Implemented in v1.1 |
+| Target a standard mobile chat-app UX for the future user-facing surface | The household product should eventually look and behave like a familiar chat app rather than an operator-first shared screen | - Preserved as future direction in v1.2 |
+| Keep chat continuity at the app-dialog level | A new chat should start clean on an available worker, while continuing a chat should stay on the same underlying browser thread | - Preserved as future direction in v1.2 |
 
 ## Evolution
 
