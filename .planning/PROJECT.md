@@ -21,6 +21,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - New session-backed chats now bootstrap through an explicit fresh-chat contract that prefers `Temporary Chat` and the latest configured reasoning model before the composer unlocks
 - Current ChatGPT UI drift hardening now has centralized selector maintenance, localized `Temporary Chat` support, and live `smoke-ok` success on `wife` and `shared-1`
 - Phase 10.2 runtime review now confirms that neither the current host hidden runtime nor the current headed Docker/Xvfb candidate is trustworthy enough to use as the rollout-confidence baseline
+- Phase 10.3 now targets a same-session alternate Windows desktop as the primary replacement non-visible runtime direction, so routine browser work can leave the operator's main desktop without introducing a second Windows identity
 - The current shared-screen client is still an interim household surface, not the final user-facing mobile chat experience
 - The desired runtime policy is now explicit: first login or reauthentication may use a visible interactive browser, but steady-state household work should run headless or otherwise non-visible to the operator's desktop session
 
@@ -51,9 +52,10 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Start and stop the proxied host-native household pool from the internal admin surface instead of relying only on PowerShell scripts.
 - Harden relay and fresh-chat bootstrap against the current ChatGPT UI so all three workers, including `dad`, can be trusted more evenly.
 - Finish the last `dad` live proof only after the hidden-runtime transition is in place for the household path.
+- Replace the rejected non-visible runtime assumptions with a same-session alternate-desktop native runtime candidate and prove or reject it explicitly before rollout smoke resumes.
 - Add a repeatable rollout smoke path so the operator can confirm readiness before the family starts using the pool again.
 
-**Current runtime gate:** Phase 10.2 ended with `block_phase_11_pending_new_runtime_design`. Rollout-smoke work cannot continue until a follow-up non-visible runtime design phase is inserted and implemented.
+**Current runtime gate:** Phase 10.2 ended with `block_phase_11_pending_new_runtime_design`. Phase 10.3 now plans a same-session alternate-desktop replacement runtime; rollout-smoke work cannot continue until that runtime is implemented and accepted or rejected explicitly.
 
 ## Out of Scope
 

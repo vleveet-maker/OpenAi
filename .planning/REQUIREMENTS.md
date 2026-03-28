@@ -29,6 +29,12 @@
 - [x] **RREV-02**: Pool and worker control-plane status reflects real runtime state closely enough that rollout decisions are not made on false `ready`, false `degraded`, or stale `idle` signals
 - [x] **RREV-03**: If the current hidden runtime is not viable, the milestone chooses and documents a concrete alternative browser runtime path before rollout-confidence work continues
 
+### Alternative Non-Visible Native Runtime
+
+- [ ] **NVRT-01**: A replacement steady-state native browser runtime can run outside the operator's main desktop while staying in the same Windows login context and reusing the same durable browser profile that was authenticated visibly
+- [ ] **NVRT-02**: Internal admin, control-api, and host-controller can transition a worker from `visible_auth` into the selected replacement non-visible native runtime instead of the rejected `hidden_runtime` path
+- [ ] **NVRT-03**: The project records a live evidence-backed accept/reject decision for the selected replacement non-visible native runtime before `Phase 11` rollout smoke resumes
+
 ### Rollout Confidence
 
 - [ ] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
@@ -69,14 +75,17 @@
 | RREV-01 | Phase 10.2 | Complete |
 | RREV-02 | Phase 10.2 | Complete |
 | RREV-03 | Phase 10.2 | Complete |
+| NVRT-01 | Phase 10.3 | Planned |
+| NVRT-02 | Phase 10.3 | Planned |
+| NVRT-03 | Phase 10.3 | Planned |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 14 total
-- Mapped to phases: 14
+- v1.2 requirements: 17 total
+- Mapped to phases: 17
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after executing Phase 10.2 Hidden runtime reliability review and alternative browser runtime decision*
+*Last updated: 2026-03-28 after planning Phase 10.3 Alternative non-visible native browser runtime design*
