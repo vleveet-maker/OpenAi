@@ -34,11 +34,13 @@ class FakePage {
   public newChatClicks = 0;
   public temporaryChatClicks = 0;
   public modelPickerClicks = 0;
+  public temporaryOnboardingContinueClicks = 0;
   public selectedModel: string | null = null;
   private currentUrl = "https://chatgpt.com/";
   private temporaryModeActive = false;
   private temporaryEntryClicked = false;
   private modelPickerOpen = false;
+  private temporaryOnboardingVisible = false;
 
   constructor(
     private readonly options: {
@@ -50,11 +52,17 @@ class FakePage {
       temporaryConfirmationAvailable?: boolean;
       modelPickerAvailable?: boolean;
       availableModels?: string[];
+      localizedModelMenu?: boolean;
+      modelMenuInitiallyOpen?: boolean;
+      keepDirectTemporaryVisibleWhenModelMenuOpen?: boolean;
+      temporaryOnboardingVisible?: boolean;
     } = {}
   ) {
     if (options.authUrl) {
       this.currentUrl = options.authUrl;
     }
+
+    this.modelPickerOpen = options.modelMenuInitiallyOpen === true;
   }
 
   url(): string {
@@ -91,14 +99,17 @@ class FakePage {
 
     if (
       (role === "button" || role === "link") &&
-      namePattern?.test("Temporary Chat")
+      ["Temporary Chat", "Temporary", "Включить временный чат"].some((label) =>
+        namePattern?.test(label)
+      )
     ) {
       return new FakeLocator(
         () => ({
-          count:
+              count:
             this.options.directTemporaryAvailable === false
               ? 0
-              : this.modelPickerOpen
+              : this.modelPickerOpen &&
+                  this.options.keepDirectTemporaryVisibleWhenModelMenuOpen !== true
                 ? 0
                 : this.temporaryModeActive &&
                     this.options.temporaryConfirmationAvailable === false
@@ -109,7 +120,8 @@ class FakePage {
           visible:
             this.options.directTemporaryAvailable === false
               ? false
-              : this.modelPickerOpen
+              : this.modelPickerOpen &&
+                  this.options.keepDirectTemporaryVisibleWhenModelMenuOpen !== true
                 ? false
                 : this.temporaryModeActive &&
                     this.options.temporaryConfirmationAvailable === false
@@ -124,6 +136,8 @@ class FakePage {
             this.temporaryEntryClicked = true;
             this.temporaryModeActive =
               this.options.temporaryConfirmationAvailable !== false;
+            this.temporaryOnboardingVisible =
+              this.options.temporaryOnboardingVisible === true;
           }
         }
       );
@@ -131,7 +145,9 @@ class FakePage {
 
     if (
       (role === "button" || role === "link" || role === "menuitem") &&
-      namePattern?.test("Temporary")
+      ["Temporary", "Temporary Chat", "Временный чат"].some((label) =>
+        namePattern?.test(label)
+      )
     ) {
       return new FakeLocator(
         () => ({
@@ -158,6 +174,8 @@ class FakePage {
             this.temporaryEntryClicked = true;
             this.temporaryModeActive =
               this.options.temporaryConfirmationAvailable !== false;
+            this.temporaryOnboardingVisible =
+              this.options.temporaryOnboardingVisible === true;
             this.modelPickerOpen = false;
           }
         }
@@ -166,6 +184,7 @@ class FakePage {
 
     if (
       role === "button" &&
+      !this.options.localizedModelMenu &&
       namePattern?.test("GPT-5.4 Thinking")
     ) {
       return new FakeLocator(
@@ -188,6 +207,7 @@ class FakePage {
 
     if (
       role === "button" &&
+      !this.options.localizedModelMenu &&
       namePattern?.test("GPT-5.4")
     ) {
       return new FakeLocator(
@@ -207,7 +227,8 @@ class FakePage {
     }
 
     if (
-      (role === "option" || role === "menuitemradio" || role === "link") &&
+      (role === "option" || role === "menuitemradio" || role === "menuitem" || role === "link") &&
+      !this.options.localizedModelMenu &&
       namePattern?.test("GPT-5.4 Thinking")
     ) {
       return new FakeLocator(
@@ -229,7 +250,8 @@ class FakePage {
     }
 
     if (
-      (role === "option" || role === "menuitemradio" || role === "link") &&
+      (role === "option" || role === "menuitemradio" || role === "menuitem" || role === "link") &&
+      !this.options.localizedModelMenu &&
       namePattern?.test("GPT-5.4")
     ) {
       return new FakeLocator(
@@ -243,6 +265,24 @@ class FakePage {
           click: async () => {
             this.selectedModel = "GPT-5.4";
             this.modelPickerOpen = false;
+          }
+        }
+      );
+    }
+
+    if (
+      role === "button" &&
+      ["Continue", "Продолжить"].some((label) => namePattern?.test(label))
+    ) {
+      return new FakeLocator(
+        () => ({
+          count: this.temporaryOnboardingVisible ? 1 : 0,
+          visible: this.temporaryOnboardingVisible
+        }),
+        {
+          click: async () => {
+            this.temporaryOnboardingContinueClicks += 1;
+            this.temporaryOnboardingVisible = false;
           }
         }
       );
@@ -263,6 +303,75 @@ class FakePage {
         count: this.options.showAuthButtons ? 1 : 0,
         visible: this.options.showAuthButtons === true
       }));
+    }
+
+    if (
+      selector.includes("model-switcher-gpt-5-4-thinking") ||
+      selector.includes("gpt-5-4-thinking")
+    ) {
+      return new FakeLocator(
+        () => ({
+          count:
+            this.modelPickerOpen && (this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"]).includes("GPT-5.4 Thinking")
+              ? 1
+              : 0,
+          visible:
+            this.modelPickerOpen && (this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"]).includes("GPT-5.4 Thinking")
+        }),
+        {
+          click: async () => {
+            this.selectedModel = "GPT-5.4 Thinking";
+            this.modelPickerOpen = false;
+          }
+        }
+      );
+    }
+
+    if (selector.includes("model-switcher-gpt-5-4") || selector.includes("gpt-5-4")) {
+      return new FakeLocator(
+        () => ({
+          count:
+            this.modelPickerOpen && (this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"]).includes("GPT-5.4")
+              ? 1
+              : 0,
+          visible:
+            this.modelPickerOpen && (this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"]).includes("GPT-5.4")
+        }),
+        {
+          click: async () => {
+            this.selectedModel = "GPT-5.4";
+            this.modelPickerOpen = false;
+          }
+        }
+      );
+    }
+
+    if (selector.includes("temporary-chat-label")) {
+      return new FakeLocator(() => ({
+        count:
+          this.temporaryModeActive &&
+          this.options.temporaryConfirmationAvailable !== false
+            ? 1
+            : 0,
+        visible:
+          this.temporaryModeActive &&
+          this.options.temporaryConfirmationAvailable !== false
+      }));
+    }
+
+    if (selector.includes("modal-temporary-chat-onboarding")) {
+      return new FakeLocator(
+        () => ({
+          count: this.temporaryOnboardingVisible ? 1 : 0,
+          visible: this.temporaryOnboardingVisible
+        }),
+        {
+          click: async () => {
+            this.temporaryOnboardingContinueClicks += 1;
+            this.temporaryOnboardingVisible = false;
+          }
+        }
+      );
     }
 
     if (selector.includes("model-switcher") || selector.includes("model-picker")) {
@@ -402,6 +511,39 @@ describe("runTemporaryChatBootstrap", () => {
     expect(result.conversationMode).toBe("temporary");
     expect(page.modelPickerClicks).toBeGreaterThanOrEqual(2);
     expect(page.temporaryChatClicks).toBe(1);
+  });
+
+  it("uses localized temporary and model selectors without collapsing an already open model menu", async () => {
+    const page = new FakePage({
+      localizedModelMenu: true,
+      modelMenuInitiallyOpen: true,
+      keepDirectTemporaryVisibleWhenModelMenuOpen: true
+    });
+
+    const result = await runTemporaryChatBootstrap(new FakeBrowserContext(page), {
+      lockKey: "wife:session-2",
+      startUrl: "https://chatgpt.com/",
+      preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+    });
+
+    expect(result.status).toBe("ready");
+    expect(result.modelLabel).toBe("GPT-5.4 Thinking");
+    expect(page.modelPickerClicks).toBe(0);
+  });
+
+  it("dismisses temporary-chat onboarding before selecting the preferred model", async () => {
+    const page = new FakePage({
+      temporaryOnboardingVisible: true
+    });
+
+    const result = await runTemporaryChatBootstrap(new FakeBrowserContext(page), {
+      lockKey: "shared:session-1",
+      startUrl: "https://chatgpt.com/",
+      preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+    });
+
+    expect(result.status).toBe("ready");
+    expect(page.temporaryOnboardingContinueClicks).toBe(1);
   });
 
   it("continues from the current surface when no New chat control is present", async () => {

@@ -1,12 +1,13 @@
 import type { BrowserContext, Page } from "playwright";
 
 import {
-  buildModelLabelPattern,
+  buildModelOptionTarget,
   modelOptionSelectorCandidates,
   modelPickerButtonSelectorCandidates,
   newChatSelectorCandidates,
   temporaryConfirmationSelectors,
   temporaryEntrySelectorCandidates,
+  temporaryOnboardingContinueSelectorCandidates,
   type BootstrapLocatorCandidate,
   type BootstrapLocatorCandidateDefinition,
   type BootstrapLocatorLike,
@@ -39,6 +40,9 @@ interface ModelSelectionResult {
 }
 
 const bootstrapLocks = new Map<string, Promise<void>>();
+const TRANSIENT_UI_POLL_INTERVAL_MS = 150;
+const TEMPORARY_CONFIRMATION_TIMEOUT_MS = 3_000;
+const TEMPORARY_ONBOARDING_TIMEOUT_MS = 1_500;
 
 async function withBootstrapLock<T>(
   lockKey: string,
@@ -99,6 +103,25 @@ async function hasTemporaryConfirmation(
     if (await locator.isVisible()) {
       return true;
     }
+  }
+
+  return false;
+}
+
+async function waitForTemporaryConfirmation(
+  page: BootstrapPageLike,
+  timeoutMs = TEMPORARY_CONFIRMATION_TIMEOUT_MS
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() <= deadline) {
+    if (await hasTemporaryConfirmation(page, temporaryConfirmationSelectors)) {
+      return true;
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, TRANSIENT_UI_POLL_INTERVAL_MS);
+    });
   }
 
   return false;
@@ -215,10 +238,50 @@ async function openTemporaryEntry(
   return null;
 }
 
+async function dismissTemporaryOnboarding(page: BootstrapPageLike): Promise<void> {
+  const deadline = Date.now() + TEMPORARY_ONBOARDING_TIMEOUT_MS;
+
+  while (Date.now() <= deadline) {
+    const continueButton = await resolveUsableLocator(
+      page,
+      temporaryOnboardingContinueSelectorCandidates
+    );
+
+    if (continueButton) {
+      await continueButton.locator.click();
+      return;
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, TRANSIENT_UI_POLL_INTERVAL_MS);
+    });
+  }
+}
+
 async function selectPreferredReasoningModel(
   page: BootstrapPageLike,
   preferredReasoningModelLabels: string[]
 ): Promise<ModelSelectionResult> {
+  for (const label of preferredReasoningModelLabels) {
+    for (const candidate of modelOptionSelectorCandidates) {
+      const locator = candidate.locate(page, buildModelOptionTarget(label));
+
+      if ((await locator.count()) === 0) {
+        continue;
+      }
+
+      if (!(await locator.isVisible())) {
+        continue;
+      }
+
+      await locator.click();
+      return {
+        selectedModel: label,
+        failureCode: null
+      };
+    }
+  }
+
   const picker = await resolveUsableLocator(page, modelPickerButtonSelectorCandidates);
 
   if (!picker) {
@@ -231,10 +294,8 @@ async function selectPreferredReasoningModel(
   await picker.locator.click();
 
   for (const label of preferredReasoningModelLabels) {
-    const labelPattern = buildModelLabelPattern(label);
-
     for (const candidate of modelOptionSelectorCandidates) {
-      const locator = candidate.locate(page, labelPattern);
+      const locator = candidate.locate(page, buildModelOptionTarget(label));
 
       if ((await locator.count()) === 0) {
         continue;
@@ -296,14 +357,13 @@ export async function runTemporaryChatBootstrap(
       return buildFailureResult(page, temporaryEntryFailure);
     }
 
-    const temporaryConfirmed = await hasTemporaryConfirmation(
-      page,
-      temporaryConfirmationSelectors
-    );
+    const temporaryConfirmed = await waitForTemporaryConfirmation(page);
 
     if (!temporaryConfirmed) {
       return buildFailureResult(page, "temporary_confirmation_not_found");
     }
+
+    await dismissTemporaryOnboarding(page);
 
     const modelSelection = await selectPreferredReasoningModel(
       page,

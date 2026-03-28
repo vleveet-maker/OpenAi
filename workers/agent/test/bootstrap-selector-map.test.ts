@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildModelLabelPattern,
+  buildModelOptionTarget,
   temporaryEntryNamePatterns,
   temporaryEntrySelectorCandidates
 } from "../src/chat-bootstrap/bootstrap-selector-map.js";
@@ -23,13 +24,26 @@ describe("bootstrap selector map", () => {
       temporaryEntryNamePatterns.some((pattern) => pattern.test("Temporary"))
     ).toBe(true);
     expect(
+      temporaryEntryNamePatterns.some((pattern) =>
+        pattern.test("Включить временный чат")
+      )
+    ).toBe(true);
+    expect(
       temporaryEntrySelectorCandidates.map((candidate) => candidate.id)
     ).toEqual(
       expect.arrayContaining([
         "temporary_chat_button",
         "temporary_button",
+        "temporary_button_localized",
         "temporary_testid"
       ])
     );
+  });
+
+  it("builds stable model-switcher test-id selectors for preferred model aliases", () => {
+    expect(buildModelOptionTarget("GPT-5.4 Thinking").testIdSelectors).toEqual([
+      "[data-testid='model-switcher-gpt-5-4-thinking']",
+      "[data-testid*='gpt-5-4-thinking']"
+    ]);
   });
 });
