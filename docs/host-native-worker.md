@@ -51,4 +51,5 @@ The current setup now supports on-demand start through the internal admin page, 
 - The verified on-demand path is exposed through `http://127.0.0.1:8081/internal/admin`.
 - The scheduler already distributes load across ready workers using least-recently-assigned selection, so once all three are signed in the app can spread sessions automatically.
 - Docker restart actions do not apply to host-native workers.
-- Fresh session bootstrap now expects `Temporary Chat` plus the latest configured reasoning model before the composer unlocks. The current default env is `WORKER_PREFERRED_REASONING_MODEL_LABELS=["GPT-5.4 Thinking"]`.
+- Fresh session bootstrap now expects `Temporary Chat` plus the latest configured reasoning model before the composer unlocks. The current default env is `WORKER_PREFERRED_REASONING_MODEL_LABELS=["GPT-5.4 Thinking","GPT-5.4"]`.
+- Current ChatGPT UI drift may surface `Temporary Chat` as a direct control or as a model menu entry. Selector maintenance for both relay and bootstrap is centralized in the worker selector-map files instead of being scattered across runner logic.

@@ -6,8 +6,9 @@ This document is for the household operator only. Worker browsers stay internal-
 
 - Every newly activated user session now prepares a fresh chat boundary before the first send is allowed.
 - The worker should prefer `Temporary Chat` so the conversation stays out of history and does not create or use memories.
-- The worker should also prefer the latest configured reasoning model. The current default is `GPT-5.4 Thinking`.
+- The worker should also prefer the latest configured reasoning model. The current default order is `GPT-5.4 Thinking`, then `GPT-5.4`.
 - Public sending stays blocked while chat bootstrap is `pending`, and the shared-screen UI will surface `Preparing Fresh Chat` or `Chat Setup Failed` instead of silently failing.
+- Current ChatGPT UI drift is maintained in the centralized selector-map files under `workers/agent/src/chat-relay/selector-map.ts` and `workers/agent/src/chat-bootstrap/bootstrap-selector-map.ts`, not by ad hoc runner patches.
 
 ## Setup
 
@@ -43,6 +44,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - `http://<host>:8080/internal/browser/...` must stay unavailable from the public edge.
 - `http://127.0.0.1:8081/internal/browser/...` is internal-only and is the only supported path for the live worker viewer.
 - If ChatGPT changed its UI and `Temporary Chat` or the preferred model can no longer be selected automatically, the session should remain blocked until the selector map is updated.
+- Current bootstrap drift may show either a direct `Temporary` control or a model menu entry before the preferred model is selected.
 
 ## First Login
 
@@ -85,6 +87,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - Use `/internal/admin` to inspect recent worker lifecycle events and session failures before restarting several workers at once.
 - Repeated profile corruption: preserve the existing profile directory for investigation before replacing it.
 - Phase 8 selector defaults live behind `WORKER_PREFERRED_REASONING_MODEL_LABELS`; if you need to pin a different latest reasoning model, update that env var instead of hardcoding a different label in the UI.
+- `test-host-worker-relay.ps1` is a Phase 10 drift hardening probe for maintainers. Use it to isolate a specific host-native worker and verify current-ui relay behavior; do not treat it as the final operator smoke flow.
 
 ## Smoke Checklist
 

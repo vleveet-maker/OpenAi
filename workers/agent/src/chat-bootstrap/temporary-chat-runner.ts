@@ -2,11 +2,13 @@ import type { BrowserContext, Page } from "playwright";
 
 import {
   buildModelLabelPattern,
-  modelOptionSelectors,
-  modelPickerButtonSelectors,
-  newChatSelectors,
-  temporaryChatSelectors,
+  modelOptionSelectorCandidates,
+  modelPickerButtonSelectorCandidates,
+  newChatSelectorCandidates,
+  temporaryConfirmationSelectors,
+  temporaryEntrySelectorCandidates,
   type BootstrapLocatorCandidate,
+  type BootstrapLocatorCandidateDefinition,
   type BootstrapLocatorLike,
   type BootstrapPageLike
 } from "./bootstrap-selector-map.js";
@@ -24,6 +26,16 @@ export interface TemporaryChatBootstrapOptions {
 interface BootstrapBrowserContextLike {
   pages(): BootstrapPageLike[];
   newPage(): Promise<BootstrapPageLike>;
+}
+
+interface ResolvedBootstrapLocator {
+  locator: BootstrapLocatorLike;
+  selectorId: string;
+}
+
+interface ModelSelectionResult {
+  selectedModel: string | null;
+  failureCode: WorkerChatBootstrapFailureCode | null;
 }
 
 const bootstrapLocks = new Map<string, Promise<void>>();
@@ -53,8 +65,30 @@ async function withBootstrapLock<T>(
 
 async function resolveUsableLocator(
   page: BootstrapPageLike,
+  candidates: BootstrapLocatorCandidateDefinition[]
+): Promise<ResolvedBootstrapLocator | null> {
+  for (const candidate of candidates) {
+    const locator = candidate.locate(page);
+
+    if ((await locator.count()) === 0) {
+      continue;
+    }
+
+    if (await locator.isVisible()) {
+      return {
+        locator,
+        selectorId: candidate.id
+      };
+    }
+  }
+
+  return null;
+}
+
+async function hasTemporaryConfirmation(
+  page: BootstrapPageLike,
   candidates: BootstrapLocatorCandidate[]
-): Promise<BootstrapLocatorLike | null> {
+): Promise<boolean> {
   for (const candidate of candidates) {
     const locator = candidate(page);
 
@@ -63,11 +97,11 @@ async function resolveUsableLocator(
     }
 
     if (await locator.isVisible()) {
-      return locator;
+      return true;
     }
   }
 
-  return null;
+  return false;
 }
 
 async function ensureChatPage(
@@ -94,15 +128,44 @@ async function ensureChatPage(
   return page;
 }
 
-function pageRequiresAuth(page: BootstrapPageLike | null): boolean {
+async function pageShowsAuthEntry(page: BootstrapPageLike): Promise<boolean> {
+  for (const selector of [
+    "[data-testid='login-button']",
+    "[data-testid='signup-button']",
+    "button[data-testid='login-button']",
+    "button[data-testid='signup-button']"
+  ]) {
+    const locator = page.locator(selector).last();
+
+    if ((await locator.count()) === 0) {
+      continue;
+    }
+
+    if (await locator.isVisible()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function pageRequiresAuth(page: BootstrapPageLike | null): Promise<boolean> {
   const currentUrl = page?.url().toLowerCase() ?? "";
 
-  return (
+  if (
     currentUrl.includes("login") ||
     currentUrl.includes("signin") ||
     currentUrl.includes("auth") ||
     currentUrl.includes("challenge")
-  );
+  ) {
+    return true;
+  }
+
+  if (!page) {
+    return false;
+  }
+
+  return pageShowsAuthEntry(page);
 }
 
 function buildFailureResult(
@@ -118,23 +181,60 @@ function buildFailureResult(
   };
 }
 
-async function selectPreferredReasoningModel(
-  page: BootstrapPageLike,
-  preferredReasoningModelLabels: string[]
-): Promise<string | null> {
-  const picker = await resolveUsableLocator(page, modelPickerButtonSelectors);
+async function openTemporaryEntry(
+  page: BootstrapPageLike
+): Promise<WorkerChatBootstrapFailureCode | null> {
+  const directTemporaryEntry = await resolveUsableLocator(
+    page,
+    temporaryEntrySelectorCandidates
+  );
 
-  if (!picker) {
+  if (directTemporaryEntry) {
+    await directTemporaryEntry.locator.click();
     return null;
   }
 
-  await picker.click();
+  const picker = await resolveUsableLocator(page, modelPickerButtonSelectorCandidates);
+
+  if (!picker) {
+    return "model_picker_not_found";
+  }
+
+  await picker.locator.click();
+
+  const menuTemporaryEntry = await resolveUsableLocator(
+    page,
+    temporaryEntrySelectorCandidates
+  );
+
+  if (!menuTemporaryEntry) {
+    return "temporary_entry_not_found";
+  }
+
+  await menuTemporaryEntry.locator.click();
+  return null;
+}
+
+async function selectPreferredReasoningModel(
+  page: BootstrapPageLike,
+  preferredReasoningModelLabels: string[]
+): Promise<ModelSelectionResult> {
+  const picker = await resolveUsableLocator(page, modelPickerButtonSelectorCandidates);
+
+  if (!picker) {
+    return {
+      selectedModel: null,
+      failureCode: "model_picker_not_found"
+    };
+  }
+
+  await picker.locator.click();
 
   for (const label of preferredReasoningModelLabels) {
     const labelPattern = buildModelLabelPattern(label);
 
-    for (const candidate of modelOptionSelectors) {
-      const locator = candidate(page, labelPattern);
+    for (const candidate of modelOptionSelectorCandidates) {
+      const locator = candidate.locate(page, labelPattern);
 
       if ((await locator.count()) === 0) {
         continue;
@@ -145,11 +245,17 @@ async function selectPreferredReasoningModel(
       }
 
       await locator.click();
-      return label;
+      return {
+        selectedModel: label,
+        failureCode: null
+      };
     }
   }
 
-  return null;
+  return {
+    selectedModel: null,
+    failureCode: "model_option_not_found"
+  };
 }
 
 export async function runTemporaryChatBootstrap(
@@ -165,39 +271,56 @@ export async function runTemporaryChatBootstrap(
       return buildFailureResult(page, "bootstrap_navigation_failed");
     }
 
-    if (pageRequiresAuth(page)) {
+    if (await pageRequiresAuth(page)) {
       return buildFailureResult(page, "bootstrap_auth_required");
     }
 
-    const newChat = await resolveUsableLocator(page, newChatSelectors);
+    const newChat = await resolveUsableLocator(page, newChatSelectorCandidates);
 
-    if (!newChat) {
-      return buildFailureResult(page, "bootstrap_selector_not_found");
+    if (newChat) {
+      await newChat.locator.click();
+    } else {
+      const currentSurfacePicker = await resolveUsableLocator(
+        page,
+        modelPickerButtonSelectorCandidates
+      );
+
+      if (!currentSurfacePicker) {
+        return buildFailureResult(page, "new_chat_selector_not_found");
+      }
     }
 
-    await newChat.click();
+    const temporaryEntryFailure = await openTemporaryEntry(page);
 
-    const temporaryChat = await resolveUsableLocator(page, temporaryChatSelectors);
-
-    if (!temporaryChat) {
-      return buildFailureResult(page, "temporary_chat_unavailable");
+    if (temporaryEntryFailure) {
+      return buildFailureResult(page, temporaryEntryFailure);
     }
 
-    await temporaryChat.click();
+    const temporaryConfirmed = await hasTemporaryConfirmation(
+      page,
+      temporaryConfirmationSelectors
+    );
 
-    const selectedModel = await selectPreferredReasoningModel(
+    if (!temporaryConfirmed) {
+      return buildFailureResult(page, "temporary_confirmation_not_found");
+    }
+
+    const modelSelection = await selectPreferredReasoningModel(
       page,
       options.preferredReasoningModelLabels
     );
 
-    if (!selectedModel) {
-      return buildFailureResult(page, "model_not_available");
+    if (modelSelection.failureCode || !modelSelection.selectedModel) {
+      return buildFailureResult(
+        page,
+        modelSelection.failureCode ?? "model_option_not_found"
+      );
     }
 
     return {
       status: "ready",
       conversationMode: "temporary",
-      modelLabel: selectedModel,
+      modelLabel: modelSelection.selectedModel,
       failureCode: null,
       pageUrl: page.url()
     };

@@ -200,7 +200,8 @@ describe("worker browser access runtime", () => {
       "GPT-5.4"
     ]);
     expect(DEFAULT_PREFERRED_REASONING_MODEL_LABELS).toEqual([
-      "GPT-5.4 Thinking"
+      "GPT-5.4 Thinking",
+      "GPT-5.4"
     ]);
 
     const app = createWorkerAgentApp(runtime);

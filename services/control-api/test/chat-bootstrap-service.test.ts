@@ -146,4 +146,38 @@ describe("ChatBootstrapService", () => {
 
     runtime.dispose();
   });
+
+  it("preserves a GPT-5.4 alias model label returned by the worker", async () => {
+    const runtime = createRuntime({
+      async bootstrap() {
+        return {
+          status: "ready",
+          conversationMode: "temporary",
+          modelLabel: "GPT-5.4",
+          failureCode: null
+        };
+      }
+    });
+    const session = runtime.sessionService.createSession(
+      "Bootstrap Alias",
+      new Date("2026-03-28T09:00:00.000Z")
+    );
+
+    runtime.service.scheduleBootstrapForSession(
+      session,
+      new Date("2026-03-28T09:00:00.000Z")
+    );
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(runtime.store.getBootstrap(session.session.sessionId)).toMatchObject({
+      status: "ready",
+      conversationMode: "temporary",
+      modelLabel: "GPT-5.4",
+      failureCode: null
+    });
+
+    runtime.dispose();
+  });
 });

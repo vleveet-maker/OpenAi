@@ -62,7 +62,8 @@ export interface WorkerBrowserAccessSnapshot {
 }
 
 export const DEFAULT_PREFERRED_REASONING_MODEL_LABELS = [
-  "GPT-5.4 Thinking"
+  "GPT-5.4 Thinking",
+  "GPT-5.4"
 ];
 
 function parsePort(value: string | undefined, fallback: number): number {
