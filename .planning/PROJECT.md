@@ -18,13 +18,13 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] Phase 2 has a durable SQLite-backed session engine with FIFO queueing, 60-minute expiry, and pinned worker assignment.
 - [x] Phase 2 exposes a safe public session API for create, resume, cancel, and end flows without leaking internal worker profile or recovery details.
 - [x] Phase 2 ships a separate shared-screen React client with Start, Queued, Active, and Ended states plus a disabled Phase 3 chat shell.
+- [x] Phase 5 now routes public and internal traffic through one Nginx edge with a loopback-only admin entry and token-first internal guardrails.
+- [x] Phase 5 adds a durable operator event trail, safe `healthz` and `readyz` endpoints, and a read-only internal admin page.
+- [x] Phase 05.1 adds protected noVNC browser access paths, 15-minute worker-scoped access sessions, and a live Docker smoke-tested manual login or reauth flow.
 
 ### Active
 
-- [ ] Relay messages between the application and the assigned server-hosted ChatGPT worker reliably
-- [ ] Show delivery or response progress clearly once real message relay begins
-- [ ] Keep end-user access constrained to the application surface rather than the raw worker browser UI
-- [ ] Add failure classification, reconnect behavior, and operator observability around live sessions
+- [ ] Decide the first v2 milestone after the v1 guardrails baseline
 
 ### Out of Scope
 
@@ -64,6 +64,9 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Keep login and reauthentication manual | Automating ChatGPT auth would be brittle and increase risk early | - Validated in Phase 1 |
 | Start with an internal admin or status surface | Operators need readiness, recovery, and reauth visibility before user sessions begin | - Implemented in Phase 1 as internal API plus ops playbook |
 | Treat BlitzBrowser as the strongest container-runtime candidate, not a hard dependency yet | It matches headful persistent worker needs well, but raw Playwright plus Docker should remain a baseline option | - Reconfirmed as fallback in Phase 1 |
+| Put one Nginx edge in front of the stack for v1 | The cleanest way to separate public app traffic from internal worker operations is to make the reverse proxy the only host-exposed entrypoint | - Implemented in Phase 5 |
+| Keep the operator admin page inside control-api | A small internal page plus JSON API gives visibility without adding a second frontend package or widening the public surface | - Implemented in Phase 5 |
+| Protect browser viewers with time-bounded access sessions on the internal edge | Manual login needs a real browser window, but raw worker ports still cannot be exposed publicly | - Implemented in Phase 05.1 |
 
 ---
-*Last updated: 2026-03-27 after Phase 2 execution and verification*
+*Last updated: 2026-03-28 after Phase 05.1 execution and verification*

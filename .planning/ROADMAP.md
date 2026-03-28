@@ -14,7 +14,8 @@ The roadmap starts by standing up a multi-worker browser foundation that can saf
 - [x] **Phase 2: Timed Session Routing** - Start 60-minute sessions and pin users to the correct worker
 - [x] **Phase 3: Core Chat Relay** - Deliver the main send and receive chat loop on an assigned worker
 - [x] **Phase 4: Resilience and Worker Recovery** - Handle failures, retries, reconnect, and worker restarts
-- [ ] **Phase 5: Guardrails and Observability** - Lock down access boundaries and instrument the worker pool
+- [x] **Phase 5: Guardrails and Observability** - Lock down access boundaries and instrument the worker pool
+- [x] **Phase 5.1: Internal browser access for manual ChatGPT login and reauthentication (INSERTED)** - Add an internal-only path for opening worker browsers and completing manual login or reauth
 
 ## Phase Details
 
@@ -89,13 +90,13 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 05-01: Enforce user and admin boundary at the app and reverse-proxy layers
-- [ ] 05-02: Add event trail, health endpoints, and monitoring hooks
+- [x] 05-01: Enforce user and admin boundary at the app and reverse-proxy layers
+- [x] 05-02: Add event trail, health endpoints, and monitoring hooks
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -103,4 +104,21 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Timed Session Routing | 3/3 | Complete | 2026-03-27 |
 | 3. Core Chat Relay | 3/3 | Complete | 2026-03-27 |
 | 4. Resilience and Worker Recovery | 3/3 | Complete | 2026-03-27 |
-| 5. Guardrails and Observability | 0/2 | Not started | - |
+| 5. Guardrails and Observability | 2/2 | Complete | 2026-03-27 |
+| 5.1. Internal browser access for manual ChatGPT login and reauthentication | 3/3 | Complete | 2026-03-28 |
+
+### Phase 05.1: Internal browser access for manual ChatGPT login and reauthentication (INSERTED)
+
+**Goal:** Give the operator an internal-only way to open a live worker browser for first login and reauthentication without exposing raw browser access publicly.
+**Requirements:** ADMN-04, SECU-03
+**Depends on:** Phase 5
+**Success Criteria** (what must be TRUE):
+  1. Operator can start a time-bounded browser access session for one worker from the internal admin surface.
+  2. Operator can drive the worker browser through an internal-only viewer path, complete ChatGPT login or reauth manually, and return the worker to `ready`.
+  3. Public traffic cannot reach raw browser viewer routes, VNC services, or worker recovery tools.
+**Plans:** 3/3 plans complete
+
+Plans:
+- [x] 05.1-01: Add worker viewer runtime and browser-access health metadata
+- [x] 05.1-02: Add secure browser access session routes and protected internal proxying
+- [x] 05.1-03: Add operator browser-access controls, docs, and smoke coverage

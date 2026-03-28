@@ -41,14 +41,14 @@
 
 ### Security
 
-- [ ] **SECU-01**: End users can access ChatGPT only through the approved application surface, not the raw worker browser UI
+- [x] **SECU-01**: End users can access ChatGPT only through the approved application surface, not the raw worker browser UI
 - [x] **SECU-02**: ChatGPT credentials, cookies, browser profiles, and session artifacts are stored only on server-side durable storage
 - [x] **SECU-03**: Worker recovery endpoints and admin controls are reachable only from the trusted internal admin surface
 
 ### Observability
 
-- [ ] **OBSV-01**: Operator can inspect recent worker lifecycle events and session failures from the internal admin surface
-- [ ] **OBSV-02**: System exposes health signals that container or host monitors can consume without parsing the browser UI
+- [x] **OBSV-01**: Operator can inspect recent worker lifecycle events and session failures from the internal admin surface
+- [x] **OBSV-02**: System exposes health signals that container or host monitors can consume without parsing the browser UI
 
 ## v2 Requirements
 
@@ -92,9 +92,9 @@
 | WORK-04 | Phase 1 | Satisfied |
 | ADMN-01 | Phase 1 | Satisfied |
 | ADMN-02 | Phase 1 | Satisfied |
-| ADMN-04 | Phase 1 | Satisfied |
+| ADMN-04 | Phase 5.1 | Satisfied |
 | SECU-02 | Phase 1 | Satisfied |
-| SECU-03 | Phase 1 | Satisfied |
+| SECU-03 | Phase 5.1 | Satisfied |
 | SESS-01 | Phase 2 | Satisfied |
 | SESS-02 | Phase 2 | Satisfied |
 | SESS-03 | Phase 2 | Satisfied |
@@ -107,9 +107,9 @@
 | RELY-02 | Phase 4 | Satisfied |
 | RELY-03 | Phase 4 | Satisfied |
 | ADMN-03 | Phase 4 | Satisfied |
-| SECU-01 | Phase 5 | Pending |
-| OBSV-01 | Phase 5 | Pending |
-| OBSV-02 | Phase 5 | Pending |
+| SECU-01 | Phase 5 | Satisfied |
+| OBSV-01 | Phase 5 | Satisfied |
+| OBSV-02 | Phase 5 | Satisfied |
 
 **Coverage:**
 - v1 requirements: 24 total
@@ -118,4 +118,4 @@
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-27 after Phase 4 execution and verification*
+*Last updated: 2026-03-28 after Phase 05.1 execution and verification*
