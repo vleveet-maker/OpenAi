@@ -537,7 +537,10 @@ class FakePage {
 class FakeBrowserContext {
   constructor(
     private readonly existingPages: FakePage[],
-    private readonly createdPage?: FakePage
+    private readonly createdPage?: FakePage,
+    private readonly options: {
+      throwOnNewPage?: boolean;
+    } = {}
   ) {}
 
   pages(): FakePage[] {
@@ -545,6 +548,10 @@ class FakeBrowserContext {
   }
 
   async newPage(): Promise<FakePage> {
+    if (this.options.throwOnNewPage) {
+      throw new Error("new page failed");
+    }
+
     if (this.createdPage) {
       return this.createdPage;
     }
@@ -946,5 +953,34 @@ describe("runTemporaryChatBootstrap", () => {
     expect(result.stepDetail).toContain("navigation branch: fresh_page_retry");
     expect(result.stepDetail).toContain("navigation branch: fresh_page_home_goto");
     expect(result.stepDetail).toContain("pageUrl");
+  });
+
+  it("records fresh page creation failure after exhausting existing-page rescue branches", async () => {
+    const unusableExistingPage = new FakePage({
+      initialUrl: "about:blank",
+      reloadThrows: true,
+      gotoThrows: true
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext(
+        [unusableExistingPage],
+        undefined,
+        {
+          throwOnNewPage: true
+        }
+      ),
+      {
+        lockKey: "shared:new-page-failed",
+        startUrl: "https://chatgpt.com/?temporary=1",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking"]
+      }
+    );
+
+    expect(result.failureCode).toBe("bootstrap_navigation_failed");
+    expect(result.stepDetail).toContain("navigation branch: existing_page_reload");
+    expect(result.stepDetail).toContain("navigation branch: existing_page_goto");
+    expect(result.stepDetail).toContain("navigation branch: fresh_page_creation_failed");
+    expect(result.stepDetail).toContain("navigation error: new page failed");
   });
 });

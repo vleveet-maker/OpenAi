@@ -555,6 +555,8 @@ export class HostController {
     const child = spawn(
       POWERSHELL_EXE,
       [
+        "-ExecutionPolicy",
+        "Bypass",
         "-NoProfile",
         "-Command",
         command
@@ -615,24 +617,27 @@ export class HostController {
   }
 
   async runAlternateDesktopValidation(worker) {
-    const command = [
-      `$result = & '${this.config.alternateDesktopValidationScriptPath.replaceAll("'", "''")}'`,
-      `-WorkerId '${worker.workerId.replaceAll("'", "''")}'`,
-      `-PublicBaseUrl '${this.config.publicBaseUrl.replaceAll("'", "''")}'`,
-      `-InternalBaseUrl '${this.config.internalBaseUrl.replaceAll("'", "''")}'`,
-      `-InternalAdminToken '${this.config.internalAdminToken.replaceAll("'", "''")}'`,
-      `-HostControllerBaseUrl '${this.config.selfBaseUrl.replaceAll("'", "''")}'`,
-      `-HostControllerToken '${this.config.authToken.replaceAll("'", "''")}'`,
-      "-ReturnJson;",
-      "$result | ConvertTo-Json -Depth 8 -Compress"
-    ].join(" ");
-
     const child = spawn(
       POWERSHELL_EXE,
       [
         "-NoProfile",
-        "-Command",
-        command
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        this.config.alternateDesktopValidationScriptPath,
+        "-WorkerId",
+        worker.workerId,
+        "-PublicBaseUrl",
+        this.config.publicBaseUrl,
+        "-InternalBaseUrl",
+        this.config.internalBaseUrl,
+        "-InternalAdminToken",
+        this.config.internalAdminToken,
+        "-HostControllerBaseUrl",
+        this.config.selfBaseUrl,
+        "-HostControllerToken",
+        this.config.authToken,
+        "-ReturnJsonLine"
       ],
       {
         windowsHide: true,

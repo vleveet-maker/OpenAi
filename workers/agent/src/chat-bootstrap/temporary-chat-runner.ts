@@ -309,7 +309,19 @@ async function ensureChatPage(
     }
   }
 
-  const freshPage = await context.newPage();
+  let freshPage: BootstrapPageLike;
+
+  try {
+    freshPage = await context.newPage();
+  } catch (error) {
+    throw new BootstrapNavigationError(
+      combineStepDetails(
+        attemptedBranches.join(" -> "),
+        "navigation branch: fresh_page_creation_failed",
+        error instanceof Error ? `navigation error: ${error.message}` : null
+      ) ?? "navigation branch: fresh_page_creation_failed"
+    );
+  }
 
   if (typeof freshPage.goto === "function") {
     const navigatedFreshPage = await attemptNavigationBranch(

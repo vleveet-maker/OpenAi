@@ -8,7 +8,8 @@ param(
   [string]$HostControllerToken = "local-host-controller-token",
   [int]$TimeoutSeconds = 180,
   [int]$PollIntervalMs = 1500,
-  [switch]$ReturnJson
+  [switch]$ReturnJson,
+  [switch]$ReturnJsonLine
 )
 
 $ErrorActionPreference = "Stop"
@@ -351,6 +352,11 @@ $evidence = [ordered]@{
 }
 
 Write-RuntimeMatrixRow -Row $evidence -RepoRoot $workerSettings.RepoRoot
+
+if ($ReturnJsonLine) {
+  [pscustomobject]$evidence | ConvertTo-Json -Depth 8 -Compress | Write-Output
+  return
+}
 
 if ($ReturnJson) {
   return [pscustomobject]$evidence
