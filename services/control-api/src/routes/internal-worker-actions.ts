@@ -8,7 +8,10 @@ import type {
   HostControllerClient
 } from "../workers/host-controller-client.js";
 import type { WorkerHealthMonitor } from "../workers/worker-health-monitor.js";
-import type { WorkerRegistry } from "../workers/worker-registry.js";
+import {
+  DEFAULT_STABILITY_TARGET_PASSES,
+  type WorkerRegistry
+} from "../workers/worker-registry.js";
 
 export interface InternalWorkerActionsRouterOptions {
   workerRegistry: WorkerRegistry;
@@ -114,6 +117,29 @@ export function createInternalWorkerActionsRouter(
     }
 
     return "surface_unusable" as const;
+  }
+
+  function deriveStabilityGateUpdate(
+    workerId: string,
+    validation: AlternateDesktopValidationResult
+  ) {
+    const worker = options.workerRegistry.getWorker(workerId);
+    const targetPasses = worker?.stabilityTargetPasses ?? DEFAULT_STABILITY_TARGET_PASSES;
+    const nextPassCount = validation.phase11Ready
+      ? Math.min((worker?.stabilityPassCount ?? 0) + 1, targetPasses)
+      : 0;
+
+    return {
+      stabilityGateStatus: validation.phase11Ready
+        ? nextPassCount >= targetPasses
+          ? ("stable" as const)
+          : ("provisional" as const)
+        : ("unstable" as const),
+      stabilityPassCount: nextPassCount,
+      stabilityTargetPasses: targetPasses,
+      lastValidationAt: validation.checkedAt,
+      lastValidationResult: validation.result
+    };
   }
 
   router.post("/internal/workers/:id/restart", async (request, response) => {
@@ -414,6 +440,10 @@ export function createInternalWorkerActionsRouter(
       );
 
       const requiresAuth = validation.proofFailureClass === "auth_required";
+      const stabilityGateUpdate = deriveStabilityGateUpdate(
+        worker.workerId,
+        validation
+      );
       const validatedWorker = options.workerRegistry.updateWorker(worker.workerId, {
         status: requiresAuth ? "reauth_required" : validation.phase11Ready ? "ready" : worker.status.status,
         reason: requiresAuth
@@ -455,7 +485,8 @@ export function createInternalWorkerActionsRouter(
         lastBootstrapUsability: deriveValidationUsability(validation),
         lastRelayAt: validation.checkedAt,
         lastRelayFailureCode: validation.relayFailureCode,
-        lastSeenAt: validation.checkedAt
+        lastSeenAt: validation.checkedAt,
+        ...stabilityGateUpdate
       });
 
       response.status(202).json({

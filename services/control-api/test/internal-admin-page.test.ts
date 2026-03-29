@@ -102,6 +102,7 @@ describe("internal admin page", () => {
     expect(response.text).toContain("Start visible reauth");
     expect(response.text).toContain("Complete login -> non-visible runtime");
     expect(response.text).toContain("Validate non-visible runtime");
+    expect(response.text).toContain("Repeatability");
     expect(response.text).toContain("Alternate desktop");
     expect(response.text).toContain("Visible auth");
     expect(response.text).toContain("architecture review required");

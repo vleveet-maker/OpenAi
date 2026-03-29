@@ -10,6 +10,10 @@ export type WorkerRuntimeCapability =
   | "reachable_but_unusable"
   | "usable";
 
+export type WorkerStabilityGateStatus = "unstable" | "provisional" | "stable";
+
+export const DEFAULT_STABILITY_TARGET_PASSES = 2;
+
 export interface WorkerRecord {
   workerId: string;
   displayName: string;
@@ -58,6 +62,11 @@ export interface WorkerRecord {
   lastRelayAt?: string | null;
   lastRelayFailureCode?: string | null;
   runtimeCapability?: WorkerRuntimeCapability;
+  stabilityGateStatus?: WorkerStabilityGateStatus;
+  stabilityPassCount?: number;
+  stabilityTargetPasses?: number;
+  lastValidationAt?: string | null;
+  lastValidationResult?: string | null;
 }
 
 export interface WorkerRegistryUpdate {
@@ -104,6 +113,11 @@ export interface WorkerRegistryUpdate {
   lastRelayAt?: string | null;
   lastRelayFailureCode?: string | null;
   runtimeCapability?: WorkerRuntimeCapability | null;
+  stabilityGateStatus?: WorkerStabilityGateStatus | null;
+  stabilityPassCount?: number | null;
+  stabilityTargetPasses?: number | null;
+  lastValidationAt?: string | null;
+  lastValidationResult?: string | null;
 }
 
 function defaultRuntimeCapabilityForStatus(
@@ -146,6 +160,11 @@ export class WorkerRegistry {
             ? "host_alternate_desktop"
             : undefined,
         runtimeCapability: defaultRuntimeCapabilityForStatus(definition.defaultStatus),
+        stabilityGateStatus: "unstable",
+        stabilityPassCount: 0,
+        stabilityTargetPasses: DEFAULT_STABILITY_TARGET_PASSES,
+        lastValidationAt: null,
+        lastValidationResult: null,
         lastSeenAt: now
       });
     }
@@ -262,7 +281,27 @@ export class WorkerRegistry {
       runtimeCapability:
         update.runtimeCapability === null
           ? undefined
-          : update.runtimeCapability ?? existing.runtimeCapability
+          : update.runtimeCapability ?? existing.runtimeCapability,
+      stabilityGateStatus:
+        update.stabilityGateStatus === null
+          ? undefined
+          : update.stabilityGateStatus ?? existing.stabilityGateStatus,
+      stabilityPassCount:
+        update.stabilityPassCount === null
+          ? undefined
+          : update.stabilityPassCount ?? existing.stabilityPassCount,
+      stabilityTargetPasses:
+        update.stabilityTargetPasses === null
+          ? undefined
+          : update.stabilityTargetPasses ?? existing.stabilityTargetPasses,
+      lastValidationAt:
+        update.lastValidationAt === null
+          ? undefined
+          : update.lastValidationAt ?? existing.lastValidationAt,
+      lastValidationResult:
+        update.lastValidationResult === null
+          ? undefined
+          : update.lastValidationResult ?? existing.lastValidationResult
     };
 
     this.workers.set(workerId, updated);

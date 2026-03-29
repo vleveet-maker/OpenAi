@@ -56,6 +56,11 @@ function createTestRuntime() {
     runtimeDesktopName: "OWMCGPT-dad",
     headless: false,
     cdpAttached: true,
+    stabilityGateStatus: "provisional",
+    stabilityPassCount: 1,
+    stabilityTargetPasses: 2,
+    lastValidationAt: "2026-03-29T10:05:00.000Z",
+    lastValidationResult: "alternate_desktop_usable",
     browserContextReady: true,
     lastBootstrapAt: "2026-03-29T10:00:00.000Z",
     lastBootstrapFailureCode: "temporary_confirmation_not_found",
@@ -102,6 +107,11 @@ describe("internal workers routes", () => {
     expect(response.body.workers[0].runtimeMode).toBe("alternate_desktop");
     expect(response.body.workers[0].runtimeClass).toBe("host_alternate_desktop");
     expect(response.body.workers[0].runtimeDesktopName).toBe("OWMCGPT-dad");
+    expect(response.body.workers[0].stabilityGateStatus).toBe("provisional");
+    expect(response.body.workers[0].stabilityPassCount).toBe(1);
+    expect(response.body.workers[0].stabilityTargetPasses).toBe(2);
+    expect(response.body.workers[0].lastValidationAt).toBe("2026-03-29T10:05:00.000Z");
+    expect(response.body.workers[0].lastValidationResult).toBe("alternate_desktop_usable");
     expect(response.body.workers[0].lastBootstrapAt).toBe("2026-03-29T10:00:00.000Z");
     expect(response.body.workers[0].lastBootstrapFailureCode).toBe(
       "temporary_confirmation_not_found"

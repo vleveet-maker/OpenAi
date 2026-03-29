@@ -373,8 +373,39 @@ describe("internal worker runtime validation", () => {
     expect(response.body.action).toBe("runtime_validation_requested");
     expect(response.body.validation.phase11Ready).toBe(true);
     expect(response.body.worker.runtimeCapability).toBe("usable");
+    expect(response.body.worker.stabilityGateStatus).toBe("provisional");
+    expect(response.body.worker.stabilityPassCount).toBe(1);
+    expect(response.body.worker.stabilityTargetPasses).toBe(2);
     expect(response.body.worker.lastBootstrapStep).toBe("complete");
     expect(response.body.worker.lastBootstrapUsability).toBe("usable");
+  });
+
+  it("marks host workers stable after two consecutive successful validations", async () => {
+    const { app, runtime } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "ready",
+      reason: "repeatability test",
+      runtimeStatus: "ready",
+      runtimeMode: "alternate_desktop",
+      runtimeClass: "host_alternate_desktop"
+    });
+
+    await request(app)
+      .post("/internal/workers/dad/validate-runtime")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    const response = await request(app)
+      .post("/internal/workers/dad/validate-runtime")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(response.body.worker.stabilityGateStatus).toBe("stable");
+    expect(response.body.worker.stabilityPassCount).toBe(2);
+    expect(response.body.worker.stabilityTargetPasses).toBe(2);
   });
 
   it("marks host workers as reauth_required when runtime validation reports auth loss", async () => {
@@ -408,6 +439,55 @@ describe("internal worker runtime validation", () => {
     expect(response.body.worker.lastBootstrapFailureCode).toBe("bootstrap_auth_required");
     expect(response.body.worker.lastBootstrapUsability).toBe("auth_required");
     expect(response.body.worker.runtimeCapability).toBe("reachable_but_unusable");
+    expect(response.body.worker.stabilityGateStatus).toBe("unstable");
+    expect(response.body.worker.stabilityPassCount).toBe(0);
+    expect(response.body.worker.lastValidationResult).toBe(
+      "alternate_desktop_reachable_but_unusable"
+    );
+  });
+
+  it("resets repeatability when validation fails after a provisional pass", async () => {
+    const { app, runtime, hostControllerClient } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "ready",
+      reason: "repeatability reset test",
+      runtimeStatus: "ready",
+      runtimeMode: "alternate_desktop",
+      runtimeClass: "host_alternate_desktop",
+      stabilityGateStatus: "provisional",
+      stabilityPassCount: 1,
+      stabilityTargetPasses: 2
+    });
+    vi.mocked(hostControllerClient.validateAlternateDesktop).mockResolvedValueOnce({
+      workerId: "dad",
+      runtimeClass: "host_alternate_desktop",
+      runtimeMode: "alternate_desktop",
+      result: "alternate_desktop_reachable_but_unusable",
+      phase11Ready: false,
+      validationPending: true,
+      proofFailureClass: "bootstrap_failed",
+      pageUrl: "https://chatgpt.com/",
+      bootstrapFailureCode: "bootstrap_navigation_failed",
+      bootstrapStep: "navigation",
+      relayFailureCode: null,
+      checkedAt: "2026-03-29T03:43:00.000Z",
+      runtimeDesktopName: "CodexWorker-dad",
+      detail: "navigation drift"
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/validate-runtime")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(response.body.worker.stabilityGateStatus).toBe("unstable");
+    expect(response.body.worker.stabilityPassCount).toBe(0);
+    expect(response.body.worker.lastValidationResult).toBe(
+      "alternate_desktop_reachable_but_unusable"
+    );
   });
 
   it("returns 409 for docker workers on runtime validation", async () => {

@@ -362,6 +362,14 @@ function renderInternalAdminPage(): string {
         return "Unknown runtime";
       }
 
+      function repeatabilityLabel(worker) {
+        const gateStatus = worker.stabilityGateStatus || "unstable";
+        const passCount = worker.stabilityPassCount ?? 0;
+        const targetPasses = worker.stabilityTargetPasses ?? 2;
+
+        return "Repeatability: " + gateStatus + " (" + passCount + "/" + targetPasses + ")";
+      }
+
       async function fetchJson(url, options = {}) {
         const response = await fetch(url, {
           headers: {
@@ -448,6 +456,11 @@ function renderInternalAdminPage(): string {
             "Last bootstrap failure: " + (worker.lastBootstrapFailureCode || "none"),
             "Last bootstrap usability: " + (worker.lastBootstrapUsability || "n/a")
           ];
+          const repeatabilityFacts = [
+            repeatabilityLabel(worker),
+            "Last validation: " + (worker.lastValidationAt || "n/a"),
+            "Last validation result: " + (worker.lastValidationResult || "n/a")
+          ];
 
           return \`
             <article class="worker-card">
@@ -469,6 +482,7 @@ function renderInternalAdminPage(): string {
                 \${worker.runtimeType === "docker" ? \`<span>Browser access: \${escapeHtml(browserAccessLabel)}</span>\` : \`<span>Visible auth runs only when explicitly requested.</span>\`}
                 <span>Last seen: \${escapeHtml(worker.lastSeenAt || "n/a")}</span>
                 <span>\${escapeHtml(bootstrapStatusCopy)}</span>
+                \${repeatabilityFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
                 \${hiddenRuntimeAuthLost ? \`<span class="error">Non-visible runtime lost auth after manual login; architecture review required.</span>\` : ""}
               </div>
               <div class="worker-actions">
