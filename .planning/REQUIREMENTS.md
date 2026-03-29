@@ -41,6 +41,12 @@
 - [ ] **ADST-02**: At least one worker can pass the current `Temporary Chat` confirmation, preferred-model selection, and composer unlock path in `alternate_desktop` so the canonical proof reports `phase11Ready=true`
 - [x] **ADST-03**: Operator and control-plane evidence distinguish `auth_required`, bootstrap selector drift, and assignment-timeout tails clearly enough to decide whether `Phase 11` can proceed
 
+### Alternate Desktop Navigation Rescue And Auth Renewal
+
+- [ ] **ADNR-01**: At least one non-auth-blocked alternate-desktop worker can recover from the current `bootstrap_navigation_failed` tail and reach a usable fresh-chat bootstrap path without reopening routine visible browser windows
+- [ ] **ADNR-02**: `dad` can be renewed through visible auth and revalidated in `alternate_desktop` through an explicit control-plane flow instead of staying stuck as `bootstrap_auth_required`
+- [ ] **ADNR-03**: Phase 10.5 ends with an evidence-backed worker-by-worker decision that either yields at least one `phase11Ready=true` worker or records why the selected runtime still cannot unblock `Phase 11`
+
 ### Rollout Confidence
 
 - [ ] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
@@ -87,12 +93,15 @@
 | ADST-01 | Phase 10.4 | Partial |
 | ADST-02 | Phase 10.4 | Pending |
 | ADST-03 | Phase 10.4 | Complete |
+| ADNR-01 | Phase 10.5 | Pending |
+| ADNR-02 | Phase 10.5 | Pending |
+| ADNR-03 | Phase 10.5 | Pending |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 20 total
-- Mapped to phases: 20
+- v1.2 requirements: 23 total
+- Mapped to phases: 23
 - Unmapped: 0
 
 ---

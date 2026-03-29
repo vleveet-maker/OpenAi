@@ -71,6 +71,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - The backend still owns browser automation, worker assignment, session timing, health monitoring, and recovery.
 - The client application should never expose raw browser controls, account credentials, or recovery tools.
 - The long-term user-facing product should feel like a standard mobile chat-bot app with a chat list, a create-new-chat action, a message composer, and an image-attachment entry point.
+- After each meaningful GSD part, wave, or follow-up step, the operator should receive a short plain-language report in Russian in addition to the technical artifact trail.
 - Host-native workers can now be started and stopped from internal admin, while PowerShell scripts remain fallback tools.
 - The current live ChatGPT UI on household profiles is localized, not reliably English-only, so bootstrap maintenance now has to tolerate Russian `Temporary Chat` labels, onboarding copy, and model-menu presentation.
 - A new chat should feel like a fresh dialog, not like a continuation of the previous household conversation on the same worker.
@@ -104,6 +105,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Block rollout confidence on ambiguous hidden runtime assumptions | Phase 10.2 live evidence showed both current host hidden runtime and current Docker/Xvfb candidate falling into non-usable ChatGPT paths, so Phase 11 must wait for a new runtime design | - Recorded during v1.2 |
 | Target a standard mobile chat-app UX for the future user-facing surface | The household product should eventually look and behave like a familiar chat app rather than an operator-first shared screen | - Preserved as future direction in v1.2 |
 | Keep chat continuity at the app-dialog level | A new chat should start clean on an available worker, while continuing a chat should stay on the same underlying browser thread | - Preserved as future direction in v1.2 |
+| After each meaningful part, provide a short simple-language report | The operator wants quick status in plain Russian, not only technical phase artifacts and logs | - Recorded during v1.2 |
 
 ## Evolution
 

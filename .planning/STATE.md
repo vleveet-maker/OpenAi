@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
-status: blocked
-stopped_at: Phase 10.4 executed with a negative unblock decision; Phase 11 remains blocked pending a new alternate-desktop follow-up
-last_updated: "2026-03-29T03:00:00.000Z"
-last_activity: 2026-03-29 -- Phase 10.4 executed, verified, and blocked Phase 11
+status: ready_to_execute
+stopped_at: Phase 10.5 planned; next step is `$gsd-execute-phase 10.5`
+last_updated: "2026-03-29T06:24:31+03:00"
+last_activity: 2026-03-29 -- Phase 10.5 planned and ready to execute
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 4
-  total_plans: 18
+  total_plans: 21
   completed_plans: 18
   percent: 71
 ---
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Insert the next alternate-desktop follow-up before Phase 11.
+**Current focus:** Phase 10.5 -- alternate-desktop-navigation-rescue-and-auth-renewal
 
 ## Current Position
 
-Phase: 10.4 (alternate-desktop-auth-and-bootstrap-stabilization) -- EXECUTED / PARTIAL
-Plan: 3 of 3 completed
+Phase: 10.5 (alternate-desktop-navigation-rescue-and-auth-renewal) -- PLANNED / READY TO EXECUTE
+Plan: 0 of 3 completed
 Milestone: `v1.2 Rollout Stability`
-Status: Blocked before Phase 11
-Last activity: 2026-03-29 -- Phase 10.4 recorded a negative unblock decision for Phase 11
+Status: Ready to execute urgent follow-up before Phase 11
+Last activity: 2026-03-29 -- Phase 10.5 planning pack completed
 
 Progress: [#######---] 71%
 
 ## Milestone Snapshot
 
-- Phases completed: `4 / 7`
+- Phases completed: `4 / 8`
 - Plans completed: `18 / 18`
 - Current roadmap:
   - `.planning/ROADMAP.md`
@@ -62,6 +62,10 @@ Progress: [#######---] 71%
 - `wife` still fails bounded proof with `bootstrap_navigation_failed` at `navigation`.
 - `shared-1` still fails bounded proof with `bootstrap_navigation_failed` at `navigation`.
 - Internal admin/control-api code now contains better bootstrap diagnostics, but the running operator stack may still need a recycle before the live admin page reflects the newest fields.
+- Phase 10.5 now has three concrete waves:
+  - worker-agent navigation rescue for `wife/shared-1`
+  - control-plane validation wiring and `dad` auth renewal
+  - bounded proof plus explicit Phase 11 unblock decision
 
 ## Accumulated Context
 
@@ -74,9 +78,11 @@ Progress: [#######---] 71%
 - Phase 10.2 completed: hidden runtime and Docker/Xvfb were rejected for Phase 11.
 - Phase 10.3 completed: alternate desktop became the leading non-visible runtime direction.
 - Phase 10.4 executed: bootstrap telemetry, composer gating, validation-pending operator flow, and bounded live proof all landed, but the final decision kept Phase 11 blocked.
+- Phase 10.5 inserted after Phase 10.4: Alternate desktop navigation rescue and auth renewal (URGENT)
+- Phase 10.5 planned: validation moves into control-plane, navigation rescue targets `wife/shared-1`, and `dad` gets an explicit auth-renewal flow before Phase 11 can resume
 
 ## Session Continuity
 
 Last session: 2026-03-29
-Stopped at: Phase 10.4 executed with a negative unblock decision; next step is to insert a new alternate-desktop follow-up before Phase 11
+Stopped at: Phase 10.5 planned; next step is `$gsd-execute-phase 10.5`
 Resume file: .planning/ROADMAP.md
