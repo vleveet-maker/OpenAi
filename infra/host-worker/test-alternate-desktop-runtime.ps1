@@ -96,6 +96,7 @@ function Resolve-WorkerSettings {
     "dad" {
       return @{
         WorkerId = "dad"
+        AgentPort = 4021
         StartScriptPath = (Join-Path $PSScriptRoot "start-dad-host-worker.ps1")
         ProfilePath = (Join-Path $repoRoot "infra\\data\\host-profiles\\dad")
         RepoRoot = $repoRoot
@@ -104,6 +105,7 @@ function Resolve-WorkerSettings {
     "wife" {
       return @{
         WorkerId = "wife"
+        AgentPort = 4022
         StartScriptPath = (Join-Path $PSScriptRoot "start-wife-host-worker.ps1")
         ProfilePath = (Join-Path $repoRoot "infra\\data\\host-profiles\\wife")
         RepoRoot = $repoRoot
@@ -112,6 +114,7 @@ function Resolve-WorkerSettings {
     "shared-1" {
       return @{
         WorkerId = "shared-1"
+        AgentPort = 4023
         StartScriptPath = (Join-Path $PSScriptRoot "start-shared-1-host-worker.ps1")
         ProfilePath = (Join-Path $repoRoot "infra\\data\\host-profiles\\shared-1")
         RepoRoot = $repoRoot
@@ -146,6 +149,15 @@ function Write-RuntimeMatrixRow {
   $matrixPath = Join-Path $logDirectory "runtime-matrix.jsonl"
   $null = New-Item -ItemType Directory -Force -Path $logDirectory
   Add-Content -Path $matrixPath -Value ($Row | ConvertTo-Json -Depth 8 -Compress) -Encoding utf8
+}
+
+function Get-DirectWorkerHealth {
+  param(
+    [Parameter(Mandatory = $true)]
+    [int]$AgentPort
+  )
+
+  return Invoke-JsonRequest -Method "GET" -Url "http://127.0.0.1:$AgentPort/health"
 }
 
 function Start-AlternateDesktopWorker {
@@ -184,6 +196,7 @@ $hostHealth = Invoke-JsonRequest -Method "GET" -Url "$HostControllerBaseUrl/heal
 $proxyServerUrl = $hostHealth.proxyServerUrl
 $relayResult = $null
 $workerHealth = $null
+$directWorkerHealth = $null
 $stateMetadata = $null
 
 try {
@@ -213,6 +226,10 @@ try {
     -TimeoutSeconds $TimeoutSeconds `
     -PollIntervalMs $PollIntervalMs `
     -ReturnJson
+
+  try {
+    $directWorkerHealth = Get-DirectWorkerHealth -AgentPort $workerSettings.AgentPort
+  } catch {}
 } catch {
   $relayResult = [pscustomobject]@{
     workerId = $WorkerId
@@ -230,6 +247,10 @@ try {
     $workerHealth = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$WorkerId/status" -Headers $internalHeaders
   } catch {}
 
+  try {
+    $directWorkerHealth = Get-DirectWorkerHealth -AgentPort $workerSettings.AgentPort
+  } catch {}
+
   if (Test-Path $statePath) {
     try {
       $stateMetadata = Get-Content -Raw $statePath | ConvertFrom-Json
@@ -239,13 +260,22 @@ try {
 
 $bootstrapFailureCode = $null
 $relayFailureCode = $null
+$bootstrapStep = $null
 
-if ($relayResult.outcome -eq "bootstrap_failed" -or $relayResult.outcome -eq "probe_failed") {
+if ($relayResult.outcome -eq "bootstrap_failed") {
   $bootstrapFailureCode = $relayResult.failureCode
 }
 
 if ($relayResult.outcome -eq "relay_failed") {
   $relayFailureCode = $relayResult.failureCode
+}
+
+if ($directWorkerHealth -and $directWorkerHealth.lastBootstrapFailureCode) {
+  $bootstrapFailureCode = $directWorkerHealth.lastBootstrapFailureCode
+}
+
+if ($directWorkerHealth -and $directWorkerHealth.lastBootstrapStep) {
+  $bootstrapStep = $directWorkerHealth.lastBootstrapStep
 }
 
 $result = "alternate_desktop_unreachable"
@@ -258,24 +288,55 @@ if ($relayResult.outcome -eq "relay_complete" -and $relayResult.runtimeUsability
   $result = "alternate_desktop_reachable_but_unusable"
 }
 
+$proofFailureClass = $null
+
+if (-not $phase11Ready) {
+  if ($result -eq "alternate_desktop_unreachable") {
+    $proofFailureClass = "runtime_unreachable"
+  } elseif (
+    $bootstrapFailureCode -eq "bootstrap_auth_required" -or
+    ($directWorkerHealth -and $directWorkerHealth.runtimeStatus -eq "reauth_required")
+  ) {
+    $proofFailureClass = "auth_required"
+  } elseif ($relayResult.outcome -eq "relay_failed") {
+    $proofFailureClass = "relay_failed"
+  } elseif (
+    $relayResult.outcome -eq "probe_failed" -and
+    $relayResult.detail -match "assigned to|Timed out waiting for session assignment"
+  ) {
+    $proofFailureClass = "assignment_timeout"
+  } elseif ($bootstrapFailureCode) {
+    $proofFailureClass = "bootstrap_failed"
+  } else {
+    $proofFailureClass = "runtime_unreachable"
+  }
+}
+
 $evidence = [ordered]@{
   workerId = $WorkerId
   runtimeClass =
-    if ($workerHealth -and $workerHealth.runtimeClass) {
+    if ($directWorkerHealth -and $directWorkerHealth.runtimeClass) {
+      $directWorkerHealth.runtimeClass
+    } elseif ($workerHealth -and $workerHealth.runtimeClass) {
       $workerHealth.runtimeClass
     } else {
       "host_alternate_desktop"
     }
   runtimeMode =
-    if ($workerHealth -and $workerHealth.runtimeMode) {
+    if ($directWorkerHealth -and $directWorkerHealth.runtimeMode) {
+      $directWorkerHealth.runtimeMode
+    } elseif ($workerHealth -and $workerHealth.runtimeMode) {
       $workerHealth.runtimeMode
     } else {
       "alternate_desktop"
     }
   result = $result
   phase11Ready = $phase11Ready
+  validationPending = (-not $phase11Ready)
+  proofFailureClass = $proofFailureClass
   pageUrl = $relayResult.pageUrl
   bootstrapFailureCode = $bootstrapFailureCode
+  bootstrapStep = $bootstrapStep
   relayFailureCode = $relayFailureCode
   checkedAt = (Get-Date).ToString("o")
   runtimeDesktopName =

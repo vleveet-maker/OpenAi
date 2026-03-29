@@ -194,7 +194,8 @@ if ($RuntimeMode -eq "HiddenRuntime" -and $HiddenLaunchVariant -eq "ChannelMsedg
 }
 
 if ($DetachAgent) {
-  $agentArguments = @(
+  $agentArguments = New-Object System.Collections.Generic.List[string]
+  foreach ($item in @(
     "-ExecutionPolicy",
     "Bypass",
     "-File",
@@ -213,20 +214,29 @@ if ($DetachAgent) {
     $StartUrl,
     "-RuntimeMode",
     $RuntimeMode,
-    "-HiddenLaunchVariant",
-    $HiddenLaunchVariant,
-    "-ProxyServer",
-    $ProxyServer,
-    "-CdpEndpointUrl",
-    $env:WORKER_CDP_ENDPOINT_URL,
-    "-RuntimeDesktopName",
-    $runtimeDesktopName,
     "-RepoRoot",
     $resolvedRepoRoot
-  )
+  )) {
+    $agentArguments.Add($item)
+  }
+
+  if ($ProxyServer -and $ProxyServer.Trim().Length -gt 0) {
+    $agentArguments.Add("-ProxyServer")
+    $agentArguments.Add($ProxyServer)
+  }
+
+  if ($env:WORKER_CDP_ENDPOINT_URL -and $env:WORKER_CDP_ENDPOINT_URL.Trim().Length -gt 0) {
+    $agentArguments.Add("-CdpEndpointUrl")
+    $agentArguments.Add($env:WORKER_CDP_ENDPOINT_URL)
+  }
+
+  if ($runtimeDesktopName -and $runtimeDesktopName.Trim().Length -gt 0) {
+    $agentArguments.Add("-RuntimeDesktopName")
+    $agentArguments.Add($runtimeDesktopName)
+  }
 
   if ($SkipInstall) {
-    $agentArguments += "-SkipInstall"
+    $agentArguments.Add("-SkipInstall")
   }
 
   Start-Process -FilePath "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ArgumentList $agentArguments -WindowStyle Hidden | Out-Null
@@ -241,7 +251,6 @@ if ($DetachAgent) {
   -ProfilePath $resolvedProfilePath `
   -StartUrl $StartUrl `
   -RuntimeMode $RuntimeMode `
-  -HiddenLaunchVariant $HiddenLaunchVariant `
   -ProxyServer $ProxyServer `
   -CdpEndpointUrl $env:WORKER_CDP_ENDPOINT_URL `
   -RuntimeDesktopName $runtimeDesktopName `

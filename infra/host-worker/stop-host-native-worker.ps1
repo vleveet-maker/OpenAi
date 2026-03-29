@@ -75,7 +75,7 @@ $processIds = @($portOwners + $matchingProcesses + $metadataBrowserPid) | Where-
 
 foreach ($processId in $processIds) {
   if (Get-Process -Id $processId -ErrorAction SilentlyContinue) {
-    Stop-Process -Id $processId -Force
+    Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
   }
 }
 
