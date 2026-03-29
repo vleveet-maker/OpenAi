@@ -35,6 +35,12 @@
 - [x] **NVRT-02**: Internal admin, control-api, and host-controller can transition a worker from `visible_auth` into the selected replacement non-visible native runtime instead of the rejected `hidden_runtime` path
 - [x] **NVRT-03**: The project records a live evidence-backed accept/reject decision for the selected replacement non-visible native runtime before `Phase 11` rollout smoke resumes
 
+### Alternate Desktop Stabilization
+
+- [ ] **ADST-01**: At least one worker can recover or confirm valid ChatGPT auth in `alternate_desktop` after visible auth and return to routine non-visible operation without reopening a routine visible browser window
+- [ ] **ADST-02**: At least one worker can pass the current `Temporary Chat` confirmation, preferred-model selection, and composer unlock path in `alternate_desktop` so the canonical proof reports `phase11Ready=true`
+- [ ] **ADST-03**: Operator and control-plane evidence distinguish `auth_required`, bootstrap selector drift, and assignment-timeout tails clearly enough to decide whether `Phase 11` can proceed
+
 ### Rollout Confidence
 
 - [ ] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
@@ -78,12 +84,15 @@
 | NVRT-01 | Phase 10.3 | Complete |
 | NVRT-02 | Phase 10.3 | Complete |
 | NVRT-03 | Phase 10.3 | Complete |
+| ADST-01 | Phase 10.4 | Pending |
+| ADST-02 | Phase 10.4 | Pending |
+| ADST-03 | Phase 10.4 | Pending |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 17 total
-- Mapped to phases: 17
+- v1.2 requirements: 20 total
+- Mapped to phases: 20
 - Unmapped: 0
 
 ---

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
-status: blocked
-stopped_at: Phase 10.3 completed with an alternate-desktop runtime decision that still keeps Phase 11 blocked; next step is `$gsd-insert-phase 10.4 "Alternate desktop auth and bootstrap stabilization"`
-last_updated: "2026-03-28T21:12:00+03:00"
-last_activity: 2026-03-28 -- completed Phase 10.3, selected alternate desktop as the leading non-visible direction, and kept Phase 11 blocked on live evidence
+status: ready_to_execute
+stopped_at: Phase 10.4 planning is complete; next step is `$gsd-execute-phase 10.4`
+last_updated: "2026-03-29T05:41:52+03:00"
+last_activity: 2026-03-29 -- planned Phase 10.4 across truth/evidence, auth+bootstrap stabilization, and bounded unblock proof
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 4
-  total_plans: 15
+  total_plans: 18
   completed_plans: 15
-  percent: 75
+  percent: 57
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Follow-up needed after Phase 10.3 alternate-desktop proof
+**Current focus:** Execute the alternate-desktop stabilization follow-up that now sits between Phase 10.3 and Phase 11
 
 ## Current Position
 
-Phase: 10.3 complete, Phase 11 blocked pending follow-up
-Plan: 3 of 3 complete
+Phase: 10.4 planned, ready to execute
+Plan: 3 of 3 planned
 Milestone: `v1.2 Rollout Stability`
-Status: Blocked pending alternate-desktop stabilization follow-up
-Last activity: 2026-03-28 -- completed Phase 10.3 and kept Phase 11 blocked after bounded live proof failed to produce `phase11Ready=true`
+Status: Ready to execute alternate-desktop stabilization follow-up
+Last activity: 2026-03-29 -- planned Phase 10.4 after Phase 10 to stabilize alternate-desktop auth and bootstrap before Phase 11
 
-Progress: [#######---] 75%
+Progress: [######----] 57%
 
 ## Milestone Snapshot
 
-- Phases completed: `4 / 6`
-- Plans completed: `15 / 15`
+- Phases completed: `4 / 7`
+- Plans completed: `15 / 18`
 - Current roadmap:
   - `.planning/ROADMAP.md`
 - Current requirements:
@@ -56,6 +56,7 @@ Progress: [#######---] 75%
 - Phase 10.2 selected runtime decision `block_phase_11_pending_new_runtime_design`; the current selected runtime for Phase 11 is none because both reviewed non-visible runtime paths are rejected for rollout use.
 - Phase 10.3 is now complete and has moved routine host control to `alternate_desktop` / `host_alternate_desktop` as the leading non-visible runtime direction.
 - Phase 10.3 bounded live proof still did not produce `phase11Ready=true`, so Phase 11 remains blocked.
+- Phase 10.4 is now the required stabilization follow-up before Phase 11 can resume.
 - A fresh user chat still goes through explicit bootstrap state and prefers `Temporary Chat` plus the latest configured reasoning model.
 - The intended future user-facing shape remains a standard mobile chat UX with a chat list, create-new-chat, image attachment, and chat continuity across browser workers.
 - Live comparison now confirms that visible interactive auth and alternate desktop must be evaluated as separate runtime classes, not as equivalent views of the same reliable session state.
@@ -65,7 +66,7 @@ Progress: [#######---] 75%
 - Current host hidden runtime is rejected for rollout: live evidence includes Cloudflare challenge URLs and bounded hidden-runtime probe failure.
 - The explicit `docker_headed_xvfb` candidate is also rejected for Phase 11 as currently implemented: live bootstrap on `worker-dad` returned `bootstrap_challenge_detected`.
 - Alternate desktop is now the best non-visible native direction, but the bounded live proof still produced `dad -> bootstrap_auth_required`, `wife -> temporary_confirmation_not_found`, and `shared-1 -> assignment timeout`.
-- Phase 11 stays blocked until a follow-up stabilization step gets at least one worker to `phase11Ready=true`.
+- Phase 10.4 must now turn that evidence into bounded auth and bootstrap stabilization work before Phase 11 can resume.
 
 ## Accumulated Context
 
@@ -82,9 +83,11 @@ Progress: [#######---] 75%
 - Phase 10.3 inserted after Phase 10: Alternative non-visible native browser runtime design (URGENT)
 - Phase 10.3 planned: same-session alternate desktop is the primary replacement non-visible runtime candidate, and Phase 11 stays blocked until execution writes an explicit runtime decision
 - Phase 10.3 executed: alternate desktop launcher, control-plane integration, and live proof landed; the runtime is better than the rejected hidden path but still not rollout-ready, so the next required action is a stabilization follow-up before Phase 11
+- Phase 10.4 inserted after Phase 10: Alternate desktop auth and bootstrap stabilization (URGENT)
+- Phase 10.4 planned: Wave 1 separates bootstrap truth from relay truth, Wave 2 stabilizes auth plus `Temporary Chat` bootstrap, and Wave 3 ends with an explicit Phase 11 unblock-or-block decision
 
 ## Session Continuity
 
 Last session: 2026-03-28 21:12
-Stopped at: Phase 10.3 completed with an alternate-desktop runtime decision that still keeps Phase 11 blocked; next step is `$gsd-insert-phase 10.4 "Alternate desktop auth and bootstrap stabilization"`
+Stopped at: Phase 10.4 planning complete; next step is `$gsd-execute-phase 10.4`
 Resume file: .planning/ROADMAP.md
