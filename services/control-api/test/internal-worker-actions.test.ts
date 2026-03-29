@@ -311,6 +311,46 @@ describe("internal worker manual auth transitions", () => {
 });
 
 describe("internal worker runtime validation", () => {
+  it("creates a worker-pinned validation session for a ready host worker", async () => {
+    const { app, runtime } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/validation-session")
+      .set("x-internal-admin-token", "secret")
+      .send({
+        requestedForLabel: "Validation session"
+      })
+      .expect(201);
+
+    expect(response.body.action).toBe("validation_session_requested");
+    expect(response.body.session.session.workerId).toBe("dad");
+    expect(response.body.session.session.state).toBe("active");
+    expect(response.body.session.session.requestedForLabel).toBe("Validation session");
+    expect(runtime.workerRegistry.getWorker("dad")?.status.status).toBe("busy");
+  });
+
+  it("rejects worker-pinned validation sessions when the worker is not ready", async () => {
+    const { app, runtime } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "starting",
+      reason: "booting"
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/validation-session")
+      .set("x-internal-admin-token", "secret")
+      .expect(409);
+
+    expect(response.body.error).toBe("worker_not_ready");
+    expect(response.body.workerId).toBe("dad");
+  });
+
   it("validates host workers through the host controller and records a usable runtime", async () => {
     const { app, runtime, hostControllerClient } = createTestRuntime("host");
     cleanupCallbacks.push(() => {

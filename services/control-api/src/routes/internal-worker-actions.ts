@@ -19,6 +19,24 @@ export interface InternalWorkerActionsRouterOptions {
   eventRecorder?: OperatorEventRecorder;
 }
 
+interface ValidationSessionBody {
+  requestedForLabel?: unknown;
+}
+
+function parseRequestedForLabel(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0 || trimmed.length > 64) {
+    return null;
+  }
+
+  return trimmed;
+}
+
 export function createInternalWorkerActionsRouter(
   options: InternalWorkerActionsRouterOptions
 ) {
@@ -327,6 +345,45 @@ export function createInternalWorkerActionsRouter(
             : "The host worker could not return to the alternate desktop runtime."
       });
     }
+  });
+
+  router.post("/internal/workers/:id/validation-session", (request, response) => {
+    const worker = options.workerRegistry.getWorker(request.params.id);
+
+    if (!worker) {
+      respondWorkerNotFound(request.params.id, response);
+      return;
+    }
+
+    if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
+      respondActiveSession(worker.workerId, response);
+      return;
+    }
+
+    if (worker.status.status !== "ready" || worker.assignedSessionId) {
+      response.status(409).json({
+        error: "worker_not_ready",
+        workerId: worker.workerId,
+        status: worker.status.status,
+        assignedSessionId: worker.assignedSessionId ?? null
+      });
+      return;
+    }
+
+    const body = request.body as ValidationSessionBody;
+    const requestedForLabel =
+      parseRequestedForLabel(body.requestedForLabel) ??
+      `Validation session for ${worker.displayName}`;
+
+    const session = options.sessionService.createPinnedSession(
+      worker.workerId,
+      requestedForLabel
+    );
+
+    response.status(201).json({
+      action: "validation_session_requested",
+      session
+    });
   });
 
   router.post("/internal/workers/:id/validate-runtime", async (request, response) => {

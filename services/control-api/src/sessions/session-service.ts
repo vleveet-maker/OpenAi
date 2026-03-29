@@ -122,6 +122,35 @@ export class SessionService {
     return this.requireSessionSnapshot(session.sessionId);
   }
 
+  createPinnedSession(
+    workerId: string,
+    requestedForLabel: string,
+    now: Date = new Date()
+  ): SessionSnapshot {
+    const worker = this.options.workerRegistry.getWorker(workerId);
+
+    if (!worker) {
+      throw new Error(`Unknown worker for pinned session: ${workerId}`);
+    }
+
+    const session: SessionRecord = {
+      sessionId: randomUUID(),
+      requestedForLabel,
+      state: "queued",
+      workerId: null,
+      queuedAt: now.toISOString(),
+      startedAt: null,
+      endsAt: null,
+      endedAt: null,
+      endReason: null
+    };
+
+    this.options.store.insertSession(session);
+    this.activateSession(session, worker, now);
+
+    return this.requireSessionSnapshot(session.sessionId);
+  }
+
   getSessionSnapshot(sessionId: string): SessionSnapshot | undefined {
     const session = this.options.store.getSession(sessionId);
 

@@ -15,10 +15,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Resolve-RepoRoot {
-  return (Resolve-Path (Join-Path $PSScriptRoot "..\\..")).Path
-}
-
 function Invoke-JsonRequest {
   param(
     [Parameter(Mandatory = $true)]
@@ -115,39 +111,12 @@ function Get-SessionMessagesSnapshot {
   }
 }
 
-function Stop-NonTargetWorker {
-  param(
-    [Parameter(Mandatory = $true)]
-    [pscustomobject]$Worker,
-    [Parameter(Mandatory = $true)]
-    [hashtable]$HostControllerHeaders,
-    [Parameter(Mandatory = $true)]
-    [hashtable]$InternalHeaders
-  )
-
-  try {
-    $null = Invoke-JsonRequest -Method "POST" -Url "$HostControllerBaseUrl/workers/$($Worker.workerId)/stop" -Headers $HostControllerHeaders -Body @{}
-    return
-  } catch {
-    $workerSnapshot = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$($Worker.workerId)" -Headers $InternalHeaders
-    $repoRoot = Resolve-RepoRoot
-
-    & (Join-Path $PSScriptRoot "stop-host-native-worker.ps1") `
-      -WorkerId $Worker.workerId `
-      -AgentPort $Worker.agentPort `
-      -CdpPort $Worker.cdpPort `
-      -ProfilePath $workerSnapshot.profilePath `
-      -RepoRoot $repoRoot
-  }
-}
-
 $hostControllerHeaders = @{
   "x-host-controller-token" = $HostControllerToken
 }
 $internalHeaders = @{
   "x-internal-admin-token" = $InternalAdminToken
 }
-$stoppedWorkers = New-Object System.Collections.Generic.List[string]
 $sessionId = $null
 $probeResult = $null
 
@@ -170,14 +139,6 @@ try {
     return $null
   }
 
-  foreach ($worker in @($health.workers | Where-Object { $_.workerId -ne $WorkerId })) {
-    if ($worker.agentListening -or $worker.browserListening) {
-      Write-Host "[phase-10] Stopping non-target worker $($worker.workerId) for isolated relay verification..."
-      Stop-NonTargetWorker -Worker $worker -HostControllerHeaders $hostControllerHeaders -InternalHeaders $internalHeaders
-      $stoppedWorkers.Add($worker.workerId) | Out-Null
-    }
-  }
-
   $null = Wait-Until -Description "control-api to report the target worker ready" -Condition {
     $status = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$WorkerId/status" -Headers $internalHeaders
 
@@ -188,28 +149,13 @@ try {
     return $null
   }
 
-  if ($stoppedWorkers.Count -gt 0) {
-    $null = Wait-Until -Description "control-api to stop routing to non-target workers" -Condition {
-      $workers = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers" -Headers $internalHeaders
-      $stillReady = @($workers.workers | Where-Object {
-        $stoppedWorkers.Contains($_.workerId) -and $_.status.status -eq "ready"
-      })
-
-      if ($stillReady.Count -eq 0) {
-        return $workers
-      }
-
-      return $null
-    }
-  }
-
-  Write-Host "[phase-10] Creating a session that should route to $WorkerId..."
-  $sessionResponse = Invoke-JsonRequest -Method "POST" -Url "$PublicBaseUrl/api/sessions" -Body @{
+  Write-Host "[phase-10] Creating a worker-pinned validation session for $WorkerId..."
+  $sessionResponse = Invoke-JsonRequest -Method "POST" -Url "$InternalBaseUrl/internal/workers/$WorkerId/validation-session" -Headers $internalHeaders -Body @{
     requestedForLabel = $SessionLabel
   }
   $sessionId = $sessionResponse.session.sessionId
 
-  $null = Wait-Until -Description "session assignment to the target worker" -Condition {
+  $null = Wait-Until -Description "validation session activation on the target worker" -Condition {
     $session = Invoke-JsonRequest -Method "GET" -Url "$PublicBaseUrl/api/sessions/$sessionId"
 
     if ($session.session.state -eq "active" -and $session.session.workerId -eq $WorkerId) {
@@ -349,15 +295,6 @@ try {
       $null = Invoke-JsonRequest -Method "POST" -Url "$PublicBaseUrl/api/sessions/$sessionId/end" -Body @{}
     } catch {
       Write-Warning "Failed to end probe session ${sessionId}: $_"
-    }
-  }
-
-  foreach ($workerToRestart in $stoppedWorkers) {
-    try {
-      Write-Host "[phase-10] Restarting previously stopped worker $workerToRestart..."
-      $null = Invoke-JsonRequest -Method "POST" -Url "$HostControllerBaseUrl/workers/$workerToRestart/start" -Headers $hostControllerHeaders -Body @{}
-    } catch {
-      Write-Warning "Failed to restart worker ${workerToRestart}: $_"
     }
   }
 }

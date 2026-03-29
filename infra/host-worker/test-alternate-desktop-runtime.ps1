@@ -302,7 +302,7 @@ if (-not $phase11Ready) {
     $proofFailureClass = "relay_failed"
   } elseif (
     $relayResult.outcome -eq "probe_failed" -and
-    $relayResult.detail -match "assigned to|Timed out waiting for session assignment"
+    $relayResult.detail -match "assigned to|Timed out waiting for session assignment|worker_not_ready|validation-session"
   ) {
     $proofFailureClass = "assignment_timeout"
   } elseif ($bootstrapFailureCode) {
