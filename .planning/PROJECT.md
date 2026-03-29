@@ -57,8 +57,9 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Replace the rejected non-visible runtime assumptions with a same-session alternate-desktop native runtime candidate and prove or reject it explicitly before rollout smoke resumes.
 - Add a repeatable rollout smoke path so the operator can confirm readiness before the family starts using the pool again.
 - First restore repeatable non-visible proof on `wife`, then resume rollout smoke while carrying `dad` auth renewal and `shared-1` cleanup forward as explicit debt.
+- Execute the inserted `Phase 10.5.1.1` rescue before rollout smoke so `wife/shared-1` get one bounded navigation-bootstrap recovery attempt and `dad` gets a control-plane auth-renewal path that is not PowerShell-only.
 
-**Current runtime gate:** The runtime gate is blocked again pending repeatability. Phase 10.5 proved that `wife` can pass once, but the latest live revalidation regressed all three workers away from a stable passing state, so Phase 10.5.1 must prove repeatable alternate-desktop success before rollout-smoke work resumes.
+**Current runtime gate:** The runtime gate is blocked again pending repeatability. Phase 10.5 proved that `wife` can pass once, but the latest live revalidation regressed all three workers away from a stable passing state, so inserted `Phase 10.5.1.1` now attempts a bounded alternate-desktop rescue before rollout-smoke work resumes.
 
 ## Out of Scope
 
@@ -128,4 +129,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 while planning Phase 10.5.1 Repeatable alternate desktop stability gate*
+*Last updated: 2026-03-29 while planning Phase 10.5.1.1 Alternate desktop repeatability rescue*

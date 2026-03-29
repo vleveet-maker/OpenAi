@@ -53,6 +53,10 @@
 - [ ] **RSG-02**: At least one alternate-desktop worker can produce repeatable proof, defined for `v1.2` as two consecutive successful non-visible validations with a real relay pass and a reset on any auth/bootstrap/relay failure
 - [x] **RSG-03**: Internal operator surfaces and milestone state expose whether a worker is still provisional or has reached the repeatable stability gate, and `Phase 11` only unblocks from that repeated proof
 
+### Alternate Desktop Repeatability Rescue
+
+- [ ] **ADRR-01**: At least one non-auth-blocked alternate-desktop worker can escape the current `bootstrap_navigation_failed @ navigation` tail through a bounded navigation rescue ladder, or emit branch-level failure evidence that names exactly which rescue branch still failed
+
 ### Rollout Confidence
 
 - [ ] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
@@ -100,19 +104,20 @@
 | ADST-02 | Phase 10.4 | Complete |
 | ADST-03 | Phase 10.4 | Complete |
 | ADNR-01 | Phase 10.5 | Complete |
-| ADNR-02 | Phase 10.5 | Partial |
+| ADNR-02 | Phase 10.5.1.1 | Pending |
 | ADNR-03 | Phase 10.5 | Complete |
 | RSG-01 | Phase 10.5.1 | Complete |
-| RSG-02 | Phase 10.5.1 | Pending |
+| RSG-02 | Phase 10.5.1.1 | Pending |
 | RSG-03 | Phase 10.5.1 | Complete |
+| ADRR-01 | Phase 10.5.1.1 | Pending |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 26 total
-- Mapped to phases: 26
+- v1.2 requirements: 27 total
+- Mapped to phases: 27
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-29 after executing Phase 10.5.1 Repeatable alternate desktop stability gate*
+*Last updated: 2026-03-29 while planning Phase 10.5.1.1 Alternate desktop repeatability rescue*

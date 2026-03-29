@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Rollout Stability
-status: blocked
-stopped_at: Phase 10.5.1 completed with a negative repeatability decision; next step is `$gsd-insert-phase 10.5.2 "Alternate desktop repeatability rescue"`
-last_updated: "2026-03-29T07:59:29+03:00"
-last_activity: 2026-03-29 -- Phase 10.5.1 completed with deterministic proof and kept Phase 11 blocked
+status: ready_to_execute
+stopped_at: Phase 10.5.1.1 planned; next step is `$gsd-execute-phase 10.5.1.1`
+last_updated: "2026-03-29T09:10:00+03:00"
+last_activity: 2026-03-29 -- Planned urgent Phase 10.5.1.1 repeatability rescue follow-up
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 8
-  total_plans: 24
+  total_plans: 27
   completed_plans: 24
   percent: 89
 ---
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Recover repeatable alternate-desktop stability before any rollout-smoke work resumes
+**Current focus:** Execute the urgent repeatability rescue follow-up before rollout-smoke work resumes
 
 ## Current Position
 
-Phase: 10.5.1 (repeatable-alternate-desktop-stability-gate) -- COMPLETE WITH BLOCKING DECISION
-Plan: 3 of 3 completed
+Phase: 10.5.1.1 (alternate-desktop-repeatability-rescue) -- PLANNED
+Plan: 0 of 3 completed
 Milestone: `v1.2 Rollout Stability`
-Status: Blocked pending a new stabilization follow-up
-Last activity: 2026-03-29 -- Phase 10.5.1 finished with deterministic proof and no stable worker
+Status: Ready to execute urgent follow-up
+Last activity: 2026-03-29 -- Phase 10.5.1.1 planning pack created after the negative repeatability decision
 
 Progress: [#########-] 89%
 
 ## Milestone Snapshot
 
-- Phases completed: `6 / 9`
-- Plans completed: `24 / 24`
+- Phases completed: `8 / 10`
+- Plans completed: `24 / 27`
 - Current roadmap:
   - `.planning/ROADMAP.md`
 - Current requirements:
@@ -63,6 +63,8 @@ Progress: [#########-] 89%
 - `dad` still fails with `bootstrap_auth_required @ auth_check` and remains the auth-renewal target.
 - `shared-1` now shares the same `bootstrap_navigation_failed @ navigation` tail as `wife`.
 - The repeatability gate is now visible in admin and worker truth, so future work should target real bootstrap/auth problems instead of routing noise.
+- Phase 10.5.1.1 now exists as the urgent rescue slot immediately after 10.5.1.
+- Phase 10.5.1.1 planning now assumes three rescue waves: navigation bootstrap recovery, dad auth-renewal control-plane recovery, then a fresh repeated proof.
 
 ## Accumulated Context
 
@@ -77,9 +79,11 @@ Progress: [#########-] 89%
 - Phase 10.4 executed: bootstrap telemetry and bounded proof became cleaner, but no worker reached `phase11Ready=true`.
 - Phase 10.5 executed: `wife` produced a one-off proof-backed success, but that was not yet repeatability.
 - Phase 10.5.1 executed: validation became worker-pinned, repeatability truth became explicit, and Phase 11 stayed blocked because no worker reached `stable (2/2)`.
+- Phase 10.5.1.1 inserted after Phase 10.5.1: Alternate desktop repeatability rescue (URGENT)
+- Phase 10.5.1.1 planned: execute rescue ladder before Phase 11 can resume
 
 ## Session Continuity
 
 Last session: 2026-03-29
-Stopped at: Phase 10.5.1 completed with a negative repeatability decision; next step is `$gsd-insert-phase 10.5.2 "Alternate desktop repeatability rescue"`
+Stopped at: Phase 10.5.1.1 planned; next step is `$gsd-execute-phase 10.5.1.1`
 Resume file: .planning/ROADMAP.md
