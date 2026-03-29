@@ -101,6 +101,7 @@ describe("internal admin page", () => {
     expect(response.text).toContain("Start visible login");
     expect(response.text).toContain("Start visible reauth");
     expect(response.text).toContain("Complete login -> non-visible runtime");
+    expect(response.text).toContain("Validate non-visible runtime");
     expect(response.text).toContain("Alternate desktop");
     expect(response.text).toContain("Visible auth");
     expect(response.text).toContain("architecture review required");
@@ -109,6 +110,7 @@ describe("internal admin page", () => {
     expect(response.text).toContain("failed");
     expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/start");
     expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/complete");
+    expect(response.text).toContain("/internal/workers/\" + workerId + \"/validate-runtime");
     expect(response.text).toContain("/internal/workers/");
     expect(response.text).toContain("/internal/observability/summary");
   });

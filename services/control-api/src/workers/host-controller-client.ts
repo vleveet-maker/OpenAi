@@ -34,6 +34,23 @@ export interface HostControllerHealthSnapshot {
   workers: HostControllerWorkerStatus[];
 }
 
+export interface AlternateDesktopValidationResult {
+  workerId: string;
+  runtimeClass: string | null;
+  runtimeMode: "visible_auth" | "hidden_runtime" | "alternate_desktop" | null;
+  result: string;
+  phase11Ready: boolean;
+  validationPending: boolean;
+  proofFailureClass: string | null;
+  pageUrl: string | null;
+  bootstrapFailureCode: string | null;
+  bootstrapStep: string | null;
+  relayFailureCode: string | null;
+  checkedAt: string;
+  runtimeDesktopName: string | null;
+  detail: string | null;
+}
+
 export interface HostControllerPoolResult extends HostControllerHealthSnapshot {
   action: string;
   runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop";
@@ -45,6 +62,9 @@ export interface HostControllerClient {
     runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop"
   ): Promise<HostControllerPoolResult | Record<string, unknown>>;
   stopWorker(workerId: string): Promise<void>;
+  validateAlternateDesktop(
+    workerId: string
+  ): Promise<AlternateDesktopValidationResult>;
   startPool(): Promise<HostControllerPoolResult>;
   stopPool(): Promise<HostControllerPoolResult>;
   getHealth(): Promise<HostControllerHealthSnapshot>;
@@ -129,6 +149,12 @@ export function createHostControllerClient(
     async stopWorker(workerId) {
       await post(`/workers/${workerId}/stop`, workerId);
     },
+    async validateAlternateDesktop(workerId) {
+      return post<AlternateDesktopValidationResult>(
+        `/workers/${workerId}/validate-alternate-desktop`,
+        workerId
+      );
+    },
     async startPool() {
       return post<HostControllerPoolResult>("/pool/start");
     },
@@ -157,6 +183,24 @@ export function createNoopHostControllerClient(): HostControllerClient {
       return {};
     },
     async stopWorker(_workerId: string) {},
+    async validateAlternateDesktop(workerId: string) {
+      return {
+        workerId,
+        runtimeClass: "host_alternate_desktop",
+        runtimeMode: "alternate_desktop",
+        result: "alternate_desktop_unreachable",
+        phase11Ready: false,
+        validationPending: true,
+        proofFailureClass: "runtime_unreachable",
+        pageUrl: null,
+        bootstrapFailureCode: null,
+        bootstrapStep: null,
+        relayFailureCode: null,
+        checkedAt: new Date().toISOString(),
+        runtimeDesktopName: null,
+        detail: "host controller disabled"
+      };
+    },
     async startPool() {
       return {
         action: "pool_start_requested",

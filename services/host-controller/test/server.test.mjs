@@ -273,3 +273,50 @@ test("POST /workers/:id/start exposes startup_timeout when startup never reaches
     }
   );
 });
+
+test("POST /workers/:id/validate-alternate-desktop forwards validation results", async () => {
+  const calls = [];
+
+  await withServer(
+    {
+      async validateAlternateDesktop(workerId) {
+        calls.push(workerId);
+
+        return {
+          workerId,
+          runtimeClass: "host_alternate_desktop",
+          runtimeMode: "alternate_desktop",
+          result: "alternate_desktop_usable",
+          phase11Ready: true,
+          validationPending: false,
+          proofFailureClass: null,
+          pageUrl: "https://chatgpt.com/",
+          bootstrapFailureCode: null,
+          bootstrapStep: "complete",
+          relayFailureCode: null,
+          checkedAt: "2026-03-29T03:55:00.000Z",
+          runtimeDesktopName: "CodexWorker-dad",
+          detail: null
+        };
+      }
+    },
+    async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/workers/dad/validate-alternate-desktop`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-host-controller-token": "secret"
+        },
+        body: "{}"
+      });
+
+      assert.equal(response.status, 202);
+
+      const body = await response.json();
+      assert.equal(body.workerId, "dad");
+      assert.equal(body.phase11Ready, true);
+      assert.equal(body.runtimeMode, "alternate_desktop");
+      assert.deepEqual(calls, ["dad"]);
+    }
+  );
+});

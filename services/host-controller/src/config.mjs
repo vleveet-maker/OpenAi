@@ -64,8 +64,18 @@ export function loadHostControllerConfig(env = process.env) {
     stopWorkerScriptPath:
       env.HOST_WORKER_STOP_SCRIPT_PATH ??
       resolve(REPO_ROOT, "infra", "host-worker", "stop-host-native-worker.ps1"),
+    alternateDesktopValidationScriptPath:
+      env.HOST_ALTERNATE_DESKTOP_VALIDATION_SCRIPT_PATH ??
+      resolve(REPO_ROOT, "infra", "host-worker", "test-alternate-desktop-runtime.ps1"),
     defaultWorkerRuntimeMode: env.HOST_WORKER_RUNTIME_MODE ?? "alternate_desktop",
     browserWindowMode: env.HOST_BROWSER_WINDOW_MODE ?? "Minimized",
+    publicBaseUrl: env.HOST_PUBLIC_BASE_URL ?? "http://127.0.0.1:8080",
+    internalBaseUrl: env.HOST_INTERNAL_BASE_URL ?? "http://127.0.0.1:8081",
+    internalAdminToken:
+      env.HOST_INTERNAL_ADMIN_TOKEN ?? "local-internal-admin-token",
+    selfBaseUrl:
+      env.HOST_CONTROLLER_SELF_BASE_URL ??
+      `http://127.0.0.1:${parseInteger(env.HOST_CONTROLLER_PORT, 4040)}`,
     proxyServerUrl:
       env.HOST_PROXY_SERVER_URL ??
       `http://${env.HOST_PROXY_LISTEN_HOST ?? "127.0.0.1"}:${parseInteger(env.HOST_PROXY_MIXED_PORT, 7897)}`,

@@ -60,6 +60,29 @@ function spawnDetached(command, args, options = {}) {
   return child;
 }
 
+function parseJsonOutput(stdout) {
+  const trimmed = stdout.trim();
+
+  if (trimmed.length === 0) {
+    throw new Error("validation_output_missing");
+  }
+
+  const lines = trimmed
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    try {
+      return JSON.parse(lines[index]);
+    } catch {
+      // Keep scanning backwards for the last JSON line.
+    }
+  }
+
+  throw new Error("validation_output_unparseable");
+}
+
 function isWorkerReachable(workerStatus) {
   return Boolean(workerStatus.agentListening) && Boolean(workerStatus.browserListening);
 }
@@ -263,6 +286,12 @@ export class HostController {
       workerId,
       status: "stop_requested"
     };
+  }
+
+  async validateAlternateDesktop(workerId) {
+    const worker = this.requireWorker(workerId);
+
+    return this.runAlternateDesktopValidation(worker);
   }
 
   async startPool(runtimeMode = this.config.defaultWorkerRuntimeMode) {
@@ -509,5 +538,63 @@ export class HostController {
       });
       child.once("error", reject);
     });
+  }
+
+  async runAlternateDesktopValidation(worker) {
+    const command = [
+      `$result = & '${this.config.alternateDesktopValidationScriptPath.replaceAll("'", "''")}'`,
+      `-WorkerId '${worker.workerId.replaceAll("'", "''")}'`,
+      `-PublicBaseUrl '${this.config.publicBaseUrl.replaceAll("'", "''")}'`,
+      `-InternalBaseUrl '${this.config.internalBaseUrl.replaceAll("'", "''")}'`,
+      `-InternalAdminToken '${this.config.internalAdminToken.replaceAll("'", "''")}'`,
+      `-HostControllerBaseUrl '${this.config.selfBaseUrl.replaceAll("'", "''")}'`,
+      `-HostControllerToken '${this.config.authToken.replaceAll("'", "''")}'`,
+      "-ReturnJson;",
+      "$result | ConvertTo-Json -Depth 8 -Compress"
+    ].join(" ");
+
+    const child = spawn(
+      POWERSHELL_EXE,
+      [
+        "-NoProfile",
+        "-Command",
+        command
+      ],
+      {
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "pipe"]
+      }
+    );
+
+    const stdoutChunks = [];
+    const stderrChunks = [];
+
+    child.stdout.on("data", (chunk) => {
+      stdoutChunks.push(Buffer.from(chunk));
+    });
+    child.stderr.on("data", (chunk) => {
+      stderrChunks.push(Buffer.from(chunk));
+    });
+
+    await new Promise((resolve, reject) => {
+      child.once("exit", (code) => {
+        if (code === 0 || code === null) {
+          resolve();
+          return;
+        }
+
+        const stderr = Buffer.concat(stderrChunks).toString("utf8").trim();
+        reject(
+          new Error(
+            stderr.length > 0
+              ? `alternate_desktop_validation_failed:${worker.workerId}:${stderr}`
+              : `alternate_desktop_validation_failed:${worker.workerId}:${code}`
+          )
+        );
+      });
+      child.once("error", reject);
+    });
+
+    return parseJsonOutput(Buffer.concat(stdoutChunks).toString("utf8"));
   }
 }

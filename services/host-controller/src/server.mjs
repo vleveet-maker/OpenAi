@@ -13,7 +13,9 @@ function sendJson(response, statusCode, payload) {
 }
 
 function matchWorkerAction(pathname) {
-  const match = pathname.match(/^\/workers\/([^/]+)\/(start|stop)$/);
+  const match = pathname.match(
+    /^\/workers\/([^/]+)\/(start|stop|validate-alternate-desktop)$/
+  );
 
   if (!match) {
     return null;
@@ -131,6 +133,15 @@ export function createHostControllerServer(
 
         if (workerAction.action === "stop") {
           sendJson(response, 202, await controller.stopWorker(workerAction.workerId));
+          return;
+        }
+
+        if (workerAction.action === "validate-alternate-desktop") {
+          sendJson(
+            response,
+            202,
+            await controller.validateAlternateDesktop(workerAction.workerId)
+          );
           return;
         }
       }

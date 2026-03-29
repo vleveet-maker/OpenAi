@@ -6,7 +6,10 @@ import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ControlApiConfig, WorkerRuntimeType } from "../src/config.js";
-import type { HostControllerClient } from "../src/workers/host-controller-client.js";
+import type {
+  AlternateDesktopValidationResult,
+  HostControllerClient
+} from "../src/workers/host-controller-client.js";
 import { createControlApiApp, createControlApiRuntime } from "../src/server.js";
 import { createReadyBootstrapTransport } from "./test-bootstrap-transport.js";
 
@@ -88,7 +91,23 @@ function createTestRuntime(runtimeType: WorkerRuntimeType = "docker") {
       proxyServerUrl: "http://127.0.0.1:7897",
       poolStatus: "idle",
       workers: []
-    })
+    }),
+    validateAlternateDesktop: vi.fn().mockResolvedValue({
+      workerId: "dad",
+      runtimeClass: "host_alternate_desktop",
+      runtimeMode: "alternate_desktop",
+      result: "alternate_desktop_usable",
+      phase11Ready: true,
+      validationPending: false,
+      proofFailureClass: null,
+      pageUrl: "https://chatgpt.com/",
+      bootstrapFailureCode: null,
+      bootstrapStep: "complete",
+      relayFailureCode: null,
+      checkedAt: "2026-03-29T03:40:00.000Z",
+      runtimeDesktopName: "CodexWorker-dad",
+      detail: null
+    } satisfies AlternateDesktopValidationResult)
   };
   const healthMonitor = {
     startHealthMonitor: vi.fn(),
@@ -288,5 +307,81 @@ describe("internal worker manual auth transitions", () => {
     expect(completeResponse.body.error).toBe("manual_auth_unsupported");
     expect(hostControllerClient.stopWorker).not.toHaveBeenCalled();
     expect(hostControllerClient.startWorker).not.toHaveBeenCalled();
+  });
+});
+
+describe("internal worker runtime validation", () => {
+  it("validates host workers through the host controller and records a usable runtime", async () => {
+    const { app, runtime, hostControllerClient } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "ready",
+      reason: "validation test",
+      runtimeStatus: "ready",
+      runtimeMode: "alternate_desktop",
+      runtimeClass: "host_alternate_desktop"
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/validate-runtime")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(hostControllerClient.validateAlternateDesktop).toHaveBeenCalledWith("dad");
+    expect(response.body.action).toBe("runtime_validation_requested");
+    expect(response.body.validation.phase11Ready).toBe(true);
+    expect(response.body.worker.runtimeCapability).toBe("usable");
+    expect(response.body.worker.lastBootstrapStep).toBe("complete");
+    expect(response.body.worker.lastBootstrapUsability).toBe("usable");
+  });
+
+  it("marks host workers as reauth_required when runtime validation reports auth loss", async () => {
+    const { app, runtime, hostControllerClient } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    vi.mocked(hostControllerClient.validateAlternateDesktop).mockResolvedValueOnce({
+      workerId: "dad",
+      runtimeClass: "host_alternate_desktop",
+      runtimeMode: "alternate_desktop",
+      result: "alternate_desktop_reachable_but_unusable",
+      phase11Ready: false,
+      validationPending: true,
+      proofFailureClass: "auth_required",
+      pageUrl: "https://chatgpt.com/auth/login",
+      bootstrapFailureCode: "bootstrap_auth_required",
+      bootstrapStep: "auth_check",
+      relayFailureCode: null,
+      checkedAt: "2026-03-29T03:42:00.000Z",
+      runtimeDesktopName: "CodexWorker-dad",
+      detail: "auth lost"
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/validate-runtime")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(response.body.worker.status.status).toBe("reauth_required");
+    expect(response.body.worker.lastBootstrapFailureCode).toBe("bootstrap_auth_required");
+    expect(response.body.worker.lastBootstrapUsability).toBe("auth_required");
+    expect(response.body.worker.runtimeCapability).toBe("reachable_but_unusable");
+  });
+
+  it("returns 409 for docker workers on runtime validation", async () => {
+    const { app, runtime, hostControllerClient } = createTestRuntime("docker");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/validate-runtime")
+      .set("x-internal-admin-token", "secret")
+      .expect(409);
+
+    expect(response.body.error).toBe("runtime_validation_unsupported");
+    expect(hostControllerClient.validateAlternateDesktop).not.toHaveBeenCalled();
   });
 });

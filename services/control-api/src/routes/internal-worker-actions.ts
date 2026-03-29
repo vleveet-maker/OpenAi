@@ -3,7 +3,10 @@ import { Router, type Response } from "express";
 import type { OperatorEventRecorder } from "../observability/operator-events.js";
 import type { SessionService } from "../sessions/session-service.js";
 import type { DockerEngineClient } from "../workers/docker-engine-client.js";
-import type { HostControllerClient } from "../workers/host-controller-client.js";
+import type {
+  AlternateDesktopValidationResult,
+  HostControllerClient
+} from "../workers/host-controller-client.js";
 import type { WorkerHealthMonitor } from "../workers/worker-health-monitor.js";
 import type { WorkerRegistry } from "../workers/worker-registry.js";
 
@@ -63,6 +66,36 @@ export function createInternalWorkerActionsRouter(
       runtimeCapability: "unreachable",
       lastSeenAt: now
     });
+  }
+
+  function deriveValidationCapability(
+    validation: AlternateDesktopValidationResult
+  ) {
+    if (validation.phase11Ready) {
+      return "usable" as const;
+    }
+
+    return validation.proofFailureClass === "runtime_unreachable"
+      ? ("unreachable" as const)
+      : ("reachable_but_unusable" as const);
+  }
+
+  function deriveValidationUsability(
+    validation: AlternateDesktopValidationResult
+  ) {
+    if (validation.phase11Ready) {
+      return "usable" as const;
+    }
+
+    if (validation.proofFailureClass === "auth_required") {
+      return "auth_required" as const;
+    }
+
+    if (validation.bootstrapFailureCode === "bootstrap_challenge_detected") {
+      return "challenge_blocked" as const;
+    }
+
+    return "surface_unusable" as const;
   }
 
   router.post("/internal/workers/:id/restart", async (request, response) => {
@@ -292,6 +325,94 @@ export function createInternalWorkerActionsRouter(
           error instanceof Error
             ? error.message
             : "The host worker could not return to the alternate desktop runtime."
+      });
+    }
+  });
+
+  router.post("/internal/workers/:id/validate-runtime", async (request, response) => {
+    const worker = options.workerRegistry.getWorker(request.params.id);
+
+    if (!worker) {
+      respondWorkerNotFound(request.params.id, response);
+      return;
+    }
+
+    if (worker.runtimeType !== "host") {
+      response.status(409).json({
+        error: "runtime_validation_unsupported",
+        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and does not support alternate desktop validation.`,
+        workerId: worker.workerId
+      });
+      return;
+    }
+
+    if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
+      respondActiveSession(worker.workerId, response);
+      return;
+    }
+
+    try {
+      const validation = await options.hostControllerClient.validateAlternateDesktop(
+        worker.workerId
+      );
+
+      const requiresAuth = validation.proofFailureClass === "auth_required";
+      const validatedWorker = options.workerRegistry.updateWorker(worker.workerId, {
+        status: requiresAuth ? "reauth_required" : validation.phase11Ready ? "ready" : worker.status.status,
+        reason: requiresAuth
+          ? "non-visible runtime validation requires renewed ChatGPT auth"
+          : validation.phase11Ready
+            ? "non-visible runtime validation passed"
+            : "non-visible runtime validation still needs rescue",
+        runtimeStatus: requiresAuth ? "reauth_required" : worker.runtimeStatus ?? worker.status.status,
+        runtimeMode:
+          validation.runtimeMode === "visible_auth" ||
+          validation.runtimeMode === "hidden_runtime" ||
+          validation.runtimeMode === "alternate_desktop"
+            ? validation.runtimeMode
+            : worker.runtimeMode ?? "alternate_desktop",
+        runtimeClass:
+          validation.runtimeClass === "host_visible_auth" ||
+          validation.runtimeClass === "host_hidden_runtime" ||
+          validation.runtimeClass === "host_alternate_desktop" ||
+          validation.runtimeClass === "docker_headed_xvfb"
+            ? validation.runtimeClass
+            : worker.runtimeClass ?? "host_alternate_desktop",
+        runtimeDesktopName: validation.runtimeDesktopName,
+        runtimeCapability: deriveValidationCapability(validation),
+        lastBootstrapAt: validation.checkedAt,
+        lastBootstrapFailureCode: validation.bootstrapFailureCode,
+        lastBootstrapStep:
+          validation.bootstrapStep === "navigation" ||
+          validation.bootstrapStep === "auth_check" ||
+          validation.bootstrapStep === "surface_entry" ||
+          validation.bootstrapStep === "new_chat" ||
+          validation.bootstrapStep === "temporary_entry" ||
+          validation.bootstrapStep === "temporary_confirmation" ||
+          validation.bootstrapStep === "temporary_onboarding" ||
+          validation.bootstrapStep === "model_selection" ||
+          validation.bootstrapStep === "composer_ready" ||
+          validation.bootstrapStep === "complete"
+            ? validation.bootstrapStep
+            : null,
+        lastBootstrapUsability: deriveValidationUsability(validation),
+        lastRelayAt: validation.checkedAt,
+        lastRelayFailureCode: validation.relayFailureCode,
+        lastSeenAt: validation.checkedAt
+      });
+
+      response.status(202).json({
+        action: "runtime_validation_requested",
+        validation,
+        worker: validatedWorker
+      });
+    } catch (error: unknown) {
+      response.status(502).json({
+        error: "runtime_validation_failed",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "The alternate desktop runtime could not be validated."
       });
     }
   });

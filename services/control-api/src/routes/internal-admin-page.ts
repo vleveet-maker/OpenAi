@@ -478,6 +478,7 @@ function renderInternalAdminPage(): string {
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="warn" data-action="cancel-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Cancel access</button>\` : ""}
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="success" data-action="complete-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login/reauth</button>\` : ""}
                 \${worker.runtimeType === "host" ? \`<button class="success" data-action="manual-auth-complete" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login -> non-visible runtime</button>\` : ""}
+                \${worker.runtimeType === "host" ? \`<button class="secondary" data-action="validate-runtime" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Validate non-visible runtime</button>\` : ""}
               </div>
             </article>
           \`;
@@ -644,6 +645,13 @@ function renderInternalAdminPage(): string {
         });
       }
 
+      async function validateRuntime(workerId) {
+        await fetchJson("/internal/workers/" + workerId + "/validate-runtime", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+      }
+
       async function cancelAccess(workerId) {
         await fetchJson("/internal/workers/" + workerId + "/browser-access/cancel", {
           method: "POST",
@@ -677,6 +685,8 @@ function renderInternalAdminPage(): string {
             await startManualAuth(workerId);
           } else if (action === "manual-auth-complete") {
             await completeManualAuth(workerId);
+          } else if (action === "validate-runtime") {
+            await validateRuntime(workerId);
           } else if (action === "cancel-access") {
             await cancelAccess(workerId);
           } else if (action === "complete-access") {
