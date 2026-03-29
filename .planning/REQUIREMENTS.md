@@ -37,8 +37,8 @@
 
 ### Alternate Desktop Stabilization
 
-- [ ] **ADST-01**: At least one worker can recover or confirm valid ChatGPT auth in `alternate_desktop` after visible auth and return to routine non-visible operation without reopening a routine visible browser window
-- [ ] **ADST-02**: At least one worker can pass the current `Temporary Chat` confirmation, preferred-model selection, and composer unlock path in `alternate_desktop` so the canonical proof reports `phase11Ready=true`
+- [x] **ADST-01**: At least one worker can recover or confirm valid ChatGPT auth in `alternate_desktop` after visible auth and return to routine non-visible operation without reopening a routine visible browser window
+- [x] **ADST-02**: At least one worker can pass the current `Temporary Chat` confirmation, preferred-model selection, and composer unlock path in `alternate_desktop` so the canonical proof reports `phase11Ready=true`
 - [x] **ADST-03**: Operator and control-plane evidence distinguish `auth_required`, bootstrap selector drift, and assignment-timeout tails clearly enough to decide whether `Phase 11` can proceed
 
 ### Alternate Desktop Navigation Rescue And Auth Renewal
@@ -90,8 +90,8 @@
 | NVRT-01 | Phase 10.3 | Complete |
 | NVRT-02 | Phase 10.3 | Complete |
 | NVRT-03 | Phase 10.3 | Complete |
-| ADST-01 | Phase 10.4 | Partial |
-| ADST-02 | Phase 10.4 | Pending |
+| ADST-01 | Phase 10.4 | Complete |
+| ADST-02 | Phase 10.4 | Complete |
 | ADST-03 | Phase 10.4 | Complete |
 | ADNR-01 | Phase 10.5 | Complete |
 | ADNR-02 | Phase 10.5 | Partial |
