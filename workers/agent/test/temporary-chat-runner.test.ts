@@ -36,6 +36,7 @@ class FakePage {
   public modelPickerClicks = 0;
   public temporaryOnboardingContinueClicks = 0;
   public selectedModel: string | null = null;
+  public gotoCallCount = 0;
   private currentUrl = "https://chatgpt.com/";
   private temporaryModeActive = false;
   private temporaryEntryClicked = false;
@@ -44,6 +45,7 @@ class FakePage {
 
   constructor(
     private readonly options: {
+      initialUrl?: string;
       authUrl?: string;
       pageTitle?: string;
       showAuthButtons?: boolean;
@@ -58,8 +60,13 @@ class FakePage {
       keepDirectTemporaryVisibleWhenModelMenuOpen?: boolean;
       temporaryOnboardingVisible?: boolean;
       composerAvailable?: boolean;
+      gotoThrows?: boolean;
     } = {}
   ) {
+    if (options.initialUrl) {
+      this.currentUrl = options.initialUrl;
+    }
+
     if (options.authUrl) {
       this.currentUrl = options.authUrl;
     }
@@ -76,6 +83,12 @@ class FakePage {
   }
 
   async goto(url: string): Promise<void> {
+    this.gotoCallCount += 1;
+
+    if (this.options.gotoThrows) {
+      throw new Error("goto failed");
+    }
+
     if (!this.options.authUrl) {
       this.currentUrl = url;
     }
@@ -105,13 +118,13 @@ class FakePage {
 
     if (
       (role === "button" || role === "link") &&
-      ["Temporary Chat", "Temporary", "Включить временный чат"].some((label) =>
+      ["Temporary Chat", "Temporary", "Р’РєР»СЋС‡РёС‚СЊ РІСЂРµРјРµРЅРЅС‹Р№ С‡Р°С‚"].some((label) =>
         namePattern?.test(label)
       )
     ) {
       return new FakeLocator(
         () => ({
-              count:
+          count:
             this.options.directTemporaryAvailable === false
               ? 0
               : this.modelPickerOpen &&
@@ -151,7 +164,7 @@ class FakePage {
 
     if (
       (role === "button" || role === "link" || role === "menuitem") &&
-      ["Temporary", "Temporary Chat", "Временный чат"].some((label) =>
+      ["Temporary", "Temporary Chat", "Р’СЂРµРјРµРЅРЅС‹Р№ С‡Р°С‚"].some((label) =>
         namePattern?.test(label)
       )
     ) {
@@ -233,7 +246,10 @@ class FakePage {
     }
 
     if (
-      (role === "option" || role === "menuitemradio" || role === "menuitem" || role === "link") &&
+      (role === "option" ||
+        role === "menuitemradio" ||
+        role === "menuitem" ||
+        role === "link") &&
       !this.options.localizedModelMenu &&
       namePattern?.test("GPT-5.4 Thinking")
     ) {
@@ -256,7 +272,10 @@ class FakePage {
     }
 
     if (
-      (role === "option" || role === "menuitemradio" || role === "menuitem" || role === "link") &&
+      (role === "option" ||
+        role === "menuitemradio" ||
+        role === "menuitem" ||
+        role === "link") &&
       !this.options.localizedModelMenu &&
       namePattern?.test("GPT-5.4")
     ) {
@@ -278,7 +297,7 @@ class FakePage {
 
     if (
       role === "button" &&
-      ["Continue", "Продолжить"].some((label) => namePattern?.test(label))
+      ["Continue", "РџСЂРѕРґРѕР»Р¶РёС‚СЊ"].some((label) => namePattern?.test(label))
     ) {
       return new FakeLocator(
         () => ({
@@ -301,6 +320,9 @@ class FakePage {
   }
 
   locator(selector: string): FakeLocator {
+    const availableModels =
+      this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"];
+
     if (
       selector.includes("login-button") ||
       selector.includes("signup-button")
@@ -318,11 +340,11 @@ class FakePage {
       return new FakeLocator(
         () => ({
           count:
-            this.modelPickerOpen && (this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"]).includes("GPT-5.4 Thinking")
+            this.modelPickerOpen && availableModels.includes("GPT-5.4 Thinking")
               ? 1
               : 0,
           visible:
-            this.modelPickerOpen && (this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"]).includes("GPT-5.4 Thinking")
+            this.modelPickerOpen && availableModels.includes("GPT-5.4 Thinking")
         }),
         {
           click: async () => {
@@ -333,15 +355,16 @@ class FakePage {
       );
     }
 
-    if (selector.includes("model-switcher-gpt-5-4") || selector.includes("gpt-5-4")) {
+    if (
+      selector.includes("model-switcher-gpt-5-4") ||
+      selector.includes("gpt-5-4")
+    ) {
       return new FakeLocator(
         () => ({
           count:
-            this.modelPickerOpen && (this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"]).includes("GPT-5.4")
-              ? 1
-              : 0,
+            this.modelPickerOpen && availableModels.includes("GPT-5.4") ? 1 : 0,
           visible:
-            this.modelPickerOpen && (this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"]).includes("GPT-5.4")
+            this.modelPickerOpen && availableModels.includes("GPT-5.4")
         }),
         {
           click: async () => {
@@ -380,7 +403,10 @@ class FakePage {
       );
     }
 
-    if (selector.includes("model-switcher") || selector.includes("model-picker")) {
+    if (
+      selector.includes("model-switcher") ||
+      selector.includes("model-picker")
+    ) {
       return new FakeLocator(
         () => ({
           count: this.options.modelPickerAvailable === false ? 0 : 1,
@@ -480,21 +506,34 @@ class FakePage {
 }
 
 class FakeBrowserContext {
-  constructor(private readonly page: FakePage) {}
+  constructor(
+    private readonly existingPages: FakePage[],
+    private readonly createdPage?: FakePage
+  ) {}
 
   pages(): FakePage[] {
-    return [this.page];
+    return this.existingPages;
   }
 
   async newPage(): Promise<FakePage> {
-    return this.page;
+    if (this.createdPage) {
+      return this.createdPage;
+    }
+
+    if (this.existingPages[0]) {
+      return this.existingPages[0];
+    }
+
+    const fallbackPage = new FakePage();
+    this.existingPages.push(fallbackPage);
+    return fallbackPage;
   }
 }
 
 describe("runTemporaryChatBootstrap", () => {
   it("creates a fresh temporary chat through the direct Temporary Chat entry", async () => {
     const page = new FakePage();
-    const context = new FakeBrowserContext(page);
+    const context = new FakeBrowserContext([page]);
 
     const result = await runTemporaryChatBootstrap(context, {
       lockKey: "dad:session-1",
@@ -522,7 +561,7 @@ describe("runTemporaryChatBootstrap", () => {
     const page = new FakePage({
       directTemporaryAvailable: false
     });
-    const context = new FakeBrowserContext(page);
+    const context = new FakeBrowserContext([page]);
 
     const result = await runTemporaryChatBootstrap(context, {
       lockKey: "wife:session-1",
@@ -543,7 +582,7 @@ describe("runTemporaryChatBootstrap", () => {
       keepDirectTemporaryVisibleWhenModelMenuOpen: true
     });
 
-    const result = await runTemporaryChatBootstrap(new FakeBrowserContext(page), {
+    const result = await runTemporaryChatBootstrap(new FakeBrowserContext([page]), {
       lockKey: "wife:session-2",
       startUrl: "https://chatgpt.com/",
       preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
@@ -559,7 +598,7 @@ describe("runTemporaryChatBootstrap", () => {
       temporaryOnboardingVisible: true
     });
 
-    const result = await runTemporaryChatBootstrap(new FakeBrowserContext(page), {
+    const result = await runTemporaryChatBootstrap(new FakeBrowserContext([page]), {
       lockKey: "shared:session-1",
       startUrl: "https://chatgpt.com/",
       preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
@@ -575,7 +614,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-2",
         startUrl: "https://chatgpt.com/",
@@ -588,13 +627,36 @@ describe("runTemporaryChatBootstrap", () => {
     expect(page.modelPickerClicks).toBe(1);
   });
 
+  it("reuses an already open ChatGPT page before trying navigation rescue", async () => {
+    const nonChatPage = new FakePage({
+      initialUrl: "https://example.com/"
+    });
+    const reusableChatPage = new FakePage({
+      initialUrl: "https://chat.openai.com/"
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext([nonChatPage, reusableChatPage]),
+      {
+        lockKey: "dad:reuse-chat-page",
+        startUrl: "https://chatgpt.com/",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+      }
+    );
+
+    expect(result.status).toBe("ready");
+    expect(result.stepDetail).toContain("navigation branch: reuse_chatgpt_page");
+    expect(nonChatPage.gotoCallCount).toBe(0);
+    expect(reusableChatPage.gotoCallCount).toBe(0);
+  });
+
   it("fails with bootstrap_auth_required when ChatGPT redirects to login", async () => {
     const page = new FakePage({
       authUrl: "https://chatgpt.com/auth/login"
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-1",
         startUrl: "https://chatgpt.com/",
@@ -614,7 +676,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-1",
         startUrl: "https://chatgpt.com/",
@@ -632,7 +694,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-challenge",
         startUrl: "https://chatgpt.com/",
@@ -652,7 +714,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-1",
         startUrl: "https://chatgpt.com/",
@@ -672,7 +734,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-1",
         startUrl: "https://chatgpt.com/",
@@ -689,7 +751,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-1",
         startUrl: "https://chatgpt.com/",
@@ -707,7 +769,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-1",
         startUrl: "https://chatgpt.com/",
@@ -724,7 +786,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-1",
         startUrl: "https://chatgpt.com/",
@@ -742,7 +804,7 @@ describe("runTemporaryChatBootstrap", () => {
     });
 
     const result = await runTemporaryChatBootstrap(
-      new FakeBrowserContext(page),
+      new FakeBrowserContext([page]),
       {
         lockKey: "dad:session-1",
         startUrl: "https://chatgpt.com/",
@@ -753,5 +815,54 @@ describe("runTemporaryChatBootstrap", () => {
     expect(result.failureCode).toBe("composer_not_ready");
     expect(result.step).toBe("composer_ready");
     expect(result.composerReady).toBe(false);
+  });
+
+  it("rescues navigation by opening a fresh page after the first page cannot navigate", async () => {
+    const unusableExistingPage = new FakePage({
+      initialUrl: "about:blank",
+      gotoThrows: true
+    });
+    const freshChatPage = new FakePage({
+      initialUrl: "about:blank"
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext([unusableExistingPage], freshChatPage),
+      {
+        lockKey: "wife:navigation-rescue",
+        startUrl: "https://chatgpt.com/",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+      }
+    );
+
+    expect(result.status).toBe("ready");
+    expect(result.stepDetail).toContain("navigation branch: fresh_page_retry");
+    expect(unusableExistingPage.gotoCallCount).toBe(1);
+    expect(freshChatPage.gotoCallCount).toBe(1);
+  });
+
+  it("returns navigation branch detail when all rescue attempts fail", async () => {
+    const unusableExistingPage = new FakePage({
+      initialUrl: "about:blank",
+      gotoThrows: true
+    });
+    const unusableFreshPage = new FakePage({
+      initialUrl: "about:blank",
+      gotoThrows: true
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext([unusableExistingPage], unusableFreshPage),
+      {
+        lockKey: "shared:navigation-failed",
+        startUrl: "https://chatgpt.com/",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking"]
+      }
+    );
+
+    expect(result.failureCode).toBe("bootstrap_navigation_failed");
+    expect(result.step).toBe("navigation");
+    expect(result.stepDetail).toContain("navigation branch: existing_page_goto");
+    expect(result.stepDetail).toContain("navigation branch: fresh_page_retry");
   });
 });

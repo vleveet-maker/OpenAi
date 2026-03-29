@@ -30,6 +30,18 @@ interface BootstrapBrowserContextLike {
   newPage(): Promise<BootstrapPageLike>;
 }
 
+interface EnsuredBootstrapPage {
+  page: BootstrapPageLike;
+  navigationDetail: string;
+}
+
+class BootstrapNavigationError extends Error {
+  constructor(readonly stepDetail: string) {
+    super("bootstrap_navigation_failed");
+    this.name = "BootstrapNavigationError";
+  }
+}
+
 interface ResolvedBootstrapLocator {
   locator: BootstrapLocatorLike;
   selectorId: string;
@@ -45,6 +57,10 @@ const bootstrapLocks = new Map<string, Promise<void>>();
 const TRANSIENT_UI_POLL_INTERVAL_MS = 150;
 const TEMPORARY_CONFIRMATION_TIMEOUT_MS = 3_000;
 const TEMPORARY_ONBOARDING_TIMEOUT_MS = 1_500;
+const CHATGPT_URL_PREFIXES = [
+  "https://chatgpt.com",
+  "https://chat.openai.com"
+] as const;
 const CHALLENGE_MARKERS = [
   "__cf_chl_rt_tk",
   "cf_challenge",
@@ -123,28 +139,121 @@ async function waitForTemporaryConfirmation(
   return null;
 }
 
-async function ensureChatPage(
-  context: BootstrapBrowserContextLike,
-  startUrl: string
-): Promise<BootstrapPageLike> {
-  const existingPage = context.pages()[0];
-
-  if (existingPage && typeof existingPage.goto === "function") {
-    await existingPage.goto(startUrl, {
-      waitUntil: "domcontentloaded"
-    });
-    return existingPage;
+function isChatGptUrl(value: string | null | undefined): boolean {
+  if (!value) {
+    return false;
   }
 
-  const page = existingPage ?? (await context.newPage());
+  const normalized = value.trim().toLowerCase();
+  return CHATGPT_URL_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+}
 
-  if (typeof page.goto === "function") {
+function isAuthOrChallengeUrl(value: string | null | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (
+    normalized.includes("login") ||
+    normalized.includes("signin") ||
+    normalized.includes("auth")
+  ) {
+    return true;
+  }
+
+  return detectChallengeMarkers(normalized);
+}
+
+function navigationSurfaceUsableForBootstrap(
+  page: BootstrapPageLike | null | undefined
+): boolean {
+  const currentUrl = page?.url().trim() ?? "";
+
+  if (currentUrl.length === 0 || currentUrl.toLowerCase() === "about:blank") {
+    return false;
+  }
+
+  return isChatGptUrl(currentUrl) || isAuthOrChallengeUrl(currentUrl);
+}
+
+async function attemptNavigationBranch(
+  page: BootstrapPageLike,
+  startUrl: string,
+  branchLabel: string
+): Promise<EnsuredBootstrapPage | null> {
+  try {
     await page.goto(startUrl, {
       waitUntil: "domcontentloaded"
     });
+  } catch {
+    if (!navigationSurfaceUsableForBootstrap(page)) {
+      return null;
+    }
   }
 
-  return page;
+  if (!navigationSurfaceUsableForBootstrap(page)) {
+    return null;
+  }
+
+  return {
+    page,
+    navigationDetail: branchLabel
+  };
+}
+
+async function ensureChatPage(
+  context: BootstrapBrowserContextLike,
+  startUrl: string
+): Promise<EnsuredBootstrapPage> {
+  const attemptedBranches: string[] = [];
+  const reusableChatPage = context
+    .pages()
+    .find((page) => isChatGptUrl(page.url()));
+
+  if (reusableChatPage) {
+    return {
+      page: reusableChatPage,
+      navigationDetail: "navigation branch: reuse_chatgpt_page"
+    };
+  }
+
+  const existingPage = context.pages()[0];
+
+  if (existingPage && typeof existingPage.goto === "function") {
+    attemptedBranches.push("navigation branch: existing_page_goto");
+    const navigatedExistingPage = await attemptNavigationBranch(
+      existingPage,
+      startUrl,
+      "navigation branch: existing_page_goto"
+    );
+
+    if (navigatedExistingPage) {
+      return navigatedExistingPage;
+    }
+  }
+
+  const freshPage = await context.newPage();
+
+  if (typeof freshPage.goto === "function") {
+    attemptedBranches.push("navigation branch: fresh_page_retry");
+    const navigatedFreshPage = await attemptNavigationBranch(
+      freshPage,
+      startUrl,
+      "navigation branch: fresh_page_retry"
+    );
+
+    if (navigatedFreshPage) {
+      return navigatedFreshPage;
+    }
+  }
+
+  throw new BootstrapNavigationError(
+    attemptedBranches.length > 0
+      ? attemptedBranches.join(" -> ")
+      : "navigation branch: no_usable_page"
+  );
 }
 
 async function pageShowsAuthEntry(page: BootstrapPageLike): Promise<boolean> {
@@ -241,7 +350,7 @@ async function buildFailureResult(
     modelLabel: null,
     failureCode,
     step,
-    stepDetail: null,
+    stepDetail,
     composerReady: false,
     challengeDetected,
     pageTitle: await getPageTitle(page),
@@ -436,10 +545,18 @@ export async function runTemporaryChatBootstrap(
     let page: BootstrapPageLike | null = null;
     let currentStep: WorkerChatBootstrapStep = "navigation";
     let currentStepDetail: string | null = "loading ChatGPT start surface";
+    let navigationDetail: string | null = null;
 
     try {
-      page = await ensureChatPage(context, options.startUrl);
-    } catch {
+      const ensuredPage = await ensureChatPage(context, options.startUrl);
+      page = ensuredPage.page;
+      navigationDetail = ensuredPage.navigationDetail;
+      currentStepDetail = ensuredPage.navigationDetail;
+    } catch (error) {
+      if (error instanceof BootstrapNavigationError) {
+        currentStepDetail = error.stepDetail;
+      }
+
       return buildFailureResult(
         page,
         "bootstrap_navigation_failed",
@@ -565,7 +682,9 @@ export async function runTemporaryChatBootstrap(
       modelLabel: modelSelection.selectedModel,
       failureCode: null,
       step: "complete",
-      stepDetail: `composer selector: ${composerLocator.selectorId}`,
+      stepDetail: navigationDetail
+        ? `${navigationDetail}; composer selector: ${composerLocator.selectorId}`
+        : `composer selector: ${composerLocator.selectorId}`,
       composerReady: true,
       challengeDetected: false,
       pageTitle: await getPageTitle(page),
