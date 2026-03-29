@@ -26,7 +26,8 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 10.3: Alternative non-visible native browser runtime design** - (INSERTED) completed 2026-03-28; alternate desktop runtime foundation and control-plane integration landed, but no worker passed the bounded live proof
 - [ ] **Phase 10.4: Alternate desktop auth and bootstrap stabilization** - (INSERTED) executed 2026-03-29 with a negative runtime decision: proof now cleanly distinguishes `dad` auth loss from `wife`/`shared-1` navigation bootstrap failure, but no worker reached `phase11Ready=true`
 - [ ] **Phase 10.5: Alternate desktop navigation rescue and auth renewal** - (INSERTED) executed 2026-03-29; `wife` produced the first proof-backed `phase11Ready=true` path in alternate desktop, while `dad` auth renewal and `shared-1` assignment-timeout cleanup remain explicit debt
-- [ ] **Phase 11: Rollout smoke confidence** - unblocked after Phase 10.5; `wife` is now the canonical proof worker for rollout-smoke planning and execution
+- [ ] **Phase 10.5.1: Repeatable alternate desktop stability gate** - (INSERTED) planned 2026-03-29; repeatability must be proven before Phase 11 resumes because the latest live revalidation regressed all three workers away from a stable passing state
+- [ ] **Phase 11: Rollout smoke confidence** - blocked again pending Phase 10.5.1; rollout smoke should resume only after at least one worker proves repeatable non-visible stability
 
 ## Phase Details
 
@@ -86,6 +87,24 @@ Plans:
 - [x] `10.5-01-PLAN.md` - alternate-desktop navigation rescue ladder and worker-agent evidence hardening
 - [x] `10.5-02-PLAN.md` - host-controller/control-api validation wiring and dad auth-renewal flow
 - [x] `10.5-03-PLAN.md` - bounded rescue proof, operator docs, and final Phase 11 unblock decision
+
+### Phase 10.5.1: Repeatable alternate desktop stability gate (INSERTED)
+
+**Goal:** Prove that at least one alternate-desktop worker remains repeatably usable across consecutive non-visible validations, instead of relying on a one-off successful pass.
+**Requirements**: RSG-01, RSG-02, RSG-03
+**Depends on:** Phase 10.5
+**Plans:** 3 plans
+
+**Current status:** Planned on 2026-03-29. The latest live revalidation showed `0` repeatably working workers: `dad -> bootstrap_auth_required@auth_check`, `wife -> bootstrap_navigation_failed@navigation`, and `shared-1 -> bootstrap_navigation_failed@navigation`. This phase now sits between the one-off `wife` success from Phase 10.5 and any Phase 11 rollout-smoke work.
+**Success Criteria** (what must be TRUE):
+  1. Validation and proof can target one named worker deterministically, without assignment-timeout noise from the shared pool.
+  2. At least one worker reaches a repeatable gate of two consecutive non-visible validation passes with a real relay success, and that gate resets on failure.
+  3. Operator/admin state and milestone artifacts distinguish a one-off passing worker from a repeatably stable worker, so Phase 11 only resumes from repeated proof.
+
+Plans:
+- [ ] `10.5.1-01-PLAN.md` - targeted validation isolation and worker-pinned proof path
+- [ ] `10.5.1-02-PLAN.md` - repeatability gate state, counters, and operator truth
+- [ ] `10.5.1-03-PLAN.md` - bounded repeated proof, docs, and final unblock decision
 
 ### Phase 10.3: Alternative non-visible native browser runtime design (INSERTED)
 
@@ -150,18 +169,18 @@ Plans:
 ### Phase 11: Rollout smoke confidence
 
 **Goal:** Give the operator a repeatable confidence check before the household begins using the pool after changes or drift.
-**Depends on:** Phase 10.5
+**Depends on:** Phase 10.5.1
 **Requirements:** CONF-01, CONF-02
 **Success Criteria** (what must be TRUE):
   1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
   2. The latest smoke result is visible in operator surfaces or logs without digging through raw process output.
   3. The rollout confidence path is documented clearly enough that it can be rerun whenever ChatGPT UI drift is suspected.
-**Current status:** Unblocked after Phase 10.5. `wife` is now the named passing worker and should be used as the canonical rollout-confidence target while `dad` and `shared-1` continue as explicit stabilization debt.
+**Current status:** Blocked on Phase 10.5.1. `wife` remains the strongest candidate, but a one-off pass is no longer enough; rollout smoke planning resumes only after repeated proof.
 
 ## Progress
 
 **Execution Order:**
-Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10.5 -> 11
+Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10.5 -> 10.5.1 -> 11
 
 | Phase | Requirements | Status | Completed |
 |-------|--------------|--------|-----------|
@@ -172,15 +191,16 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 | 10.3 Alternative non-visible native browser runtime design | NVRT-01, NVRT-02, NVRT-03 | Complete | 2026-03-28 |
 | 10.4 Alternate desktop auth and bootstrap stabilization | ADST-01, ADST-02, ADST-03 | Partial | 2026-03-29 |
 | 10.5 Alternate desktop navigation rescue and auth renewal | ADNR-01, ADNR-02, ADNR-03 | Partial | 2026-03-29 |
-| 11. Rollout smoke confidence | CONF-01, CONF-02 | Ready to plan | - |
+| 10.5.1 Repeatable alternate desktop stability gate | RSG-01, RSG-02, RSG-03 | Ready to execute | - |
+| 11. Rollout smoke confidence | CONF-01, CONF-02 | Blocked on 10.5.1 | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: plan `Phase 11`
-- Carry-forward debt from `Phase 10.5`: `wife` is rollout-ready, but `dad` still needs auth renewal and `shared-1` still carries assignment-timeout proof noise
+- Current next action: execute `Phase 10.5.1`
+- Carry-forward debt from `Phase 10.5`: `wife` passed once, but repeatability is not yet proven; `dad` still needs auth renewal and `shared-1` still carries assignment/bootstrapping proof noise
 
 ## Next Up
 
-- `$gsd-plan-phase 11`
-- then use `wife` as the canonical worker for rollout smoke while carrying `dad` and `shared-1` debt explicitly
+- `$gsd-execute-phase 10.5.1`
+- then resume `Phase 11` only after at least one worker proves repeatable non-visible stability

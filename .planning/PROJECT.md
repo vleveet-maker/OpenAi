@@ -19,7 +19,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Host-native worker profiles stay on durable host storage and can be stopped cleanly when the pool is idle
 - Host-native workers now support an explicit visible-auth then hidden-runtime split, so routine pool start no longer needs visible browser windows after manual login is complete
 - New session-backed chats now bootstrap through an explicit fresh-chat contract that prefers `Temporary Chat` and the latest configured reasoning model before the composer unlocks
-- Current ChatGPT UI drift hardening now has centralized selector maintenance, localized `Temporary Chat` support, and live `smoke-ok` success on `wife` and `shared-1`
+- Current ChatGPT UI drift hardening now has centralized selector maintenance and localized `Temporary Chat` support, but the latest repeatability check regressed `wife` and `shared-1` back into `bootstrap_navigation_failed`
 - Phase 10.2 runtime review now confirms that neither the current host hidden runtime nor the current headed Docker/Xvfb candidate is trustworthy enough to use as the rollout-confidence baseline
 - Phase 10.3 now targets a same-session alternate Windows desktop as the primary replacement non-visible runtime direction, so routine browser work can leave the operator's main desktop without introducing a second Windows identity
 - The current shared-screen client is still an interim household surface, not the final user-facing mobile chat experience
@@ -44,7 +44,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] Host-native workers now expose explicit `visible_auth` and `hidden_runtime` modes, operator transition controls, and a canonical hidden-runtime validation probe.
 - [x] Runtime review now distinguishes process reachability from ChatGPT usability and confirms that the current hidden runtime choices must not be treated as rollout-ready steady-state browser paths.
 - [x] Alternate-desktop validation is now available from internal admin, and `wife` has produced the first proof-backed non-visible success: `Temporary Chat -> GPT-5.4 Thinking -> smoke-ok`.
-- [x] `dad` still carries the auth-renewal tail and `shared-1` still carries assignment-timeout proof noise, so the pool is not yet fully interchangeable even though Phase 11 can resume from `wife`.
+- [x] `dad` still carries the auth-renewal tail, and the pool is not yet repeatably stable even though `wife` produced the first proof-backed non-visible success.
 
 ## Current Milestone: v1.2 Rollout Stability
 
@@ -56,9 +56,9 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Finish the last `dad` live proof only after the hidden-runtime transition is in place for the household path.
 - Replace the rejected non-visible runtime assumptions with a same-session alternate-desktop native runtime candidate and prove or reject it explicitly before rollout smoke resumes.
 - Add a repeatable rollout smoke path so the operator can confirm readiness before the family starts using the pool again.
-- Use `wife` as the first canonical proof worker for rollout smoke while carrying `dad` auth renewal and `shared-1` assignment cleanup forward as explicit debt.
+- First restore repeatable non-visible proof on `wife`, then resume rollout smoke while carrying `dad` auth renewal and `shared-1` cleanup forward as explicit debt.
 
-**Current runtime gate:** The runtime gate is now open from `wife`. Phase 10.5 produced the first proof-backed alternate-desktop success, so rollout-smoke work can resume while `dad` and `shared-1` remain explicit follow-up debt.
+**Current runtime gate:** The runtime gate is blocked again pending repeatability. Phase 10.5 proved that `wife` can pass once, but the latest live revalidation regressed all three workers away from a stable passing state, so Phase 10.5.1 must prove repeatable alternate-desktop success before rollout-smoke work resumes.
 
 ## Out of Scope
 
@@ -83,7 +83,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Each app-level chat should map to one underlying browser conversation: a new chat should claim a free worker and start a fresh `Temporary Chat`, while continuing an existing chat should stay pinned to the same underlying browser conversation.
 - Image attachment belongs in the future user-facing app flow and should relay into the same active browser conversation rather than creating a separate hidden path.
 - The largest remaining real-world risks are no longer ordinary selector drift; they are the reliability of the non-visible runtime choice after manual login and the need for a more dependable steady-state browser path.
-- `wife` and `shared-1` now pass live `Temporary Chat -> GPT-5.4 Thinking -> smoke-ok` probes; `dad` currently fails as `bootstrap_auth_required`, which is a profile/authentication tail rather than a generic selector-drift failure.
+- `wife` produced the first live `Temporary Chat -> GPT-5.4 Thinking -> smoke-ok` proof on alternate desktop, but the latest revalidation regressed `wife` and `shared-1` back into `bootstrap_navigation_failed`; `dad` still fails as `bootstrap_auth_required`.
 - If saved ChatGPT login state still proves unreliable after a deliberate visible-login then hidden-runtime split, that should be treated as evidence that the current multi-browser runtime choice is not robust enough and needs architectural replacement rather than more patching.
 - `v1.2` intentionally keeps scope on rollout reliability rather than adding billing, entitlements, or broader product expansion yet.
 
@@ -128,4 +128,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after executing Phase 10.2 Hidden runtime reliability review and alternative browser runtime decision*
+*Last updated: 2026-03-29 while planning Phase 10.5.1 Repeatable alternate desktop stability gate*

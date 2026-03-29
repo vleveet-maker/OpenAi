@@ -47,6 +47,12 @@
 - [ ] **ADNR-02**: `dad` can be renewed through visible auth and revalidated in `alternate_desktop` through an explicit control-plane flow instead of staying stuck as `bootstrap_auth_required`
 - [x] **ADNR-03**: Phase 10.5 ends with an evidence-backed worker-by-worker decision that either yields at least one `phase11Ready=true` worker or records why the selected runtime still cannot unblock `Phase 11`
 
+### Repeatable Alternate Desktop Stability Gate
+
+- [ ] **RSG-01**: A non-visible validation run can target one named worker deterministically without depending on global session assignment luck or producing `assignment_timeout` false negatives
+- [ ] **RSG-02**: At least one alternate-desktop worker can produce repeatable proof, defined for `v1.2` as two consecutive successful non-visible validations with a real relay pass and a reset on any auth/bootstrap/relay failure
+- [ ] **RSG-03**: Internal operator surfaces and milestone state expose whether a worker is still provisional or has reached the repeatable stability gate, and `Phase 11` only unblocks from that repeated proof
+
 ### Rollout Confidence
 
 - [ ] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
@@ -96,14 +102,17 @@
 | ADNR-01 | Phase 10.5 | Complete |
 | ADNR-02 | Phase 10.5 | Partial |
 | ADNR-03 | Phase 10.5 | Complete |
+| RSG-01 | Phase 10.5.1 | Pending |
+| RSG-02 | Phase 10.5.1 | Pending |
+| RSG-03 | Phase 10.5.1 | Pending |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 23 total
-- Mapped to phases: 23
+- v1.2 requirements: 26 total
+- Mapped to phases: 26
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-29 after executing Phase 10.5 Alternate desktop navigation rescue and auth renewal*
+*Last updated: 2026-03-29 while planning Phase 10.5.1 Repeatable alternate desktop stability gate*
