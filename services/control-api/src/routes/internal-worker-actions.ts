@@ -5,7 +5,8 @@ import type { SessionService } from "../sessions/session-service.js";
 import type { DockerEngineClient } from "../workers/docker-engine-client.js";
 import type {
   AlternateDesktopValidationResult,
-  HostControllerClient
+  HostControllerClient,
+  HostControllerProfileStrategy
 } from "../workers/host-controller-client.js";
 import type { WorkerHealthMonitor } from "../workers/worker-health-monitor.js";
 import {
@@ -137,9 +138,105 @@ export function createInternalWorkerActionsRouter(
         : ("unstable" as const),
       stabilityPassCount: nextPassCount,
       stabilityTargetPasses: targetPasses,
-      lastValidationAt: validation.checkedAt,
-      lastValidationResult: validation.result
+      lastValidationAt: validation.checkedAt
     };
+  }
+
+  function resolveManualProfileStrategy(workerId: string): HostControllerProfileStrategy {
+    const worker = options.workerRegistry.getWorker(workerId);
+    return worker?.lastValidationResult === "diagnostic_profile_started"
+      ? "diagnostic_fresh"
+      : "durable";
+  }
+
+  function buildValidationResultLabel(
+    validation: AlternateDesktopValidationResult,
+    profileStrategy: HostControllerProfileStrategy,
+    actionLabel = "runtime_validation_requested"
+  ) {
+    if (actionLabel !== "runtime_validation_requested") {
+      return `${actionLabel}:${validation.result}`;
+    }
+
+    return profileStrategy === "diagnostic_fresh"
+      ? `diagnostic_profile_validation:${validation.result}`
+      : validation.result;
+  }
+
+  function applyValidationResult(
+    workerId: string,
+    validation: AlternateDesktopValidationResult,
+    profileStrategy: HostControllerProfileStrategy,
+    nextActionLabel = "runtime_validation_requested"
+  ) {
+    const worker = options.workerRegistry.getWorker(workerId);
+
+    if (!worker) {
+      throw new Error(`worker_not_found:${workerId}`);
+    }
+
+    const requiresAuth = validation.proofFailureClass === "auth_required";
+    const stabilityGateUpdate = deriveStabilityGateUpdate(workerId, validation);
+    const diagnosticLabel =
+      profileStrategy === "diagnostic_fresh"
+        ? "temporary diagnostic profile"
+        : "durable profile";
+
+    return options.workerRegistry.updateWorker(workerId, {
+      status: requiresAuth
+        ? "reauth_required"
+        : validation.phase11Ready
+          ? "ready"
+          : worker.status.status,
+      reason: requiresAuth
+        ? `${diagnosticLabel} requires renewed ChatGPT auth`
+        : validation.phase11Ready
+          ? `${diagnosticLabel} validation passed`
+          : `${diagnosticLabel} validation still needs rescue`,
+      runtimeStatus: requiresAuth
+        ? "reauth_required"
+        : worker.runtimeStatus ?? worker.status.status,
+      runtimeMode:
+        validation.runtimeMode === "visible_auth" ||
+        validation.runtimeMode === "hidden_runtime" ||
+        validation.runtimeMode === "alternate_desktop"
+          ? validation.runtimeMode
+          : worker.runtimeMode ?? "alternate_desktop",
+      runtimeClass:
+        validation.runtimeClass === "host_visible_auth" ||
+        validation.runtimeClass === "host_hidden_runtime" ||
+        validation.runtimeClass === "host_alternate_desktop" ||
+        validation.runtimeClass === "docker_headed_xvfb"
+          ? validation.runtimeClass
+          : worker.runtimeClass ?? "host_alternate_desktop",
+      runtimeDesktopName: validation.runtimeDesktopName,
+      runtimeCapability: deriveValidationCapability(validation),
+      lastBootstrapAt: validation.checkedAt,
+      lastBootstrapFailureCode: validation.bootstrapFailureCode,
+      lastBootstrapStep:
+        validation.bootstrapStep === "navigation" ||
+        validation.bootstrapStep === "auth_check" ||
+        validation.bootstrapStep === "surface_entry" ||
+        validation.bootstrapStep === "new_chat" ||
+        validation.bootstrapStep === "temporary_entry" ||
+        validation.bootstrapStep === "temporary_confirmation" ||
+        validation.bootstrapStep === "temporary_onboarding" ||
+        validation.bootstrapStep === "model_selection" ||
+        validation.bootstrapStep === "composer_ready" ||
+        validation.bootstrapStep === "complete"
+          ? validation.bootstrapStep
+          : null,
+      lastBootstrapUsability: deriveValidationUsability(validation),
+      lastRelayAt: validation.checkedAt,
+      lastRelayFailureCode: validation.relayFailureCode,
+      lastSeenAt: validation.checkedAt,
+      lastValidationResult: buildValidationResultLabel(
+        validation,
+        profileStrategy,
+        nextActionLabel
+      ),
+      ...stabilityGateUpdate
+    });
   }
 
   router.post("/internal/workers/:id/restart", async (request, response) => {
@@ -281,7 +378,8 @@ export function createInternalWorkerActionsRouter(
       await options.hostControllerClient.stopWorker(worker.workerId);
       const result = await options.hostControllerClient.startWorker(
         worker.workerId,
-        "visible_auth"
+        "visible_auth",
+        "durable"
       );
 
       buildHostTransitionUpdate(
@@ -289,6 +387,9 @@ export function createInternalWorkerActionsRouter(
         "visible_auth",
         "manual visible auth requested by operator"
       );
+      options.workerRegistry.updateWorker(worker.workerId, {
+        lastValidationResult: "manual_auth_started"
+      });
       void options.healthMonitor.runHealthSweep();
 
       response.status(202).json({
@@ -304,6 +405,64 @@ export function createInternalWorkerActionsRouter(
           error instanceof Error
             ? error.message
             : "The host worker could not enter visible auth mode."
+      });
+    }
+  });
+
+  router.post("/internal/workers/:id/diagnostic-profile/start", async (request, response) => {
+    const worker = options.workerRegistry.getWorker(request.params.id);
+
+    if (!worker) {
+      respondWorkerNotFound(request.params.id, response);
+      return;
+    }
+
+    if (worker.runtimeType !== "host") {
+      response.status(409).json({
+        error: "diagnostic_profile_unsupported",
+        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and does not support a temporary diagnostic profile.`,
+        workerId: worker.workerId
+      });
+      return;
+    }
+
+    if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
+      respondActiveSession(worker.workerId, response);
+      return;
+    }
+
+    try {
+      await options.hostControllerClient.stopWorker(worker.workerId);
+      const result = await options.hostControllerClient.startWorker(
+        worker.workerId,
+        "visible_auth",
+        "diagnostic_fresh"
+      );
+
+      buildHostTransitionUpdate(
+        worker.workerId,
+        "visible_auth",
+        "temporary diagnostic profile waiting for visible auth"
+      );
+      const updatedWorker = options.workerRegistry.updateWorker(worker.workerId, {
+        lastValidationResult: "diagnostic_profile_started"
+      });
+      void options.healthMonitor.runHealthSweep();
+
+      response.status(202).json({
+        action: "diagnostic_profile_started",
+        runtimeMode: "visible_auth",
+        profileStrategy: "diagnostic_fresh",
+        hostController: result,
+        worker: updatedWorker
+      });
+    } catch (error: unknown) {
+      response.status(502).json({
+        error: "diagnostic_profile_start_failed",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "The temporary diagnostic profile could not enter visible auth mode."
       });
     }
   });
@@ -334,7 +493,8 @@ export function createInternalWorkerActionsRouter(
       await options.hostControllerClient.stopWorker(worker.workerId);
       const result = await options.hostControllerClient.startWorker(
         worker.workerId,
-        "alternate_desktop"
+        "alternate_desktop",
+        resolveManualProfileStrategy(worker.workerId)
       );
 
       buildHostTransitionUpdate(
@@ -369,6 +529,98 @@ export function createInternalWorkerActionsRouter(
           error instanceof Error
             ? error.message
             : "The host worker could not return to the alternate desktop runtime."
+      });
+    }
+  });
+
+  router.post("/internal/workers/:id/manual-auth/complete-and-validate", async (request, response) => {
+    const worker = options.workerRegistry.getWorker(request.params.id);
+
+    if (!worker) {
+      respondWorkerNotFound(request.params.id, response);
+      return;
+    }
+
+    if (worker.runtimeType !== "host") {
+      response.status(409).json({
+        error: "manual_auth_unsupported",
+        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and does not support validated non-visible runtime promotion.`,
+        workerId: worker.workerId
+      });
+      return;
+    }
+
+    if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
+      respondActiveSession(worker.workerId, response);
+      return;
+    }
+
+    const profileStrategy = resolveManualProfileStrategy(worker.workerId);
+    const actionLabel =
+      profileStrategy === "diagnostic_fresh"
+        ? "diagnostic_profile_completed_and_validated"
+        : "manual_auth_completed_and_validated";
+
+    try {
+      await options.hostControllerClient.stopWorker(worker.workerId);
+      const startResult = await options.hostControllerClient.startWorker(
+        worker.workerId,
+        "alternate_desktop",
+        profileStrategy
+      );
+
+      buildHostTransitionUpdate(
+        worker.workerId,
+        "alternate_desktop",
+        profileStrategy === "diagnostic_fresh"
+          ? "temporary diagnostic profile login completed; alternate desktop validation pending"
+          : "manual login completed; alternate desktop validation pending"
+      );
+
+      const validation = await options.hostControllerClient.validateAlternateDesktop(
+        worker.workerId
+      );
+      const validatedWorker = applyValidationResult(
+        worker.workerId,
+        validation,
+        profileStrategy,
+        actionLabel
+      );
+
+      options.eventRecorder?.recordEvent({
+        eventType: "worker_reauth_completed",
+        severity: validation.proofFailureClass === "auth_required" ? "warn" : "info",
+        workerId: worker.workerId,
+        summary:
+          profileStrategy === "diagnostic_fresh"
+            ? `Worker ${worker.workerId} completed temporary diagnostic login and validation`
+            : `Worker ${worker.workerId} completed manual login and validation`,
+        detailJson: JSON.stringify({
+          runtimeMode: "alternate_desktop",
+          profileStrategy,
+          validationResult: validation.result,
+          bootstrapFailureCode: validation.bootstrapFailureCode,
+          proofFailureClass: validation.proofFailureClass
+        })
+      });
+      void options.healthMonitor.runHealthSweep();
+
+      response.status(202).json({
+        action: actionLabel,
+        validationPending: false,
+        runtimeMode: "alternate_desktop",
+        profileStrategy,
+        hostController: startResult,
+        validation,
+        worker: validatedWorker
+      });
+    } catch (error: unknown) {
+      response.status(502).json({
+        error: "manual_auth_complete_and_validate_failed",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "The host worker could not complete visible auth and validate the non-visible runtime."
       });
     }
   });
@@ -439,56 +691,12 @@ export function createInternalWorkerActionsRouter(
       const validation = await options.hostControllerClient.validateAlternateDesktop(
         worker.workerId
       );
-
-      const requiresAuth = validation.proofFailureClass === "auth_required";
-      const stabilityGateUpdate = deriveStabilityGateUpdate(
+      const profileStrategy = resolveManualProfileStrategy(worker.workerId);
+      const validatedWorker = applyValidationResult(
         worker.workerId,
-        validation
+        validation,
+        profileStrategy
       );
-      const validatedWorker = options.workerRegistry.updateWorker(worker.workerId, {
-        status: requiresAuth ? "reauth_required" : validation.phase11Ready ? "ready" : worker.status.status,
-        reason: requiresAuth
-          ? "non-visible runtime validation requires renewed ChatGPT auth"
-          : validation.phase11Ready
-            ? "non-visible runtime validation passed"
-            : "non-visible runtime validation still needs rescue",
-        runtimeStatus: requiresAuth ? "reauth_required" : worker.runtimeStatus ?? worker.status.status,
-        runtimeMode:
-          validation.runtimeMode === "visible_auth" ||
-          validation.runtimeMode === "hidden_runtime" ||
-          validation.runtimeMode === "alternate_desktop"
-            ? validation.runtimeMode
-            : worker.runtimeMode ?? "alternate_desktop",
-        runtimeClass:
-          validation.runtimeClass === "host_visible_auth" ||
-          validation.runtimeClass === "host_hidden_runtime" ||
-          validation.runtimeClass === "host_alternate_desktop" ||
-          validation.runtimeClass === "docker_headed_xvfb"
-            ? validation.runtimeClass
-            : worker.runtimeClass ?? "host_alternate_desktop",
-        runtimeDesktopName: validation.runtimeDesktopName,
-        runtimeCapability: deriveValidationCapability(validation),
-        lastBootstrapAt: validation.checkedAt,
-        lastBootstrapFailureCode: validation.bootstrapFailureCode,
-        lastBootstrapStep:
-          validation.bootstrapStep === "navigation" ||
-          validation.bootstrapStep === "auth_check" ||
-          validation.bootstrapStep === "surface_entry" ||
-          validation.bootstrapStep === "new_chat" ||
-          validation.bootstrapStep === "temporary_entry" ||
-          validation.bootstrapStep === "temporary_confirmation" ||
-          validation.bootstrapStep === "temporary_onboarding" ||
-          validation.bootstrapStep === "model_selection" ||
-          validation.bootstrapStep === "composer_ready" ||
-          validation.bootstrapStep === "complete"
-            ? validation.bootstrapStep
-            : null,
-        lastBootstrapUsability: deriveValidationUsability(validation),
-        lastRelayAt: validation.checkedAt,
-        lastRelayFailureCode: validation.relayFailureCode,
-        lastSeenAt: validation.checkedAt,
-        ...stabilityGateUpdate
-      });
 
       response.status(202).json({
         action: "runtime_validation_requested",

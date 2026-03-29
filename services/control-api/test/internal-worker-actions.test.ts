@@ -244,13 +244,18 @@ describe("internal worker manual auth transitions", () => {
       .expect(202);
 
     expect(hostControllerClient.stopWorker).toHaveBeenCalledWith("dad");
-    expect(hostControllerClient.startWorker).toHaveBeenCalledWith("dad", "visible_auth");
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith(
+      "dad",
+      "visible_auth",
+      "durable"
+    );
     expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
     expect(response.body.action).toBe("manual_auth_start_requested");
     expect(response.body.runtimeMode).toBe("visible_auth");
     expect(response.body.worker.runtimeMode).toBe("visible_auth");
     expect(response.body.worker.headless).toBe(false);
     expect(response.body.worker.cdpAttached).toBe(true);
+    expect(response.body.worker.lastValidationResult).toBe("manual_auth_started");
   });
 
   it("completes manual auth by restarting the host worker in alternate_desktop", async () => {
@@ -273,7 +278,11 @@ describe("internal worker manual auth transitions", () => {
       .expect(202);
 
     expect(hostControllerClient.stopWorker).toHaveBeenCalledWith("dad");
-    expect(hostControllerClient.startWorker).toHaveBeenCalledWith("dad", "alternate_desktop");
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith(
+      "dad",
+      "alternate_desktop",
+      "durable"
+    );
     expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
     expect(response.body.action).toBe("manual_auth_completed_alternate_desktop_started");
     expect(response.body.validationPending).toBe(true);
@@ -284,6 +293,137 @@ describe("internal worker manual auth transitions", () => {
     expect(response.body.worker.cdpAttached).toBe(true);
     expect(response.body.worker.status.reason).toBe(
       "manual login completed; alternate desktop validation pending"
+    );
+  });
+
+  it("completes visible auth and validates the durable non-visible runtime in one flow", async () => {
+    const { app, runtime, hostControllerClient, healthMonitor } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "reauth_required",
+      reason: "manual transition test",
+      runtimeStatus: "reauth_required",
+      runtimeMode: "visible_auth",
+      headless: false,
+      cdpAttached: true,
+      lastValidationResult: "manual_auth_started"
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/manual-auth/complete-and-validate")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(hostControllerClient.stopWorker).toHaveBeenCalledWith("dad");
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith(
+      "dad",
+      "alternate_desktop",
+      "durable"
+    );
+    expect(hostControllerClient.validateAlternateDesktop).toHaveBeenCalledWith("dad");
+    expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
+    expect(response.body.action).toBe("manual_auth_completed_and_validated");
+    expect(response.body.worker.lastValidationResult).toBe(
+      "manual_auth_completed_and_validated:alternate_desktop_usable"
+    );
+    expect(response.body.worker.stabilityGateStatus).toBe("provisional");
+  });
+
+  it("starts a fresh-profile diagnostic branch without touching the durable profile", async () => {
+    const { app, runtime, hostControllerClient } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/diagnostic-profile/start")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(hostControllerClient.stopWorker).toHaveBeenCalledWith("dad");
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith(
+      "dad",
+      "visible_auth",
+      "diagnostic_fresh"
+    );
+    expect(response.body.action).toBe("diagnostic_profile_started");
+    expect(response.body.profileStrategy).toBe("diagnostic_fresh");
+    expect(response.body.worker.lastValidationResult).toBe("diagnostic_profile_started");
+  });
+
+  it("keeps diagnostic profile truth explicit after complete-and-validate", async () => {
+    const { app, runtime, hostControllerClient } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "reauth_required",
+      reason: "diagnostic transition test",
+      runtimeStatus: "reauth_required",
+      runtimeMode: "visible_auth",
+      headless: false,
+      cdpAttached: true,
+      lastValidationResult: "diagnostic_profile_started"
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/manual-auth/complete-and-validate")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith(
+      "dad",
+      "alternate_desktop",
+      "diagnostic_fresh"
+    );
+    expect(response.body.action).toBe("diagnostic_profile_completed_and_validated");
+    expect(response.body.worker.lastValidationResult).toBe(
+      "diagnostic_profile_completed_and_validated:alternate_desktop_usable"
+    );
+  });
+
+  it("keeps bootstrap_auth_required truth explicit after complete-and-validate", async () => {
+    const { app, runtime, hostControllerClient } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "reauth_required",
+      reason: "auth truth test",
+      runtimeStatus: "reauth_required",
+      runtimeMode: "visible_auth",
+      headless: false,
+      cdpAttached: true,
+      lastValidationResult: "manual_auth_started"
+    });
+    vi.mocked(hostControllerClient.validateAlternateDesktop).mockResolvedValueOnce({
+      workerId: "dad",
+      runtimeClass: "host_alternate_desktop",
+      runtimeMode: "alternate_desktop",
+      result: "alternate_desktop_reachable_but_unusable",
+      phase11Ready: false,
+      validationPending: true,
+      proofFailureClass: "auth_required",
+      pageUrl: "https://chatgpt.com/auth/login",
+      bootstrapFailureCode: "bootstrap_auth_required",
+      bootstrapStep: "auth_check",
+      relayFailureCode: null,
+      checkedAt: "2026-03-29T03:45:00.000Z",
+      runtimeDesktopName: "CodexWorker-dad",
+      detail: "auth lost"
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/manual-auth/complete-and-validate")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(response.body.worker.status.status).toBe("reauth_required");
+    expect(response.body.worker.lastBootstrapFailureCode).toBe("bootstrap_auth_required");
+    expect(response.body.worker.lastValidationResult).toContain(
+      "manual_auth_completed_and_validated"
     );
   });
 
@@ -302,9 +442,19 @@ describe("internal worker manual auth transitions", () => {
       .post("/internal/workers/dad/manual-auth/complete")
       .set("x-internal-admin-token", "secret")
       .expect(409);
+    const completeAndValidateResponse = await request(app)
+      .post("/internal/workers/dad/manual-auth/complete-and-validate")
+      .set("x-internal-admin-token", "secret")
+      .expect(409);
+    const diagnosticResponse = await request(app)
+      .post("/internal/workers/dad/diagnostic-profile/start")
+      .set("x-internal-admin-token", "secret")
+      .expect(409);
 
     expect(startResponse.body.error).toBe("manual_auth_unsupported");
     expect(completeResponse.body.error).toBe("manual_auth_unsupported");
+    expect(completeAndValidateResponse.body.error).toBe("manual_auth_unsupported");
+    expect(diagnosticResponse.body.error).toBe("diagnostic_profile_unsupported");
     expect(hostControllerClient.stopWorker).not.toHaveBeenCalled();
     expect(hostControllerClient.startWorker).not.toHaveBeenCalled();
   });

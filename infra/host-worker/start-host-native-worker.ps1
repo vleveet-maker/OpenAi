@@ -9,6 +9,8 @@ param(
   [string]$ProxyServer = "",
   [ValidateSet("VisibleAuth", "HiddenRuntime", "AlternateDesktop")]
   [string]$RuntimeMode = "AlternateDesktop",
+  [ValidateSet("Durable", "DiagnosticFresh")]
+  [string]$ProfileStrategy = "Durable",
   [ValidateSet("CurrentExecutable", "ChannelMsedge")]
   [string]$HiddenLaunchVariant = "CurrentExecutable",
   [ValidateSet("Normal", "Minimized")]
@@ -81,6 +83,8 @@ $resolvedBrowserExecutable = Resolve-BrowserExecutable -Candidate $BrowserExecut
 $resolvedProfilePath =
   if ($ProfilePath -and $ProfilePath.Trim().Length -gt 0) {
     $ProfilePath
+  } elseif ($ProfileStrategy -eq "DiagnosticFresh") {
+    Join-Path $resolvedRepoRoot "infra\\data\\host-profile-diagnostics\\$WorkerId"
   } else {
     Join-Path $resolvedRepoRoot "infra\\data\\host-profiles\\$WorkerId"
   }
@@ -157,6 +161,12 @@ $env:WORKER_CONTAINER_NAME = "host-$WorkerId"
 $env:WORKER_AGENT_HOST = "127.0.0.1"
 $env:WORKER_AGENT_PORT = "$AgentPort"
 $env:WORKER_PROFILE_PATH = $resolvedProfilePath
+$env:WORKER_PROFILE_STRATEGY =
+  if ($ProfileStrategy -eq "DiagnosticFresh") {
+    "diagnostic_fresh"
+  } else {
+    "durable"
+  }
 $env:WORKER_RUNTIME_MODE =
   if ($RuntimeMode -eq "VisibleAuth") {
     "visible_auth"
@@ -210,6 +220,8 @@ if ($DetachAgent) {
     $resolvedBrowserExecutable,
     "-ProfilePath",
     $resolvedProfilePath,
+    "-ProfileStrategy",
+    $ProfileStrategy,
     "-StartUrl",
     $StartUrl,
     "-RuntimeMode",

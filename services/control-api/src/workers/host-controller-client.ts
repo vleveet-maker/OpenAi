@@ -1,3 +1,10 @@
+export type HostControllerRuntimeMode =
+  | "visible_auth"
+  | "hidden_runtime"
+  | "alternate_desktop";
+
+export type HostControllerProfileStrategy = "durable" | "diagnostic_fresh";
+
 export type HostControllerWorkerStartupStatus =
   | "already_running"
   | "started"
@@ -53,13 +60,16 @@ export interface AlternateDesktopValidationResult {
 
 export interface HostControllerPoolResult extends HostControllerHealthSnapshot {
   action: string;
-  runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop";
+  runtimeMode?: HostControllerRuntimeMode;
+  profileStrategy?: HostControllerProfileStrategy;
+  profilePath?: string | null;
 }
 
 export interface HostControllerClient {
   startWorker(
     workerId: string,
-    runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop"
+    runtimeMode?: HostControllerRuntimeMode,
+    profileStrategy?: HostControllerProfileStrategy
   ): Promise<HostControllerPoolResult | Record<string, unknown>>;
   stopWorker(workerId: string): Promise<void>;
   validateAlternateDesktop(
@@ -141,9 +151,10 @@ export function createHostControllerClient(
   }
 
   return {
-    async startWorker(workerId, runtimeMode) {
+    async startWorker(workerId, runtimeMode, profileStrategy) {
       return post(`/workers/${workerId}/start`, workerId, {
-        ...(runtimeMode ? { runtimeMode } : {})
+        ...(runtimeMode ? { runtimeMode } : {}),
+        ...(profileStrategy ? { profileStrategy } : {})
       });
     },
     async stopWorker(workerId) {
@@ -179,7 +190,11 @@ export function createNoopHostControllerClient(): HostControllerClient {
   };
 
   return {
-    async startWorker(_workerId: string, _runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop") {
+    async startWorker(
+      _workerId: string,
+      _runtimeMode?: HostControllerRuntimeMode,
+      _profileStrategy?: HostControllerProfileStrategy
+    ) {
       return {};
     },
     async stopWorker(_workerId: string) {},

@@ -1,4 +1,4 @@
-import { access, constants, mkdir } from "node:fs/promises";
+import { access, constants, mkdir, rm } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { join } from "node:path";
 import net from "node:net";
@@ -9,6 +9,12 @@ const POWERSHELL_EXE = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershe
 
 function normalizeRuntimeMode(value, fallback = "alternate_desktop") {
   return value === "visible_auth" || value === "hidden_runtime" || value === "alternate_desktop"
+    ? value
+    : fallback;
+}
+
+function normalizeProfileStrategy(value, fallback = "durable") {
+  return value === "diagnostic_fresh" || value === "durable"
     ? value
     : fallback;
 }
@@ -238,12 +244,54 @@ export class HostController {
     throw new Error("proxy_runtime_failed_to_start");
   }
 
-  async startWorker(workerId, runtimeMode = this.config.defaultWorkerRuntimeMode) {
+  async resolveWorkerProfilePath(worker, profileStrategy, runtimeMode) {
+    const resolvedProfileStrategy = normalizeProfileStrategy(profileStrategy, "durable");
+
+    if (resolvedProfileStrategy !== "diagnostic_fresh") {
+      return worker.profilePath;
+    }
+
+    const diagnosticProfilePath = join(
+      this.config.repoRoot,
+      "infra",
+      "data",
+      "host-profile-diagnostics",
+      worker.workerId
+    );
+
+    if (runtimeMode === "visible_auth") {
+      await rm(diagnosticProfilePath, {
+        force: true,
+        recursive: true
+      });
+    }
+
+    await mkdir(diagnosticProfilePath, {
+      recursive: true
+    });
+
+    return diagnosticProfilePath;
+  }
+
+  async startWorker(
+    workerId,
+    runtimeMode = this.config.defaultWorkerRuntimeMode,
+    profileStrategy = "durable"
+  ) {
     const worker = this.requireWorker(workerId);
     const proxyRuntime = await this.ensureProxyReady();
     const resolvedRuntimeMode = normalizeRuntimeMode(
       runtimeMode,
       this.config.defaultWorkerRuntimeMode ?? "alternate_desktop"
+    );
+    const resolvedProfileStrategy = normalizeProfileStrategy(
+      profileStrategy,
+      "durable"
+    );
+    const resolvedProfilePath = await this.resolveWorkerProfilePath(
+      worker,
+      resolvedProfileStrategy,
+      resolvedRuntimeMode
     );
 
     const existingStatus = await this.getWorkerStatus(
@@ -259,11 +307,21 @@ export class HostController {
           resolvedRuntimeMode
         ),
         workerId,
-        proxyServerUrl: proxyRuntime.proxyServerUrl
+        proxyServerUrl: proxyRuntime.proxyServerUrl,
+        profileStrategy: resolvedProfileStrategy,
+        profilePath: resolvedProfilePath
       };
     }
 
-    await this.requestWorkerStart(worker, resolvedRuntimeMode, proxyRuntime.proxyServerUrl);
+    await this.requestWorkerStart(
+      worker,
+      resolvedRuntimeMode,
+      proxyRuntime.proxyServerUrl,
+      {
+        profilePath: resolvedProfilePath,
+        profileStrategy: resolvedProfileStrategy
+      }
+    );
 
     const startedStatus = await this.observeWorkerStartup(
       worker,
@@ -274,7 +332,9 @@ export class HostController {
       ...startedStatus,
       workerId,
       proxyServerUrl: proxyRuntime.proxyServerUrl,
-      runtimeMode: startedStatus.runtimeMode ?? resolvedRuntimeMode
+      runtimeMode: startedStatus.runtimeMode ?? resolvedRuntimeMode,
+      profileStrategy: resolvedProfileStrategy,
+      profilePath: resolvedProfilePath
     };
   }
 
@@ -462,7 +522,17 @@ export class HostController {
     );
   }
 
-  async requestWorkerStart(worker, runtimeMode, proxyServerUrl) {
+  async requestWorkerStart(
+    worker,
+    runtimeMode,
+    proxyServerUrl,
+    startOptions = {}
+  ) {
+    const profilePath = startOptions.profilePath ?? worker.profilePath;
+    const profileStrategy = normalizeProfileStrategy(
+      startOptions.profileStrategy,
+      "durable"
+    );
     const escapedArguments = [
       "-ExecutionPolicy",
       "Bypass",
@@ -474,6 +544,10 @@ export class HostController {
       proxyServerUrl,
       "-RuntimeMode",
       toPowerShellRuntimeMode(runtimeMode),
+      "-ProfileStrategy",
+      profileStrategy === "diagnostic_fresh" ? "DiagnosticFresh" : "Durable",
+      "-ProfilePath",
+      profilePath,
       "-BrowserWindowMode",
       this.config.browserWindowMode
     ].map((value) => `'${String(value).replaceAll("'", "''")}'`);

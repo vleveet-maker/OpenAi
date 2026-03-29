@@ -100,7 +100,9 @@ describe("internal admin page", () => {
     expect(response.text).toContain("alternate desktop non-visible runtime");
     expect(response.text).toContain("Start visible login");
     expect(response.text).toContain("Start visible reauth");
-    expect(response.text).toContain("Complete login -> non-visible runtime");
+    expect(response.text).toContain("Complete login and validate");
+    expect(response.text).toContain("Start fresh-profile diagnostic");
+    expect(response.text).toContain("Temporary profile does not delete the durable profile.");
     expect(response.text).toContain("Validate non-visible runtime");
     expect(response.text).toContain("Repeatability");
     expect(response.text).toContain("Alternate desktop");
@@ -110,7 +112,8 @@ describe("internal admin page", () => {
     expect(response.text).toContain("degraded");
     expect(response.text).toContain("failed");
     expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/start");
-    expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/complete");
+    expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/complete-and-validate");
+    expect(response.text).toContain("/internal/workers/\" + workerId + \"/diagnostic-profile/start");
     expect(response.text).toContain("/internal/workers/\" + workerId + \"/validate-runtime");
     expect(response.text).toContain("/internal/workers/");
     expect(response.text).toContain("/internal/observability/summary");

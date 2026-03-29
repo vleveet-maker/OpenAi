@@ -37,16 +37,23 @@ async function readRequestBody(request) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-function parseRuntimeModeFromBody(rawBody, fallback = undefined) {
+function parseStartWorkerOptionsFromBody(rawBody, fallback = {}) {
   if (!rawBody || rawBody.trim().length === 0) {
     return fallback;
   }
 
   try {
     const parsed = JSON.parse(rawBody);
-    return typeof parsed?.runtimeMode === "string"
-      ? parsed.runtimeMode
-      : fallback;
+    return {
+      runtimeMode:
+        typeof parsed?.runtimeMode === "string"
+          ? parsed.runtimeMode
+          : fallback.runtimeMode,
+      profileStrategy:
+        typeof parsed?.profileStrategy === "string"
+          ? parsed.profileStrategy
+          : fallback.profileStrategy
+    };
   } catch {
     return fallback;
   }
@@ -91,7 +98,7 @@ export function createHostControllerServer(
       if (request.method === "POST" && url.pathname === "/pool/start") {
         const body = await readRequestBody(request);
         const result = await controller.startPool(
-          parseRuntimeModeFromBody(body)
+          parseStartWorkerOptionsFromBody(body).runtimeMode
         );
         sendJson(response, 202, {
           ...result,
@@ -116,9 +123,11 @@ export function createHostControllerServer(
         const body = await readRequestBody(request);
 
         if (workerAction.action === "start") {
+          const startOptions = parseStartWorkerOptionsFromBody(body);
           const result = await controller.startWorker(
             workerAction.workerId,
-            parseRuntimeModeFromBody(body)
+            startOptions.runtimeMode,
+            startOptions.profileStrategy
           );
           sendJson(
             response,

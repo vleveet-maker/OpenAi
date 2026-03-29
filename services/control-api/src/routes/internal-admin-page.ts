@@ -461,6 +461,12 @@ function renderInternalAdminPage(): string {
             "Last validation: " + (worker.lastValidationAt || "n/a"),
             "Last validation result: " + (worker.lastValidationResult || "n/a")
           ];
+          const diagnosticProfileActive =
+            typeof worker.lastValidationResult === "string" &&
+            worker.lastValidationResult.includes("diagnostic_profile");
+          const profileStrategyCopy = diagnosticProfileActive
+            ? "Profile strategy: diagnostic temporary profile"
+            : "Profile strategy: durable profile";
 
           return \`
             <article class="worker-card">
@@ -483,15 +489,18 @@ function renderInternalAdminPage(): string {
                 <span>Last seen: \${escapeHtml(worker.lastSeenAt || "n/a")}</span>
                 <span>\${escapeHtml(bootstrapStatusCopy)}</span>
                 \${repeatabilityFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
+                <span>\${escapeHtml(profileStrategyCopy)}</span>
+                \${diagnosticProfileActive ? \`<span>Temporary profile does not delete the durable profile.</span>\` : ""}
                 \${hiddenRuntimeAuthLost ? \`<span class="error">Non-visible runtime lost auth after manual login; architecture review required.</span>\` : ""}
               </div>
               <div class="worker-actions">
                 \${worker.runtimeType === "docker" ? \`<button data-action="open-browser" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Open browser</button>\` : \`<button data-action="manual-auth-start" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start visible login</button>\`}
                 \${worker.runtimeType === "docker" ? \`<button class="secondary" data-action="start-reauth" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start reauth</button>\` : \`<button class="secondary" data-action="manual-reauth-start" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start visible reauth</button>\`}
+                \${worker.runtimeType === "host" ? \`<button class="warn" data-action="diagnostic-profile-start" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Start fresh-profile diagnostic</button>\` : ""}
                 <button class="secondary" data-action="mark-ready" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Mark ready</button>
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="warn" data-action="cancel-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Cancel access</button>\` : ""}
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="success" data-action="complete-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login/reauth</button>\` : ""}
-                \${worker.runtimeType === "host" ? \`<button class="success" data-action="manual-auth-complete" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login -> non-visible runtime</button>\` : ""}
+                \${worker.runtimeType === "host" ? \`<button class="success" data-action="manual-auth-complete-and-validate" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login and validate</button>\` : ""}
                 \${worker.runtimeType === "host" ? \`<button class="secondary" data-action="validate-runtime" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Validate non-visible runtime</button>\` : ""}
               </div>
             </article>
@@ -652,8 +661,15 @@ function renderInternalAdminPage(): string {
         });
       }
 
-      async function completeManualAuth(workerId) {
-        await fetchJson("/internal/workers/" + workerId + "/manual-auth/complete", {
+      async function startDiagnosticProfile(workerId) {
+        await fetchJson("/internal/workers/" + workerId + "/diagnostic-profile/start", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+      }
+
+      async function completeManualAuthAndValidate(workerId) {
+        await fetchJson("/internal/workers/" + workerId + "/manual-auth/complete-and-validate", {
           method: "POST",
           body: JSON.stringify({})
         });
@@ -697,8 +713,10 @@ function renderInternalAdminPage(): string {
             await startReauth(workerId);
           } else if (action === "manual-auth-start" || action === "manual-reauth-start") {
             await startManualAuth(workerId);
-          } else if (action === "manual-auth-complete") {
-            await completeManualAuth(workerId);
+          } else if (action === "diagnostic-profile-start") {
+            await startDiagnosticProfile(workerId);
+          } else if (action === "manual-auth-complete-and-validate") {
+            await completeManualAuthAndValidate(workerId);
           } else if (action === "validate-runtime") {
             await validateRuntime(workerId);
           } else if (action === "cancel-access") {

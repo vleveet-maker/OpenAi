@@ -1,10 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { HostController } from "../src/host-controller.mjs";
 
 function createConfig() {
   return {
+    repoRoot: join(tmpdir(), "owmcgp-host-controller-test"),
     proxyListenHost: "127.0.0.1",
     proxyMixedPort: 7897,
     proxyServerUrl: "http://127.0.0.1:7897",
@@ -164,6 +167,71 @@ test("startPool requests alternate_desktop for each configured worker by default
       runtimeMode: "alternate_desktop"
     }
   ]);
+});
+
+test("startWorker supports diagnostic_fresh without overwriting the durable profile path", async () => {
+  const controller = new HostController(createConfig());
+  const capturedStarts = [];
+
+  controller.ensureProxyReady = async () => ({
+    listenHost: "127.0.0.1",
+    listenPort: 7897,
+    proxyServerUrl: "http://127.0.0.1:7897"
+  });
+  controller.getWorkerStatus = async (_worker, runtimeModeFallback) => ({
+    workerId: "dad",
+    displayName: "Dad",
+    agentPort: 4021,
+    cdpPort: 9222,
+    proxyServer: "http://127.0.0.1:7897",
+    agentListening: false,
+    browserListening: false,
+    runtimeMode: runtimeModeFallback,
+    headless: false,
+    cdpAttached: true,
+    proxyServerConfigured: true,
+    runtimeStatus: null
+  });
+  controller.requestWorkerStart = async (_worker, runtimeMode, _proxyServerUrl, startOptions) => {
+    capturedStarts.push({
+      runtimeMode,
+      profileStrategy: startOptions.profileStrategy,
+      profilePath: startOptions.profilePath
+    });
+  };
+  controller.observeWorkerStartup = async (_worker, runtimeMode) => ({
+    workerId: "dad",
+    displayName: "Dad",
+    agentPort: 4021,
+    cdpPort: 9222,
+    proxyServer: "http://127.0.0.1:7897",
+    status: "started",
+    startupStatus: "started",
+    agentListening: true,
+    browserListening: true,
+    runtimeMode,
+    headless: false,
+    cdpAttached: true,
+    proxyServerConfigured: true,
+    runtimeStatus: "ready"
+  });
+
+  const result = await controller.startWorker(
+    "dad",
+    "visible_auth",
+    "diagnostic_fresh"
+  );
+
+  assert.equal(result.profileStrategy, "diagnostic_fresh");
+  assert.match(result.profilePath, /host-profile-diagnostics[\\/]dad$/);
+  assert.deepEqual(capturedStarts, [
+    {
+      runtimeMode: "visible_auth",
+      profileStrategy: "diagnostic_fresh",
+      profilePath: result.profilePath
+    }
+  ]);
+  assert.equal(createConfig().workers[0].profilePath, "dad-profile");
 });
 
 test("startWorker returns already_running when health JSON is already reachable", async () => {
