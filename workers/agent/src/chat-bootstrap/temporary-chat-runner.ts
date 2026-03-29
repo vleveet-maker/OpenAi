@@ -183,6 +183,10 @@ async function attemptNavigationBranch(
   startUrl: string,
   branchLabel: string
 ): Promise<EnsuredBootstrapPage | null> {
+  if (typeof page.goto !== "function") {
+    return null;
+  }
+
   try {
     await page.goto(startUrl, {
       waitUntil: "domcontentloaded"
