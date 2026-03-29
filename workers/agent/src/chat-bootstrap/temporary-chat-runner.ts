@@ -14,6 +14,7 @@ import {
   type BootstrapPageLike
 } from "./bootstrap-selector-map.js";
 import type {
+  WorkerChatBootstrapStep,
   WorkerChatBootstrapFailureCode,
   WorkerChatBootstrapResult
 } from "./bootstrap-types.js";
@@ -245,16 +246,49 @@ async function buildFailureResult(
         ? "challenge_blocked"
         : "surface_unusable";
 
+  const step = resolveFailureStep(failureCode);
+
   return {
     status: "failed",
     conversationMode: "unknown",
     modelLabel: null,
     failureCode,
+    step,
+    stepDetail: null,
+    composerReady: false,
     challengeDetected,
     pageTitle: await getPageTitle(page),
     runtimeUsability,
     pageUrl: page?.url() ?? null
   };
+}
+
+function resolveFailureStep(
+  failureCode: WorkerChatBootstrapFailureCode
+): WorkerChatBootstrapStep {
+  switch (failureCode) {
+    case "bootstrap_navigation_failed":
+      return "navigation";
+    case "bootstrap_auth_required":
+    case "bootstrap_challenge_detected":
+      return "auth_check";
+    case "bootstrap_surface_unusable":
+      return "surface_entry";
+    case "new_chat_selector_not_found":
+      return "new_chat";
+    case "temporary_chat_unavailable":
+    case "temporary_entry_not_found":
+      return "temporary_entry";
+    case "temporary_confirmation_not_found":
+      return "temporary_confirmation";
+    case "model_not_available":
+    case "model_picker_not_found":
+    case "model_option_not_found":
+    case "bootstrap_selector_not_found":
+      return "model_selection";
+    default:
+      return "surface_entry";
+  }
 }
 
 async function openTemporaryEntry(
@@ -439,6 +473,9 @@ export async function runTemporaryChatBootstrap(
       conversationMode: "temporary",
       modelLabel: modelSelection.selectedModel,
       failureCode: null,
+      step: "complete",
+      stepDetail: null,
+      composerReady: true,
       challengeDetected: false,
       pageTitle: await getPageTitle(page),
       runtimeUsability: "usable",

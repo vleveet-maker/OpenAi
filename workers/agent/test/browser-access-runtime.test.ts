@@ -191,6 +191,12 @@ describe("worker browser access runtime", () => {
         conversationMode: "temporary",
         modelLabel: "GPT-5.4 Thinking",
         failureCode: null,
+        step: "complete",
+        stepDetail: null,
+        composerReady: true,
+        challengeDetected: false,
+        pageTitle: "ChatGPT",
+        runtimeUsability: "usable",
         pageUrl: "https://chatgpt.com/"
       })
     });

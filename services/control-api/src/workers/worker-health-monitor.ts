@@ -10,6 +10,26 @@ import type {
 interface WorkerHealthPayload {
   runtimeStatus?: WorkerStatus;
   browserContextReady?: boolean;
+  lastBootstrapAt?: string | null;
+  lastBootstrapFailureCode?: string | null;
+  lastBootstrapStep?:
+    | "navigation"
+    | "auth_check"
+    | "surface_entry"
+    | "new_chat"
+    | "temporary_entry"
+    | "temporary_confirmation"
+    | "temporary_onboarding"
+    | "model_selection"
+    | "composer_ready"
+    | "complete"
+    | null;
+  lastBootstrapUsability?:
+    | "usable"
+    | "auth_required"
+    | "challenge_blocked"
+    | "surface_unusable"
+    | null;
   lastRelayAt?: string | null;
   lastRelayFailureCode?: string | null;
   runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop";
@@ -32,7 +52,7 @@ export interface WorkerHealthMonitorOptions {
   eventRecorder?: OperatorEventRecorder;
 }
 
-function isChallengeOrAuthFailureCode(
+function isUnusableBootstrapFailureCode(
   failureCode: string | null | undefined
 ): boolean {
   if (!failureCode) {
@@ -42,6 +62,9 @@ function isChallengeOrAuthFailureCode(
   return [
     "bootstrap_auth_required",
     "bootstrap_challenge_detected",
+    "temporary_confirmation_not_found",
+    "model_picker_not_found",
+    "model_option_not_found",
     "bootstrap_surface_unusable"
   ].includes(failureCode) || /auth|challenge|reauth|captcha|cloudflare/i.test(failureCode);
 }
@@ -104,6 +127,10 @@ export class WorkerHealthMonitor {
         cdpAttached: payload.cdpAttached ?? null,
         proxyServerConfigured: payload.proxyServerConfigured ?? null,
         browserContextReady: payload.browserContextReady ?? null,
+        lastBootstrapAt: payload.lastBootstrapAt ?? null,
+        lastBootstrapFailureCode: payload.lastBootstrapFailureCode ?? null,
+        lastBootstrapStep: payload.lastBootstrapStep ?? null,
+        lastBootstrapUsability: payload.lastBootstrapUsability ?? null,
         lastRelayAt: payload.lastRelayAt ?? null,
         lastRelayFailureCode: payload.lastRelayFailureCode ?? null,
         runtimeCapability,
@@ -138,6 +165,10 @@ export class WorkerHealthMonitor {
             cdpAttached: payload.cdpAttached ?? null,
             proxyServerConfigured: payload.proxyServerConfigured ?? null,
             browserContextReady: payload.browserContextReady ?? null,
+            lastBootstrapAt: payload.lastBootstrapAt ?? null,
+            lastBootstrapFailureCode: payload.lastBootstrapFailureCode ?? null,
+            lastBootstrapStep: payload.lastBootstrapStep ?? null,
+            lastBootstrapUsability: payload.lastBootstrapUsability ?? null,
             lastRelayAt: payload.lastRelayAt ?? null,
             lastRelayFailureCode: payload.lastRelayFailureCode ?? null
           }),
@@ -215,11 +246,16 @@ export class WorkerHealthMonitor {
     payload: WorkerHealthPayload,
     nextStatus: WorkerStatus
   ): WorkerRuntimeCapability {
-    if (nextStatus === "disconnected" || payload.runtimeStatus === "disconnected") {
+      if (nextStatus === "disconnected" || payload.runtimeStatus === "disconnected") {
       return "unreachable";
     }
 
-    if (isChallengeOrAuthFailureCode(payload.lastRelayFailureCode)) {
+    if (
+      isUnusableBootstrapFailureCode(payload.lastBootstrapFailureCode) ||
+      payload.lastBootstrapUsability === "auth_required" ||
+      payload.lastBootstrapUsability === "challenge_blocked" ||
+      payload.lastBootstrapUsability === "surface_unusable"
+    ) {
       return "reachable_but_unusable";
     }
 
@@ -232,6 +268,8 @@ export class WorkerHealthMonitor {
     }
 
     if (
+      payload.lastRelayFailureCode ||
+      payload.lastBootstrapAt ||
       payload.browserContextReady === true ||
       payload.browserContextReady === false ||
       nextStatus === "starting" ||

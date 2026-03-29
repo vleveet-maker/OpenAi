@@ -15,6 +15,7 @@ import {
   toBootstrapBrowserContext
 } from "./chat-bootstrap/temporary-chat-runner.js";
 import type {
+  WorkerChatBootstrapStep,
   WorkerChatBootstrapRequest,
   WorkerChatBootstrapResult
 } from "./chat-bootstrap/bootstrap-types.js";
@@ -56,6 +57,15 @@ export interface WorkerAgentConfig {
 export interface WorkerHealthSnapshot {
   runtimeStatus: WorkerRuntimeStatus;
   browserContextReady: boolean;
+  lastBootstrapAt: string | null;
+  lastBootstrapFailureCode: string | null;
+  lastBootstrapStep: WorkerChatBootstrapStep | null;
+  lastBootstrapUsability:
+    | "usable"
+    | "auth_required"
+    | "challenge_blocked"
+    | "surface_unusable"
+    | null;
   lastRelayAt: string | null;
   lastRelayFailureCode: string | null;
   runtimeUsability:
@@ -342,6 +352,10 @@ export function createWorkerAgentRuntime(
   const runtimeState: WorkerHealthSnapshot = {
     runtimeStatus: "starting",
     browserContextReady: false,
+    lastBootstrapAt: null,
+    lastBootstrapFailureCode: null,
+    lastBootstrapStep: null,
+    lastBootstrapUsability: null,
     lastRelayAt: null,
     lastRelayFailureCode: null,
     runtimeUsability: null,
@@ -384,7 +398,6 @@ export function createWorkerAgentRuntime(
     .catch((error: unknown) => {
       runtimeState.browserContextReady = false;
       runtimeState.runtimeStatus = "disconnected";
-      runtimeState.lastRelayFailureCode = resolveRuntimeFailureCode(error);
       runtimeState.runtimeUsability = "surface_unusable";
       runtimeState.challengeDetected = false;
       throw error;
@@ -407,6 +420,7 @@ export function createWorkerAgentRuntime(
     },
     async bootstrapSessionChat(request: WorkerChatBootstrapRequest) {
       const browserContext = (await instrumentedBrowserHandlePromise).browserContext;
+      const bootstrapAttemptedAt = new Date().toISOString();
       const bootstrapResult = bootstrapHandler
         ? await bootstrapHandler(request, browserContext, config)
         : await runTemporaryChatBootstrap(
@@ -425,7 +439,10 @@ export function createWorkerAgentRuntime(
       runtimeState.challengeDetected = bootstrapResult.challengeDetected;
       runtimeState.pageTitle = bootstrapResult.pageTitle;
       runtimeState.runtimeUsability = bootstrapResult.runtimeUsability;
-      runtimeState.lastRelayFailureCode = bootstrapResult.failureCode;
+      runtimeState.lastBootstrapAt = bootstrapAttemptedAt;
+      runtimeState.lastBootstrapFailureCode = bootstrapResult.failureCode;
+      runtimeState.lastBootstrapStep = bootstrapResult.step;
+      runtimeState.lastBootstrapUsability = bootstrapResult.runtimeUsability;
 
       return bootstrapResult;
     },
@@ -450,10 +467,10 @@ export function createWorkerAgentRuntime(
 
         return relayResult;
       } catch (error: unknown) {
-        runtimeState.lastRelayAt = new Date().toISOString();
-        runtimeState.lastRelayFailureCode = resolveRuntimeFailureCode(error);
-        runtimeState.runtimeStatus = "disconnected";
-        runtimeState.runtimeUsability = "surface_unusable";
+      runtimeState.lastRelayAt = new Date().toISOString();
+      runtimeState.lastRelayFailureCode = resolveRuntimeFailureCode(error);
+      runtimeState.runtimeStatus = "disconnected";
+      runtimeState.runtimeUsability = "surface_unusable";
         runtimeState.challengeDetected = false;
         throw error;
       }
@@ -493,6 +510,10 @@ export function createWorkerAgentApp(
       browserContextReady: healthSnapshot.browserContextReady,
       lastRelayAt: healthSnapshot.lastRelayAt,
       lastRelayFailureCode: healthSnapshot.lastRelayFailureCode,
+      lastBootstrapAt: healthSnapshot.lastBootstrapAt,
+      lastBootstrapFailureCode: healthSnapshot.lastBootstrapFailureCode,
+      lastBootstrapStep: healthSnapshot.lastBootstrapStep,
+      lastBootstrapUsability: healthSnapshot.lastBootstrapUsability,
       runtimeUsability: healthSnapshot.runtimeUsability,
       challengeDetected: healthSnapshot.challengeDetected,
       pageTitle: healthSnapshot.pageTitle,

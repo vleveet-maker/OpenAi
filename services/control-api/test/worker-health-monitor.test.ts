@@ -93,6 +93,10 @@ describe("worker health monitor", () => {
         createJsonResponse({
           runtimeStatus: "ready",
           browserContextReady: true,
+          lastBootstrapAt: "2026-03-27T10:00:58.000Z",
+          lastBootstrapFailureCode: null,
+          lastBootstrapStep: "complete",
+          lastBootstrapUsability: "usable",
           lastRelayAt: null,
           lastRelayFailureCode: null
         })
@@ -126,7 +130,7 @@ describe("worker health monitor", () => {
     );
   });
 
-  it("keeps a reachable worker as reachable_but_unusable when auth-like failure evidence exists", async () => {
+  it("keeps a reachable worker as reachable_but_unusable when bootstrap auth evidence exists", async () => {
     const workerRegistry = createWorkerRegistry(WORKERS);
     const eventRecorder = {
       recordEvent: vi.fn()
@@ -142,8 +146,12 @@ describe("worker health monitor", () => {
         createJsonResponse({
           runtimeStatus: "ready",
           browserContextReady: true,
+          lastBootstrapAt: "2026-03-27T10:01:59.000Z",
+          lastBootstrapFailureCode: "bootstrap_auth_required",
+          lastBootstrapStep: "auth_check",
+          lastBootstrapUsability: "auth_required",
           lastRelayAt: "2026-03-27T10:02:00.000Z",
-          lastRelayFailureCode: "bootstrap_auth_required"
+          lastRelayFailureCode: null
         })
       )
     );
@@ -160,6 +168,8 @@ describe("worker health monitor", () => {
 
     const worker = workerRegistry.getWorker("dad");
     expect(worker?.runtimeCapability).toBe("reachable_but_unusable");
-    expect(worker?.lastRelayFailureCode).toBe("bootstrap_auth_required");
+    expect(worker?.lastBootstrapFailureCode).toBe("bootstrap_auth_required");
+    expect(worker?.lastBootstrapStep).toBe("auth_check");
+    expect(worker?.lastRelayFailureCode).toBeUndefined();
   });
 });

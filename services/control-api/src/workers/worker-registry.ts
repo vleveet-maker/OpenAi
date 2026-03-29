@@ -35,6 +35,26 @@ export interface WorkerRecord {
   cdpAttached?: boolean;
   proxyServerConfigured?: boolean;
   browserContextReady?: boolean;
+  lastBootstrapAt?: string | null;
+  lastBootstrapFailureCode?: string | null;
+  lastBootstrapStep?:
+    | "navigation"
+    | "auth_check"
+    | "surface_entry"
+    | "new_chat"
+    | "temporary_entry"
+    | "temporary_confirmation"
+    | "temporary_onboarding"
+    | "model_selection"
+    | "composer_ready"
+    | "complete"
+    | null;
+  lastBootstrapUsability?:
+    | "usable"
+    | "auth_required"
+    | "challenge_blocked"
+    | "surface_unusable"
+    | null;
   lastRelayAt?: string | null;
   lastRelayFailureCode?: string | null;
   runtimeCapability?: WorkerRuntimeCapability;
@@ -61,6 +81,26 @@ export interface WorkerRegistryUpdate {
   cdpAttached?: boolean | null;
   proxyServerConfigured?: boolean | null;
   browserContextReady?: boolean | null;
+  lastBootstrapAt?: string | null;
+  lastBootstrapFailureCode?: string | null;
+  lastBootstrapStep?:
+    | "navigation"
+    | "auth_check"
+    | "surface_entry"
+    | "new_chat"
+    | "temporary_entry"
+    | "temporary_confirmation"
+    | "temporary_onboarding"
+    | "model_selection"
+    | "composer_ready"
+    | "complete"
+    | null;
+  lastBootstrapUsability?:
+    | "usable"
+    | "auth_required"
+    | "challenge_blocked"
+    | "surface_unusable"
+    | null;
   lastRelayAt?: string | null;
   lastRelayFailureCode?: string | null;
   runtimeCapability?: WorkerRuntimeCapability | null;
@@ -195,6 +235,22 @@ export class WorkerRegistry {
         update.browserContextReady === null
           ? undefined
           : update.browserContextReady ?? existing.browserContextReady,
+      lastBootstrapAt:
+        update.lastBootstrapAt === null
+          ? undefined
+          : update.lastBootstrapAt ?? existing.lastBootstrapAt,
+      lastBootstrapFailureCode:
+        update.lastBootstrapFailureCode === null
+          ? undefined
+          : update.lastBootstrapFailureCode ?? existing.lastBootstrapFailureCode,
+      lastBootstrapStep:
+        update.lastBootstrapStep === null
+          ? undefined
+          : update.lastBootstrapStep ?? existing.lastBootstrapStep,
+      lastBootstrapUsability:
+        update.lastBootstrapUsability === null
+          ? undefined
+          : update.lastBootstrapUsability ?? existing.lastBootstrapUsability,
       lastRelayAt:
         update.lastRelayAt === null
           ? undefined

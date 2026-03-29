@@ -27,6 +27,10 @@ export function createInternalWorkersRouter(
         proxyServerConfigured: worker.proxyServerConfigured ?? null,
         runtimeCapability: worker.runtimeCapability ?? "unreachable",
         browserContextReady: worker.browserContextReady ?? null,
+        lastBootstrapAt: worker.lastBootstrapAt ?? null,
+        lastBootstrapFailureCode: worker.lastBootstrapFailureCode ?? null,
+        lastBootstrapStep: worker.lastBootstrapStep ?? null,
+        lastBootstrapUsability: worker.lastBootstrapUsability ?? null,
         lastRelayAt: worker.lastRelayAt ?? null,
         lastRelayFailureCode: worker.lastRelayFailureCode ?? null
       }))
@@ -56,6 +60,10 @@ export function createInternalWorkersRouter(
       proxyServerConfigured: worker.proxyServerConfigured ?? null,
       runtimeCapability: worker.runtimeCapability ?? "unreachable",
       browserContextReady: worker.browserContextReady ?? null,
+      lastBootstrapAt: worker.lastBootstrapAt ?? null,
+      lastBootstrapFailureCode: worker.lastBootstrapFailureCode ?? null,
+      lastBootstrapStep: worker.lastBootstrapStep ?? null,
+      lastBootstrapUsability: worker.lastBootstrapUsability ?? null,
       lastRelayAt: worker.lastRelayAt ?? null,
       lastRelayFailureCode: worker.lastRelayFailureCode ?? null
     });
@@ -85,6 +93,10 @@ export function createInternalWorkersRouter(
       proxyServerConfigured: worker.proxyServerConfigured ?? null,
       runtimeCapability: worker.runtimeCapability ?? "unreachable",
       browserContextReady: worker.browserContextReady ?? null,
+      lastBootstrapAt: worker.lastBootstrapAt ?? null,
+      lastBootstrapFailureCode: worker.lastBootstrapFailureCode ?? null,
+      lastBootstrapStep: worker.lastBootstrapStep ?? null,
+      lastBootstrapUsability: worker.lastBootstrapUsability ?? null,
       lastRelayAt: worker.lastRelayAt ?? null,
       lastRelayFailureCode: worker.lastRelayFailureCode ?? null
     });
