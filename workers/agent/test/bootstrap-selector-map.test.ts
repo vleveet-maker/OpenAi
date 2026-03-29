@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildModelLabelPattern,
   buildModelOptionTarget,
+  composerReadySelectorCandidates,
+  temporaryConfirmationSelectorCandidates,
   temporaryEntryNamePatterns,
   temporaryEntrySelectorCandidates
 } from "../src/chat-bootstrap/bootstrap-selector-map.js";
@@ -45,5 +47,27 @@ describe("bootstrap selector map", () => {
       "[data-testid='model-switcher-gpt-5-4-thinking']",
       "[data-testid*='gpt-5-4-thinking']"
     ]);
+  });
+
+  it("centralizes temporary confirmation and composer selectors used by bootstrap", () => {
+    expect(
+      temporaryConfirmationSelectorCandidates.map((candidate) => candidate.id)
+    ).toEqual(
+      expect.arrayContaining([
+        "temporary_chat_label",
+        "temporary_surface_testid"
+      ])
+    );
+    expect(
+      composerReadySelectorCandidates.map((candidate) => candidate.id)
+    ).toEqual(
+      expect.arrayContaining([
+        "prompt_textarea_id",
+        "prompt_textarea_testid",
+        "contenteditable_prompt_testid",
+        "textarea_placeholder_message",
+        "contenteditable_fallback"
+      ])
+    );
   });
 });

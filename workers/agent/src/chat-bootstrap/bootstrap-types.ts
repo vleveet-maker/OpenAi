@@ -21,6 +21,7 @@ export type WorkerChatBootstrapFailureCode =
   | "temporary_chat_unavailable"
   | "temporary_entry_not_found"
   | "temporary_confirmation_not_found"
+  | "composer_not_ready"
   | "model_not_available"
   | "model_picker_not_found"
   | "model_option_not_found";

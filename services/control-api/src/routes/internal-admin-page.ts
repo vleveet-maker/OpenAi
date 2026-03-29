@@ -428,12 +428,25 @@ function renderInternalAdminPage(): string {
             worker.runtimeType === "host" &&
             worker.runtimeMode === "alternate_desktop" &&
             worker.status.status === "reauth_required";
+          const bootstrapStatusCopy =
+            worker.lastBootstrapFailureCode === "bootstrap_auth_required"
+              ? "Bootstrap says auth is required in the non-visible runtime."
+              : worker.lastBootstrapFailureCode
+                ? "Bootstrap drift is present in the non-visible runtime."
+                : worker.lastBootstrapStep
+                  ? "Bootstrap has recent step evidence for this worker."
+                  : "No recent bootstrap diagnostics yet.";
           const runtimeMode = runtimeModeLabel(worker);
           const runtimeFacts = [
             "Runtime mode: " + runtimeMode,
             "Headless: " + (worker.headless === null || worker.headless === undefined ? "unknown" : worker.headless ? "yes" : "no"),
             "CDP attached: " + (worker.cdpAttached === null || worker.cdpAttached === undefined ? "unknown" : worker.cdpAttached ? "yes" : "no"),
             "Proxy configured: " + (worker.proxyServerConfigured === null || worker.proxyServerConfigured === undefined ? "unknown" : worker.proxyServerConfigured ? "yes" : "no")
+          ];
+          const bootstrapFacts = [
+            "Last bootstrap step: " + (worker.lastBootstrapStep || "n/a"),
+            "Last bootstrap failure: " + (worker.lastBootstrapFailureCode || "none"),
+            "Last bootstrap usability: " + (worker.lastBootstrapUsability || "n/a")
           ];
 
           return \`
@@ -452,8 +465,10 @@ function renderInternalAdminPage(): string {
                 <span>\${escapeHtml(worker.runtimeType === "host" ? "Host worker: " + worker.containerName : "Container: " + worker.containerName)}</span>
                 <span>Worker state: \${escapeHtml(worker.runtimeStatus || worker.status.status)}</span>
                 \${runtimeFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
+                \${bootstrapFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
                 \${worker.runtimeType === "docker" ? \`<span>Browser access: \${escapeHtml(browserAccessLabel)}</span>\` : \`<span>Visible auth runs only when explicitly requested.</span>\`}
                 <span>Last seen: \${escapeHtml(worker.lastSeenAt || "n/a")}</span>
+                <span>\${escapeHtml(bootstrapStatusCopy)}</span>
                 \${hiddenRuntimeAuthLost ? \`<span class="error">Non-visible runtime lost auth after manual login; architecture review required.</span>\` : ""}
               </div>
               <div class="worker-actions">

@@ -257,11 +257,15 @@ describe("internal worker manual auth transitions", () => {
     expect(hostControllerClient.startWorker).toHaveBeenCalledWith("dad", "alternate_desktop");
     expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
     expect(response.body.action).toBe("manual_auth_completed_alternate_desktop_started");
+    expect(response.body.validationPending).toBe(true);
     expect(response.body.runtimeMode).toBe("alternate_desktop");
     expect(response.body.worker.runtimeMode).toBe("alternate_desktop");
     expect(response.body.worker.runtimeClass).toBe("host_alternate_desktop");
     expect(response.body.worker.headless).toBe(false);
     expect(response.body.worker.cdpAttached).toBe(true);
+    expect(response.body.worker.status.reason).toBe(
+      "manual login completed; alternate desktop validation pending"
+    );
   });
 
   it("returns 409 for docker workers on manual auth transitions", async () => {

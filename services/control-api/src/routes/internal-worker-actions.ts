@@ -263,7 +263,7 @@ export function createInternalWorkerActionsRouter(
       buildHostTransitionUpdate(
         worker.workerId,
         "alternate_desktop",
-        "manual login completed; restarting worker in alternate desktop runtime"
+        "manual login completed; alternate desktop validation pending"
       );
       options.eventRecorder?.recordEvent({
         eventType: "worker_reauth_completed",
@@ -272,13 +272,15 @@ export function createInternalWorkerActionsRouter(
         summary: `Worker ${worker.workerId} completed manual login and restarted in alternate desktop runtime`,
         detailJson: JSON.stringify({
           runtimeMode: "alternate_desktop",
-          previousRuntimeMode: worker.runtimeMode ?? null
+          previousRuntimeMode: worker.runtimeMode ?? null,
+          validationPending: true
         })
       });
       void options.healthMonitor.runHealthSweep();
 
       response.status(202).json({
         action: "manual_auth_completed_alternate_desktop_started",
+        validationPending: true,
         runtimeMode: "alternate_desktop",
         hostController: result,
         worker: options.workerRegistry.getWorker(worker.workerId)

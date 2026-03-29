@@ -57,6 +57,7 @@ class FakePage {
       modelMenuInitiallyOpen?: boolean;
       keepDirectTemporaryVisibleWhenModelMenuOpen?: boolean;
       temporaryOnboardingVisible?: boolean;
+      composerAvailable?: boolean;
     } = {}
   ) {
     if (options.authUrl) {
@@ -394,6 +395,19 @@ class FakePage {
       );
     }
 
+    if (
+      selector.includes("#prompt-textarea") ||
+      selector.includes("[data-testid='prompt-textarea']") ||
+      selector.includes("[contenteditable='true'][data-testid*='prompt']") ||
+      selector.includes("textarea[placeholder*='Message']") ||
+      selector.includes("[contenteditable='true']")
+    ) {
+      return new FakeLocator(() => ({
+        count: this.options.composerAvailable === false ? 0 : 1,
+        visible: this.options.composerAvailable !== false
+      }));
+    }
+
     if (selector.includes("new-chat")) {
       return new FakeLocator(
         () => ({
@@ -493,6 +507,8 @@ describe("runTemporaryChatBootstrap", () => {
       conversationMode: "temporary",
       modelLabel: "GPT-5.4 Thinking",
       failureCode: null,
+      step: "complete",
+      composerReady: true,
       challengeDetected: false,
       runtimeUsability: "usable"
     });
@@ -682,6 +698,7 @@ describe("runTemporaryChatBootstrap", () => {
     );
 
     expect(result.failureCode).toBe("temporary_confirmation_not_found");
+    expect(result.step).toBe("temporary_confirmation");
   });
 
   it("fails with model_picker_not_found when the current UI exposes no model picker", async () => {
@@ -716,5 +733,25 @@ describe("runTemporaryChatBootstrap", () => {
     );
 
     expect(result.failureCode).toBe("model_option_not_found");
+    expect(result.step).toBe("model_selection");
+  });
+
+  it("fails with composer_not_ready when no usable prompt surface is visible after model selection", async () => {
+    const page = new FakePage({
+      composerAvailable: false
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext(page),
+      {
+        lockKey: "dad:session-1",
+        startUrl: "https://chatgpt.com/",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+      }
+    );
+
+    expect(result.failureCode).toBe("composer_not_ready");
+    expect(result.step).toBe("composer_ready");
+    expect(result.composerReady).toBe(false);
   });
 });

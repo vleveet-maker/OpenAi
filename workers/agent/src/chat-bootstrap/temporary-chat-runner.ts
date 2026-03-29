@@ -2,13 +2,13 @@ import type { BrowserContext, Page } from "playwright";
 
 import {
   buildModelOptionTarget,
+  composerReadySelectorCandidates,
   modelOptionSelectorCandidates,
   modelPickerButtonSelectorCandidates,
   newChatSelectorCandidates,
-  temporaryConfirmationSelectors,
+  temporaryConfirmationSelectorCandidates,
   temporaryEntrySelectorCandidates,
   temporaryOnboardingContinueSelectorCandidates,
-  type BootstrapLocatorCandidate,
   type BootstrapLocatorCandidateDefinition,
   type BootstrapLocatorLike,
   type BootstrapPageLike
@@ -38,6 +38,7 @@ interface ResolvedBootstrapLocator {
 interface ModelSelectionResult {
   selectedModel: string | null;
   failureCode: WorkerChatBootstrapFailureCode | null;
+  stepDetail: string | null;
 }
 
 const bootstrapLocks = new Map<string, Promise<void>>();
@@ -98,34 +99,20 @@ async function resolveUsableLocator(
   return null;
 }
 
-async function hasTemporaryConfirmation(
-  page: BootstrapPageLike,
-  candidates: BootstrapLocatorCandidate[]
-): Promise<boolean> {
-  for (const candidate of candidates) {
-    const locator = candidate(page);
-
-    if ((await locator.count()) === 0) {
-      continue;
-    }
-
-    if (await locator.isVisible()) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 async function waitForTemporaryConfirmation(
   page: BootstrapPageLike,
   timeoutMs = TEMPORARY_CONFIRMATION_TIMEOUT_MS
-): Promise<boolean> {
+): Promise<ResolvedBootstrapLocator | null> {
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() <= deadline) {
-    if (await hasTemporaryConfirmation(page, temporaryConfirmationSelectors)) {
-      return true;
+    const confirmation = await resolveUsableLocator(
+      page,
+      temporaryConfirmationSelectorCandidates
+    );
+
+    if (confirmation) {
+      return confirmation;
     }
 
     await new Promise((resolve) => {
@@ -133,7 +120,7 @@ async function waitForTemporaryConfirmation(
     });
   }
 
-  return false;
+  return null;
 }
 
 async function ensureChatPage(
@@ -233,7 +220,9 @@ async function pageShowsChallenge(page: BootstrapPageLike | null): Promise<boole
 
 async function buildFailureResult(
   page: BootstrapPageLike | null,
-  failureCode: WorkerChatBootstrapFailureCode
+  failureCode: WorkerChatBootstrapFailureCode,
+  step: WorkerChatBootstrapStep = resolveFailureStep(failureCode),
+  stepDetail: string | null = null
 ): Promise<WorkerChatBootstrapResult> {
   const challengeDetected =
     failureCode === "bootstrap_challenge_detected" ||
@@ -245,8 +234,6 @@ async function buildFailureResult(
       : challengeDetected
         ? "challenge_blocked"
         : "surface_unusable";
-
-  const step = resolveFailureStep(failureCode);
 
   return {
     status: "failed",
@@ -281,6 +268,8 @@ function resolveFailureStep(
       return "temporary_entry";
     case "temporary_confirmation_not_found":
       return "temporary_confirmation";
+    case "composer_not_ready":
+      return "composer_ready";
     case "model_not_available":
     case "model_picker_not_found":
     case "model_option_not_found":
@@ -293,7 +282,10 @@ function resolveFailureStep(
 
 async function openTemporaryEntry(
   page: BootstrapPageLike
-): Promise<WorkerChatBootstrapFailureCode | null> {
+): Promise<{
+  failureCode: WorkerChatBootstrapFailureCode | null;
+  stepDetail: string | null;
+}> {
   const directTemporaryEntry = await resolveUsableLocator(
     page,
     temporaryEntrySelectorCandidates
@@ -301,13 +293,19 @@ async function openTemporaryEntry(
 
   if (directTemporaryEntry) {
     await directTemporaryEntry.locator.click();
-    return null;
+    return {
+      failureCode: null,
+      stepDetail: `temporary entry selector: ${directTemporaryEntry.selectorId}`
+    };
   }
 
   const picker = await resolveUsableLocator(page, modelPickerButtonSelectorCandidates);
 
   if (!picker) {
-    return "model_picker_not_found";
+    return {
+      failureCode: "model_picker_not_found",
+      stepDetail: "temporary entry fallback model picker not found"
+    };
   }
 
   await picker.locator.click();
@@ -318,14 +316,22 @@ async function openTemporaryEntry(
   );
 
   if (!menuTemporaryEntry) {
-    return "temporary_entry_not_found";
+    return {
+      failureCode: "temporary_entry_not_found",
+      stepDetail: "temporary entry menu item not visible after opening model picker"
+    };
   }
 
   await menuTemporaryEntry.locator.click();
-  return null;
+  return {
+    failureCode: null,
+    stepDetail: `temporary entry selector: ${menuTemporaryEntry.selectorId}`
+  };
 }
 
-async function dismissTemporaryOnboarding(page: BootstrapPageLike): Promise<void> {
+async function dismissTemporaryOnboarding(
+  page: BootstrapPageLike
+): Promise<string | null> {
   const deadline = Date.now() + TEMPORARY_ONBOARDING_TIMEOUT_MS;
 
   while (Date.now() <= deadline) {
@@ -336,13 +342,15 @@ async function dismissTemporaryOnboarding(page: BootstrapPageLike): Promise<void
 
     if (continueButton) {
       await continueButton.locator.click();
-      return;
+      return `temporary onboarding selector: ${continueButton.selectorId}`;
     }
 
     await new Promise((resolve) => {
       setTimeout(resolve, TRANSIENT_UI_POLL_INTERVAL_MS);
     });
   }
+
+  return null;
 }
 
 async function selectPreferredReasoningModel(
@@ -364,7 +372,8 @@ async function selectPreferredReasoningModel(
       await locator.click();
       return {
         selectedModel: label,
-        failureCode: null
+        failureCode: null,
+        stepDetail: `model selector: ${candidate.id} -> ${label}`
       };
     }
   }
@@ -374,7 +383,8 @@ async function selectPreferredReasoningModel(
   if (!picker) {
     return {
       selectedModel: null,
-      failureCode: "model_picker_not_found"
+      failureCode: "model_picker_not_found",
+      stepDetail: "model picker was not visible during preferred-model selection"
     };
   }
 
@@ -395,15 +405,27 @@ async function selectPreferredReasoningModel(
       await locator.click();
       return {
         selectedModel: label,
-        failureCode: null
+        failureCode: null,
+        stepDetail: `model selector: ${candidate.id} -> ${label}`
       };
     }
   }
 
   return {
     selectedModel: null,
-    failureCode: "model_option_not_found"
+    failureCode: "model_option_not_found",
+    stepDetail: "preferred model options were not visible after opening the picker"
   };
+}
+
+// Composer readiness is gated on the centralized prompt selectors
+// (#prompt-textarea, [data-testid='prompt-textarea'],
+// [contenteditable='true'][data-testid*='prompt'],
+// textarea[placeholder*='Message'], and [contenteditable='true']).
+async function ensureComposerReady(
+  page: BootstrapPageLike
+): Promise<ResolvedBootstrapLocator | null> {
+  return resolveUsableLocator(page, composerReadySelectorCandidates);
 }
 
 export async function runTemporaryChatBootstrap(
@@ -412,50 +434,104 @@ export async function runTemporaryChatBootstrap(
 ): Promise<WorkerChatBootstrapResult> {
   return withBootstrapLock(options.lockKey, async () => {
     let page: BootstrapPageLike | null = null;
+    let currentStep: WorkerChatBootstrapStep = "navigation";
+    let currentStepDetail: string | null = "loading ChatGPT start surface";
 
     try {
       page = await ensureChatPage(context, options.startUrl);
     } catch {
-      return buildFailureResult(page, "bootstrap_navigation_failed");
+      return buildFailureResult(
+        page,
+        "bootstrap_navigation_failed",
+        currentStep,
+        currentStepDetail
+      );
     }
 
+    currentStep = "auth_check";
+    currentStepDetail = "checking auth state and challenge markers";
     if (await pageShowsChallenge(page)) {
-      return buildFailureResult(page, "bootstrap_challenge_detected");
+      return buildFailureResult(
+        page,
+        "bootstrap_challenge_detected",
+        currentStep,
+        "challenge markers detected before bootstrap could continue"
+      );
     }
 
     if (await pageRequiresAuth(page)) {
-      return buildFailureResult(page, "bootstrap_auth_required");
+      return buildFailureResult(
+        page,
+        "bootstrap_auth_required",
+        currentStep,
+        "ChatGPT auth entry is visible for this runtime"
+      );
     }
 
+    currentStep = "new_chat";
+    currentStepDetail = "opening a fresh chat surface";
     const newChat = await resolveUsableLocator(page, newChatSelectorCandidates);
 
     if (newChat) {
       await newChat.locator.click();
+      currentStepDetail = `new chat selector: ${newChat.selectorId}`;
     } else {
+      currentStep = "surface_entry";
+      currentStepDetail =
+        "new chat selector missing; checking whether current surface can still bootstrap";
       const currentSurfacePicker = await resolveUsableLocator(
         page,
         modelPickerButtonSelectorCandidates
       );
 
       if (!currentSurfacePicker) {
-        return buildFailureResult(page, "bootstrap_surface_unusable");
+        return buildFailureResult(
+          page,
+          "bootstrap_surface_unusable",
+          currentStep,
+          currentStepDetail
+        );
       }
     }
 
-    const temporaryEntryFailure = await openTemporaryEntry(page);
+    currentStep = "temporary_entry";
+    currentStepDetail = "opening Temporary Chat";
+    const temporaryEntry = await openTemporaryEntry(page);
 
-    if (temporaryEntryFailure) {
-      return buildFailureResult(page, temporaryEntryFailure);
+    if (temporaryEntry.failureCode) {
+      return buildFailureResult(
+        page,
+        temporaryEntry.failureCode,
+        currentStep,
+        temporaryEntry.stepDetail
+      );
     }
+    currentStepDetail = temporaryEntry.stepDetail;
 
+    currentStep = "temporary_confirmation";
+    currentStepDetail = "waiting for Temporary Chat confirmation";
     const temporaryConfirmed = await waitForTemporaryConfirmation(page);
 
     if (!temporaryConfirmed) {
-      return buildFailureResult(page, "temporary_confirmation_not_found");
+      return buildFailureResult(
+        page,
+        "temporary_confirmation_not_found",
+        currentStep,
+        currentStepDetail
+      );
+    }
+    currentStepDetail = `temporary confirmation selector: ${temporaryConfirmed.selectorId}`;
+
+    currentStep = "temporary_onboarding";
+    currentStepDetail = "dismissing Temporary Chat onboarding if present";
+    const onboardingDetail = await dismissTemporaryOnboarding(page);
+
+    if (onboardingDetail) {
+      currentStepDetail = onboardingDetail;
     }
 
-    await dismissTemporaryOnboarding(page);
-
+    currentStep = "model_selection";
+    currentStepDetail = "selecting the preferred reasoning model";
     const modelSelection = await selectPreferredReasoningModel(
       page,
       options.preferredReasoningModelLabels
@@ -464,7 +540,22 @@ export async function runTemporaryChatBootstrap(
     if (modelSelection.failureCode || !modelSelection.selectedModel) {
       return buildFailureResult(
         page,
-        modelSelection.failureCode ?? "model_option_not_found"
+        modelSelection.failureCode ?? "model_option_not_found",
+        currentStep,
+        modelSelection.stepDetail
+      );
+    }
+
+    currentStep = "composer_ready";
+    currentStepDetail = modelSelection.stepDetail;
+    const composerLocator = await ensureComposerReady(page);
+
+    if (!composerLocator) {
+      return buildFailureResult(
+        page,
+        "composer_not_ready",
+        currentStep,
+        "No visible composer matched the centralized prompt-textarea selectors"
       );
     }
 
@@ -474,7 +565,7 @@ export async function runTemporaryChatBootstrap(
       modelLabel: modelSelection.selectedModel,
       failureCode: null,
       step: "complete",
-      stepDetail: null,
+      stepDetail: `composer selector: ${composerLocator.selectorId}`,
       composerReady: true,
       challengeDetected: false,
       pageTitle: await getPageTitle(page),

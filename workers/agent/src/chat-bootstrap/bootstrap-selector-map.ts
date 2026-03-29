@@ -151,12 +151,27 @@ export const temporaryEntrySelectorCandidates: BootstrapLocatorCandidateDefiniti
     }
   ];
 
-export const temporaryConfirmationSelectors: BootstrapLocatorCandidate[] = [
-  (page) => page.getByRole("button", { name: temporaryEnabledNamePatterns[0] }).last(),
-  (page) => page.getByRole("button", { name: temporaryEnabledNamePatterns[1] }).last(),
-  (page) => page.getByRole("button", { name: temporaryEnabledNamePatterns[2] }).last(),
-  (page) => page.locator("[data-testid='temporary-chat-label']").last(),
-  (page) => page.locator("[data-testid*='temporary']").last()
+export const temporaryConfirmationSelectorCandidates: BootstrapLocatorCandidateDefinition[] = [
+  {
+    id: "temporary_disable_button",
+    locate: (page) => page.getByRole("button", { name: temporaryEnabledNamePatterns[0] }).last()
+  },
+  {
+    id: "temporary_turn_off_button",
+    locate: (page) => page.getByRole("button", { name: temporaryEnabledNamePatterns[1] }).last()
+  },
+  {
+    id: "temporary_disable_localized_button",
+    locate: (page) => page.getByRole("button", { name: temporaryEnabledNamePatterns[2] }).last()
+  },
+  {
+    id: "temporary_chat_label",
+    locate: (page) => page.locator("[data-testid='temporary-chat-label']").last()
+  },
+  {
+    id: "temporary_surface_testid",
+    locate: (page) => page.locator("[data-testid*='temporary']").last()
+  }
 ];
 
 export const temporaryOnboardingContinueSelectorCandidates: BootstrapLocatorCandidateDefinition[] =
@@ -244,3 +259,33 @@ export const modelPickerButtonSelectors: BootstrapLocatorCandidate[] =
 
 export const modelOptionSelectors: ModelOptionLocatorCandidate[] =
   modelOptionSelectorCandidates.map((candidate) => candidate.locate);
+
+export const composerReadySelectorCandidates: BootstrapLocatorCandidateDefinition[] = [
+  {
+    id: "prompt_textarea_id",
+    locate: (page) => page.locator("#prompt-textarea").last()
+  },
+  {
+    id: "prompt_textarea_testid",
+    locate: (page) => page.locator("[data-testid='prompt-textarea']").last()
+  },
+  {
+    id: "contenteditable_prompt_testid",
+    locate: (page) =>
+      page.locator("[contenteditable='true'][data-testid*='prompt']").last()
+  },
+  {
+    id: "textarea_placeholder_message",
+    locate: (page) => page.locator("textarea[placeholder*='Message']").last()
+  },
+  {
+    id: "contenteditable_fallback",
+    locate: (page) => page.locator("[contenteditable='true']").last()
+  }
+];
+
+export const temporaryConfirmationSelectors: BootstrapLocatorCandidate[] =
+  temporaryConfirmationSelectorCandidates.map((candidate) => candidate.locate);
+
+export const composerReadySelectors: BootstrapLocatorCandidate[] =
+  composerReadySelectorCandidates.map((candidate) => candidate.locate);
