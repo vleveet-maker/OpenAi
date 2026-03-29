@@ -37,6 +37,7 @@ class FakePage {
   public temporaryOnboardingContinueClicks = 0;
   public selectedModel: string | null = null;
   public gotoCallCount = 0;
+  public reloadCallCount = 0;
   private currentUrl = "https://chatgpt.com/";
   private temporaryModeActive = false;
   private temporaryEntryClicked = false;
@@ -61,6 +62,9 @@ class FakePage {
       temporaryOnboardingVisible?: boolean;
       composerAvailable?: boolean;
       gotoThrows?: boolean;
+      gotoBehaviors?: Array<"throw" | "success">;
+      reloadThrows?: boolean;
+      reloadUrl?: string;
     } = {}
   ) {
     if (options.initialUrl) {
@@ -85,12 +89,37 @@ class FakePage {
   async goto(url: string): Promise<void> {
     this.gotoCallCount += 1;
 
+    const gotoBehavior = this.options.gotoBehaviors?.shift();
+
+    if (gotoBehavior === "throw") {
+      throw new Error("goto failed");
+    }
+
+    if (gotoBehavior === "success") {
+      if (!this.options.authUrl) {
+        this.currentUrl = url;
+      }
+      return;
+    }
+
     if (this.options.gotoThrows) {
       throw new Error("goto failed");
     }
 
     if (!this.options.authUrl) {
       this.currentUrl = url;
+    }
+  }
+
+  async reload(): Promise<void> {
+    this.reloadCallCount += 1;
+
+    if (this.options.reloadThrows) {
+      throw new Error("reload failed");
+    }
+
+    if (this.options.reloadUrl && !this.options.authUrl) {
+      this.currentUrl = this.options.reloadUrl;
     }
   }
 
@@ -666,6 +695,7 @@ describe("runTemporaryChatBootstrap", () => {
 
     expect(result.failureCode).toBe("bootstrap_auth_required");
     expect(result.runtimeUsability).toBe("auth_required");
+    expect(result.stepDetail).toContain("navigation branch: reuse_chatgpt_page");
   });
 
   it("fails with bootstrap_auth_required when the current surface exposes login buttons", async () => {
@@ -705,6 +735,7 @@ describe("runTemporaryChatBootstrap", () => {
     expect(result.failureCode).toBe("bootstrap_challenge_detected");
     expect(result.challengeDetected).toBe(true);
     expect(result.runtimeUsability).toBe("challenge_blocked");
+    expect(result.stepDetail).toContain("navigation branch: reuse_chatgpt_page");
   });
 
   it("fails with bootstrap_surface_unusable when New chat and model picker are both missing", async () => {
@@ -820,6 +851,7 @@ describe("runTemporaryChatBootstrap", () => {
   it("rescues navigation by opening a fresh page after the first page cannot navigate", async () => {
     const unusableExistingPage = new FakePage({
       initialUrl: "about:blank",
+      reloadThrows: true,
       gotoThrows: true
     });
     const freshChatPage = new FakePage({
@@ -841,28 +873,78 @@ describe("runTemporaryChatBootstrap", () => {
     expect(freshChatPage.gotoCallCount).toBe(1);
   });
 
+  it("rescues navigation by reloading the existing page before attempting a goto", async () => {
+    const staleExistingPage = new FakePage({
+      initialUrl: "https://example.com/stale",
+      reloadUrl: "https://chatgpt.com/"
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext([staleExistingPage]),
+      {
+        lockKey: "wife:reload-rescue",
+        startUrl: "https://chatgpt.com/",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+      }
+    );
+
+    expect(result.status).toBe("ready");
+    expect(result.stepDetail).toContain("navigation branch: existing_page_reload");
+    expect(staleExistingPage.reloadCallCount).toBe(1);
+    expect(staleExistingPage.gotoCallCount).toBe(0);
+  });
+
+  it("falls back to fresh_page_home_goto when the first fresh-page navigation still fails", async () => {
+    const unusableExistingPage = new FakePage({
+      initialUrl: "about:blank",
+      reloadThrows: true,
+      gotoThrows: true
+    });
+    const freshChatPage = new FakePage({
+      initialUrl: "about:blank",
+      gotoBehaviors: ["throw", "success"]
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext([unusableExistingPage], freshChatPage),
+      {
+        lockKey: "shared:home-goto-rescue",
+        startUrl: "https://chatgpt.com/?temporary=1",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+      }
+    );
+
+    expect(result.status).toBe("ready");
+    expect(result.stepDetail).toContain("navigation branch: fresh_page_home_goto");
+    expect(freshChatPage.gotoCallCount).toBe(2);
+  });
+
   it("returns navigation branch detail when all rescue attempts fail", async () => {
     const unusableExistingPage = new FakePage({
       initialUrl: "about:blank",
+      reloadThrows: true,
       gotoThrows: true
     });
     const unusableFreshPage = new FakePage({
       initialUrl: "about:blank",
-      gotoThrows: true
+      gotoBehaviors: ["throw", "throw"]
     });
 
     const result = await runTemporaryChatBootstrap(
       new FakeBrowserContext([unusableExistingPage], unusableFreshPage),
       {
         lockKey: "shared:navigation-failed",
-        startUrl: "https://chatgpt.com/",
+        startUrl: "https://chatgpt.com/?temporary=1",
         preferredReasoningModelLabels: ["GPT-5.4 Thinking"]
       }
     );
 
     expect(result.failureCode).toBe("bootstrap_navigation_failed");
     expect(result.step).toBe("navigation");
+    expect(result.stepDetail).toContain("navigation branch: existing_page_reload");
     expect(result.stepDetail).toContain("navigation branch: existing_page_goto");
     expect(result.stepDetail).toContain("navigation branch: fresh_page_retry");
+    expect(result.stepDetail).toContain("navigation branch: fresh_page_home_goto");
+    expect(result.stepDetail).toContain("pageUrl");
   });
 });

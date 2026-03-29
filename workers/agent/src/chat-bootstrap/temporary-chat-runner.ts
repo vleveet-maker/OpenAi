@@ -53,6 +53,11 @@ interface ModelSelectionResult {
   stepDetail: string | null;
 }
 
+interface NavigationAttemptResult {
+  ensuredPage: EnsuredBootstrapPage | null;
+  failureDetail: string;
+}
+
 const bootstrapLocks = new Map<string, Promise<void>>();
 const TRANSIENT_UI_POLL_INTERVAL_MS = 150;
 const TEMPORARY_CONFIRMATION_TIMEOUT_MS = 3_000;
@@ -180,31 +185,73 @@ function navigationSurfaceUsableForBootstrap(
 
 async function attemptNavigationBranch(
   page: BootstrapPageLike,
-  startUrl: string,
-  branchLabel: string
-): Promise<EnsuredBootstrapPage | null> {
-  if (typeof page.goto !== "function") {
-    return null;
+  branchLabel: string,
+  navigate: () => Promise<void>
+): Promise<NavigationAttemptResult> {
+  try {
+    await navigate();
+  } catch {
+    // Playwright can still throw even when the resulting page is usable.
   }
 
-  try {
-    await page.goto(startUrl, {
-      waitUntil: "domcontentloaded"
-    });
-  } catch {
-    if (!navigationSurfaceUsableForBootstrap(page)) {
-      return null;
-    }
-  }
+  const failureDetail = await buildDetailWithPageEvidence(page, branchLabel);
 
   if (!navigationSurfaceUsableForBootstrap(page)) {
-    return null;
+    return {
+      ensuredPage: null,
+      failureDetail: failureDetail ?? branchLabel
+    };
   }
 
   return {
-    page,
-    navigationDetail: branchLabel
+    ensuredPage: {
+      page,
+      navigationDetail: failureDetail ?? branchLabel
+    },
+    failureDetail: failureDetail ?? branchLabel
   };
+}
+
+function buildHomeStartUrl(startUrl: string): string {
+  try {
+    const url = new URL(startUrl);
+    url.pathname = "/";
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return startUrl;
+  }
+}
+
+function combineStepDetails(
+  ...details: Array<string | null | undefined>
+): string | null {
+  const normalized = details
+    .map((detail) => detail?.trim())
+    .filter((detail): detail is string => Boolean(detail));
+
+  return normalized.length > 0 ? normalized.join("; ") : null;
+}
+
+async function buildDetailWithPageEvidence(
+  page: BootstrapPageLike | null | undefined,
+  detail: string | null | undefined
+): Promise<string | null> {
+  const detailText = detail?.trim() ?? "";
+  const pageUrl = page?.url().trim() ?? "";
+  const pageTitle = await getPageTitle(page ?? null);
+  const evidence: string[] = [];
+
+  if (pageUrl && !detailText.includes(`pageUrl: ${pageUrl}`)) {
+    evidence.push(`pageUrl: ${pageUrl}`);
+  }
+
+  if (pageTitle && !detailText.includes(`pageTitle: ${pageTitle}`)) {
+    evidence.push(`pageTitle: ${pageTitle}`);
+  }
+
+  return combineStepDetails(detailText || null, evidence.join("; "));
 }
 
 async function ensureChatPage(
@@ -212,6 +259,7 @@ async function ensureChatPage(
   startUrl: string
 ): Promise<EnsuredBootstrapPage> {
   const attemptedBranches: string[] = [];
+  const homeStartUrl = buildHomeStartUrl(startUrl);
   const reusableChatPage = context
     .pages()
     .find((page) => isChatGptUrl(page.url()));
@@ -219,37 +267,79 @@ async function ensureChatPage(
   if (reusableChatPage) {
     return {
       page: reusableChatPage,
-      navigationDetail: "navigation branch: reuse_chatgpt_page"
+      navigationDetail:
+        (await buildDetailWithPageEvidence(
+          reusableChatPage,
+          "navigation branch: reuse_chatgpt_page"
+        )) ?? "navigation branch: reuse_chatgpt_page"
     };
   }
 
   const existingPage = context.pages()[0];
 
+  if (existingPage && typeof existingPage.reload === "function") {
+    const reloadedExistingPage = await attemptNavigationBranch(
+      existingPage,
+      "navigation branch: existing_page_reload",
+      () =>
+        existingPage.reload!({
+          waitUntil: "domcontentloaded"
+        })
+    );
+    attemptedBranches.push(reloadedExistingPage.failureDetail);
+
+    if (reloadedExistingPage.ensuredPage) {
+      return reloadedExistingPage.ensuredPage;
+    }
+  }
+
   if (existingPage && typeof existingPage.goto === "function") {
-    attemptedBranches.push("navigation branch: existing_page_goto");
     const navigatedExistingPage = await attemptNavigationBranch(
       existingPage,
-      startUrl,
-      "navigation branch: existing_page_goto"
+      "navigation branch: existing_page_goto",
+      () =>
+        existingPage.goto!(startUrl, {
+          waitUntil: "domcontentloaded"
+        })
     );
+    attemptedBranches.push(navigatedExistingPage.failureDetail);
 
-    if (navigatedExistingPage) {
-      return navigatedExistingPage;
+    if (navigatedExistingPage.ensuredPage) {
+      return navigatedExistingPage.ensuredPage;
     }
   }
 
   const freshPage = await context.newPage();
 
   if (typeof freshPage.goto === "function") {
-    attemptedBranches.push("navigation branch: fresh_page_retry");
     const navigatedFreshPage = await attemptNavigationBranch(
       freshPage,
-      startUrl,
-      "navigation branch: fresh_page_retry"
+      "navigation branch: fresh_page_retry",
+      () =>
+        freshPage.goto!(startUrl, {
+          waitUntil: "domcontentloaded"
+        })
     );
+    attemptedBranches.push(navigatedFreshPage.failureDetail);
 
-    if (navigatedFreshPage) {
-      return navigatedFreshPage;
+    if (navigatedFreshPage.ensuredPage) {
+      return navigatedFreshPage.ensuredPage;
+    }
+  }
+
+  if (typeof freshPage.goto === "function") {
+    const navigatedHomeFreshPage = await attemptNavigationBranch(
+      freshPage,
+      "navigation branch: fresh_page_home_goto",
+      () =>
+        freshPage.goto!(homeStartUrl, {
+          waitUntil: "domcontentloaded"
+        })
+    );
+    attemptedBranches.push(navigatedHomeFreshPage.failureDetail);
+
+    if (navigatedHomeFreshPage.ensuredPage) {
+      return navigatedHomeFreshPage.ensuredPage;
     }
   }
 
@@ -337,6 +427,7 @@ async function buildFailureResult(
   step: WorkerChatBootstrapStep = resolveFailureStep(failureCode),
   stepDetail: string | null = null
 ): Promise<WorkerChatBootstrapResult> {
+  const detailedStepDetail = await buildDetailWithPageEvidence(page, stepDetail);
   const challengeDetected =
     failureCode === "bootstrap_challenge_detected" ||
     (await pageShowsChallenge(page));
@@ -354,7 +445,7 @@ async function buildFailureResult(
     modelLabel: null,
     failureCode,
     step,
-    stepDetail,
+    stepDetail: detailedStepDetail,
     composerReady: false,
     challengeDetected,
     pageTitle: await getPageTitle(page),
@@ -576,7 +667,10 @@ export async function runTemporaryChatBootstrap(
         page,
         "bootstrap_challenge_detected",
         currentStep,
-        "challenge markers detected before bootstrap could continue"
+        combineStepDetails(
+          navigationDetail,
+          "challenge markers detected before bootstrap could continue"
+        )
       );
     }
 
@@ -585,7 +679,10 @@ export async function runTemporaryChatBootstrap(
         page,
         "bootstrap_auth_required",
         currentStep,
-        "ChatGPT auth entry is visible for this runtime"
+        combineStepDetails(
+          navigationDetail,
+          "ChatGPT auth entry is visible for this runtime"
+        )
       );
     }
 
@@ -610,7 +707,7 @@ export async function runTemporaryChatBootstrap(
           page,
           "bootstrap_surface_unusable",
           currentStep,
-          currentStepDetail
+          combineStepDetails(navigationDetail, currentStepDetail)
         );
       }
     }
@@ -624,7 +721,7 @@ export async function runTemporaryChatBootstrap(
         page,
         temporaryEntry.failureCode,
         currentStep,
-        temporaryEntry.stepDetail
+        combineStepDetails(navigationDetail, temporaryEntry.stepDetail)
       );
     }
     currentStepDetail = temporaryEntry.stepDetail;
@@ -638,7 +735,7 @@ export async function runTemporaryChatBootstrap(
         page,
         "temporary_confirmation_not_found",
         currentStep,
-        currentStepDetail
+        combineStepDetails(navigationDetail, currentStepDetail)
       );
     }
     currentStepDetail = `temporary confirmation selector: ${temporaryConfirmed.selectorId}`;
@@ -663,7 +760,7 @@ export async function runTemporaryChatBootstrap(
         page,
         modelSelection.failureCode ?? "model_option_not_found",
         currentStep,
-        modelSelection.stepDetail
+        combineStepDetails(navigationDetail, modelSelection.stepDetail)
       );
     }
 
@@ -676,7 +773,10 @@ export async function runTemporaryChatBootstrap(
         page,
         "composer_not_ready",
         currentStep,
-        "No visible composer matched the centralized prompt-textarea selectors"
+        combineStepDetails(
+          navigationDetail,
+          "No visible composer matched the centralized prompt-textarea selectors"
+        )
       );
     }
 

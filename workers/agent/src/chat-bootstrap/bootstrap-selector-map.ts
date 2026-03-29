@@ -16,6 +16,7 @@ export interface BootstrapPageLike {
   ): BootstrapLocatorLike;
   locator(selector: string): BootstrapLocatorLike;
   goto?(url: string, options?: { waitUntil?: "domcontentloaded" }): Promise<void>;
+  reload?(options?: { waitUntil?: "domcontentloaded" }): Promise<void>;
 }
 
 export type BootstrapLocatorCandidate =
