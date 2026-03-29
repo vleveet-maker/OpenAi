@@ -39,7 +39,7 @@
 
 - [ ] **ADST-01**: At least one worker can recover or confirm valid ChatGPT auth in `alternate_desktop` after visible auth and return to routine non-visible operation without reopening a routine visible browser window
 - [ ] **ADST-02**: At least one worker can pass the current `Temporary Chat` confirmation, preferred-model selection, and composer unlock path in `alternate_desktop` so the canonical proof reports `phase11Ready=true`
-- [ ] **ADST-03**: Operator and control-plane evidence distinguish `auth_required`, bootstrap selector drift, and assignment-timeout tails clearly enough to decide whether `Phase 11` can proceed
+- [x] **ADST-03**: Operator and control-plane evidence distinguish `auth_required`, bootstrap selector drift, and assignment-timeout tails clearly enough to decide whether `Phase 11` can proceed
 
 ### Rollout Confidence
 
@@ -84,9 +84,9 @@
 | NVRT-01 | Phase 10.3 | Complete |
 | NVRT-02 | Phase 10.3 | Complete |
 | NVRT-03 | Phase 10.3 | Complete |
-| ADST-01 | Phase 10.4 | Pending |
+| ADST-01 | Phase 10.4 | Partial |
 | ADST-02 | Phase 10.4 | Pending |
-| ADST-03 | Phase 10.4 | Pending |
+| ADST-03 | Phase 10.4 | Complete |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
@@ -97,4 +97,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after completing Phase 10.3 Alternative non-visible native browser runtime design*
+*Last updated: 2026-03-29 after executing Phase 10.4 Alternate desktop auth and bootstrap stabilization*

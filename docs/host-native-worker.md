@@ -48,12 +48,12 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 - Phase 11 remains blocked until the alternate-desktop probe records `phase11Ready=true`.
 - Every probe appends a row to `infra/data/host-worker-logs/runtime-matrix.jsonl` so alternate-desktop viability is evidence-backed instead of anecdotal.
 
-## Current Phase 10.3 Result
+## Current Phase 10.4 Result
 
-- `dad` now reaches the alternate desktop runtime cleanly but its live probe returned `bootstrap_auth_required`.
-- `wife` reached alternate desktop runtime and advanced far enough for `Temporary Chat` bootstrap to fail at `temporary_confirmation_not_found`, which is deeper than the old hidden-runtime Cloudflare failure.
-- `shared-1` reached alternate desktop runtime, but the isolated proof still timed out on assignment before a successful relay could complete.
-- Because no worker produced `phase11Ready=true`, Phase 11 remains blocked even though alternate desktop is a better non-visible direction than the rejected hidden/headless path.
+- `wife` is now the primary bootstrap target. The latest bounded proof keeps it reachable in `alternate_desktop`, but bootstrap currently fails at `navigation` with `bootstrap_navigation_failed`.
+- `dad` is now the auth-recovery target. The latest bounded proof shows a clean `auth_check` classification of `bootstrap_auth_required`.
+- `shared-1` is now the proof-noise cleanup target. Its latest bounded proof is reachable, but still fails at `navigation` with `bootstrap_navigation_failed`.
+- Because no worker produced `phase11Ready=true`, Phase 11 remains blocked and the next required step is another focused follow-up on alternate-desktop auth and navigation bootstrap rescue.
 
 ## Notes
 

@@ -24,8 +24,8 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 10.1: Hidden runtime after manual login** - (INSERTED) completed 2026-03-28; explicit visible-auth and hidden-runtime paths now exist, plus a canonical hidden-runtime validation probe
 - [x] **Phase 10.2: Hidden runtime reliability review and alternative browser runtime decision** - (INSERTED) completed 2026-03-28; control-plane truth is explicit, hidden-runtime evidence is recorded, and Phase 11 is now blocked by an explicit runtime decision
 - [x] **Phase 10.3: Alternative non-visible native browser runtime design** - (INSERTED) completed 2026-03-28; alternate desktop runtime foundation and control-plane integration landed, but no worker passed the bounded live proof
-- [ ] **Phase 10.4: Alternate desktop auth and bootstrap stabilization** - (INSERTED) urgent follow-up for the live alternate-desktop tails: `dad` auth recovery, `wife` bootstrap confirmation, and at least one worker reaching `phase11Ready=true`
-- [ ] **Phase 11: Rollout smoke confidence** - blocked pending Phase 10.4; rollout smoke must not proceed until the stabilization follow-up gets at least one worker to `phase11Ready=true`
+- [ ] **Phase 10.4: Alternate desktop auth and bootstrap stabilization** - (INSERTED) executed 2026-03-29 with a negative runtime decision: proof now cleanly distinguishes `dad` auth loss from `wife`/`shared-1` navigation bootstrap failure, but no worker reached `phase11Ready=true`
+- [ ] **Phase 11: Rollout smoke confidence** - blocked after Phase 10.4; rollout smoke must not proceed until a new alternate-desktop follow-up produces at least one `phase11Ready=true` worker
 
 ## Phase Details
 
@@ -57,16 +57,16 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 **Depends on:** Phase 10.3
 **Plans:** 3 plans
 
-**Current status:** Planned on 2026-03-29. Wave 1 hardens bootstrap/control-plane truth, Wave 2 stabilizes auth and `Temporary Chat` bootstrap, and Wave 3 runs the bounded proof plus unblock decision for Phase 11.
+**Current status:** Executed on 2026-03-29. Wave 1 separated bootstrap truth from relay truth, Wave 2 added composer-gated bootstrap plus validation-pending admin semantics, and Wave 3 recorded a negative unblock decision: `dad -> auth_required@auth_check`, `wife -> bootstrap_navigation_failed@navigation`, `shared-1 -> bootstrap_navigation_failed@navigation`.
 **Success Criteria** (what must be TRUE):
   1. At least one alternate-desktop worker completes visible auth or uses an already-valid profile, returns to non-visible runtime, and remains routable without routine visible browser windows.
   2. Fresh-chat bootstrap on the selected runtime survives the current `Temporary Chat` confirmation and composer-unlock path well enough for at least one worker to record `phase11Ready=true`.
   3. Control-plane and operator evidence distinguish auth recovery failure from bootstrap drift clearly enough that Phase 11 can resume or stay blocked on written proof instead of guesswork.
 
 Plans:
-- [ ] `10.4-01-PLAN.md` - bootstrap truth, worker diagnostics, and control-plane evidence separation
-- [ ] `10.4-02-PLAN.md` - alternate-desktop auth and `Temporary Chat` bootstrap stabilization
-- [ ] `10.4-03-PLAN.md` - bounded proof, operator docs, and explicit Phase 11 unblock decision
+- [x] `10.4-01-PLAN.md` - bootstrap truth, worker diagnostics, and control-plane evidence separation
+- [x] `10.4-02-PLAN.md` - alternate-desktop auth and `Temporary Chat` bootstrap stabilization
+- [x] `10.4-03-PLAN.md` - bounded proof, operator docs, and explicit Phase 11 unblock decision
 
 ### Phase 10.3: Alternative non-visible native browser runtime design (INSERTED)
 
@@ -137,7 +137,7 @@ Plans:
   1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
   2. The latest smoke result is visible in operator surfaces or logs without digging through raw process output.
   3. The rollout confidence path is documented clearly enough that it can be rerun whenever ChatGPT UI drift is suspected.
-**Current status:** Blocked after Phase 10.3. Rollout confidence resumes only after Phase 10.4 gets at least one worker to `phase11Ready=true`.
+**Current status:** Blocked after Phase 10.4. Rollout confidence resumes only after a new alternate-desktop follow-up gets at least one worker to `phase11Ready=true`.
 
 ## Progress
 
@@ -151,16 +151,16 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 11
 | 10.1 Hidden runtime after manual login | HIDE-01, HIDE-02, HIDE-03 | Complete | 2026-03-28 |
 | 10.2 Hidden runtime reliability review and alternative browser runtime decision | RREV-01, RREV-02, RREV-03 | Complete | 2026-03-28 |
 | 10.3 Alternative non-visible native browser runtime design | NVRT-01, NVRT-02, NVRT-03 | Complete | 2026-03-28 |
-| 10.4 Alternate desktop auth and bootstrap stabilization | ADST-01, ADST-02, ADST-03 | Planned | - |
+| 10.4 Alternate desktop auth and bootstrap stabilization | ADST-01, ADST-02, ADST-03 | Partial | 2026-03-29 |
 | 11. Rollout smoke confidence | CONF-01, CONF-02 | Blocked | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: execute `Phase 10.4` before `Phase 11`
-- Carry-forward debt from `v1.1`: current ChatGPT `Temporary Chat`/model-picker live recheck is now joined by a harder blocker: the current non-visible runtime still has not produced `phase11Ready=true`
+- Current next action: insert a new urgent follow-up before `Phase 11`
+- Carry-forward debt from `v1.1`: current ChatGPT `Temporary Chat`/model-picker live recheck is now joined by a harder blocker: the selected non-visible runtime still has not produced `phase11Ready=true`
 
 ## Next Up
 
-- `$gsd-execute-phase 10.4`
+- `$gsd-insert-phase 10.5 "Alternate desktop navigation rescue and auth renewal"`
 - then return to `Phase 11` only after the follow-up proves `phase11Ready=true`

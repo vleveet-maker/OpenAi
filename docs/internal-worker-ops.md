@@ -103,7 +103,14 @@ This document is for the household operator only. Worker browsers stay internal-
 - `test-host-worker-relay.ps1` is a Phase 10 drift hardening probe for maintainers. Use it to isolate a specific host-native worker and verify current-ui relay behavior; do not treat it as the final operator smoke flow.
 - `test-alternate-desktop-runtime.ps1` is the canonical alternate-desktop validation path. Use it after `Complete login -> non-visible runtime`.
 - Phase 11 remains blocked until `test-alternate-desktop-runtime.ps1` reports `phase11Ready=true` on at least one worker.
-- The current Phase 10.3 live result is still negative for rollout confidence: `dad` returned `bootstrap_auth_required`, `wife` returned `temporary_confirmation_not_found`, and `shared-1` timed out before a successful isolated proof completed.
+- Current target split for the bounded proof is:
+  - `wife`: primary bootstrap target
+  - `dad`: auth-recovery target
+  - `shared-1`: proof-noise cleanup target
+- The current Phase 10.4 live result is still negative for rollout confidence:
+  - `dad` returned `proofFailureClass=auth_required`, `bootstrapFailureCode=bootstrap_auth_required`, `bootstrapStep=auth_check`
+  - `wife` returned `proofFailureClass=bootstrap_failed`, `bootstrapFailureCode=bootstrap_navigation_failed`, `bootstrapStep=navigation`
+  - `shared-1` returned `proofFailureClass=bootstrap_failed`, `bootstrapFailureCode=bootstrap_navigation_failed`, `bootstrapStep=navigation`
 
 ## Smoke Checklist
 
