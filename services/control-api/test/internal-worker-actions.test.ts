@@ -326,6 +326,7 @@ describe("internal worker runtime validation", () => {
       .expect(201);
 
     expect(response.body.action).toBe("validation_session_requested");
+    expect(response.body.sessionId).toBe(response.body.session.session.sessionId);
     expect(response.body.session.session.workerId).toBe("dad");
     expect(response.body.session.session.state).toBe("active");
     expect(response.body.session.session.requestedForLabel).toBe("Validation session");

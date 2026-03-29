@@ -153,7 +153,18 @@ try {
   $sessionResponse = Invoke-JsonRequest -Method "POST" -Url "$InternalBaseUrl/internal/workers/$WorkerId/validation-session" -Headers $internalHeaders -Body @{
     requestedForLabel = $SessionLabel
   }
-  $sessionId = $sessionResponse.session.sessionId
+  $sessionId =
+    if ($sessionResponse.sessionId) {
+      $sessionResponse.sessionId
+    } elseif ($sessionResponse.session -and $sessionResponse.session.session) {
+      $sessionResponse.session.session.sessionId
+    } else {
+      $null
+    }
+
+  if ([string]::IsNullOrWhiteSpace($sessionId)) {
+    throw "Validation session did not return a sessionId."
+  }
 
   $null = Wait-Until -Description "validation session activation on the target worker" -Condition {
     $session = Invoke-JsonRequest -Method "GET" -Url "$PublicBaseUrl/api/sessions/$sessionId"

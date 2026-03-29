@@ -408,6 +408,7 @@ export function createInternalWorkerActionsRouter(
 
     response.status(201).json({
       action: "validation_session_requested",
+      sessionId: session.session.sessionId,
       session
     });
   });
