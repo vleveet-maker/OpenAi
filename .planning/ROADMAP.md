@@ -114,7 +114,7 @@ Plans:
 **Depends on:** Phase 10.5.1
 **Plans:** 3 plans
 
-**Current status:** Planned on 2026-03-29. This urgent follow-up exists because Phase 10.5.1 ended with `wife` failing `bootstrap_navigation_failed @ navigation` twice in a row, `shared-1` matching the same tail, and `dad` still sitting in `bootstrap_auth_required`.
+**Current status:** Planned on 2026-03-29. This urgent follow-up exists because Phase 10.5.1 ended with `wife` failing `bootstrap_navigation_failed @ navigation` twice in a row, `shared-1` matching the same tail, and `dad` still sitting in `bootstrap_auth_required`. The rescue now also includes one temporary fresh-profile diagnostic branch if durable profiles remain suspicious after bounded rescue.
 **Success Criteria** (what must be TRUE):
   1. At least one non-auth-blocked alternate-desktop worker (`wife` or `shared-1`) can exit the current `bootstrap_navigation_failed @ navigation` tail through a bounded rescue ladder instead of immediately failing at navigation.
   2. `dad` can move through visible auth renewal and return to alternate-desktop validation through internal admin and control-plane routes, not only via manual PowerShell recovery.
