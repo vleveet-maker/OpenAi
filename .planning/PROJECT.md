@@ -43,6 +43,8 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - [x] Relay and bootstrap selector maintenance is now centralized and live-verified against the current localized ChatGPT UI on two logged-in household workers.
 - [x] Host-native workers now expose explicit `visible_auth` and `hidden_runtime` modes, operator transition controls, and a canonical hidden-runtime validation probe.
 - [x] Runtime review now distinguishes process reachability from ChatGPT usability and confirms that the current hidden runtime choices must not be treated as rollout-ready steady-state browser paths.
+- [x] Alternate-desktop validation is now available from internal admin, and `wife` has produced the first proof-backed non-visible success: `Temporary Chat -> GPT-5.4 Thinking -> smoke-ok`.
+- [x] `dad` still carries the auth-renewal tail and `shared-1` still carries assignment-timeout proof noise, so the pool is not yet fully interchangeable even though Phase 11 can resume from `wife`.
 
 ## Current Milestone: v1.2 Rollout Stability
 
@@ -54,8 +56,9 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Finish the last `dad` live proof only after the hidden-runtime transition is in place for the household path.
 - Replace the rejected non-visible runtime assumptions with a same-session alternate-desktop native runtime candidate and prove or reject it explicitly before rollout smoke resumes.
 - Add a repeatable rollout smoke path so the operator can confirm readiness before the family starts using the pool again.
+- Use `wife` as the first canonical proof worker for rollout smoke while carrying `dad` auth renewal and `shared-1` assignment cleanup forward as explicit debt.
 
-**Current runtime gate:** Phase 10.2 ended with `block_phase_11_pending_new_runtime_design`. Phase 10.3 now plans a same-session alternate-desktop replacement runtime; rollout-smoke work cannot continue until that runtime is implemented and accepted or rejected explicitly.
+**Current runtime gate:** The runtime gate is now open from `wife`. Phase 10.5 produced the first proof-backed alternate-desktop success, so rollout-smoke work can resume while `dad` and `shared-1` remain explicit follow-up debt.
 
 ## Out of Scope
 

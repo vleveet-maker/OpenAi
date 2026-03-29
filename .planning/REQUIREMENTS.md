@@ -43,9 +43,9 @@
 
 ### Alternate Desktop Navigation Rescue And Auth Renewal
 
-- [ ] **ADNR-01**: At least one non-auth-blocked alternate-desktop worker can recover from the current `bootstrap_navigation_failed` tail and reach a usable fresh-chat bootstrap path without reopening routine visible browser windows
+- [x] **ADNR-01**: At least one non-auth-blocked alternate-desktop worker can recover from the current `bootstrap_navigation_failed` tail and reach a usable fresh-chat bootstrap path without reopening routine visible browser windows
 - [ ] **ADNR-02**: `dad` can be renewed through visible auth and revalidated in `alternate_desktop` through an explicit control-plane flow instead of staying stuck as `bootstrap_auth_required`
-- [ ] **ADNR-03**: Phase 10.5 ends with an evidence-backed worker-by-worker decision that either yields at least one `phase11Ready=true` worker or records why the selected runtime still cannot unblock `Phase 11`
+- [x] **ADNR-03**: Phase 10.5 ends with an evidence-backed worker-by-worker decision that either yields at least one `phase11Ready=true` worker or records why the selected runtime still cannot unblock `Phase 11`
 
 ### Rollout Confidence
 
@@ -93,9 +93,9 @@
 | ADST-01 | Phase 10.4 | Partial |
 | ADST-02 | Phase 10.4 | Pending |
 | ADST-03 | Phase 10.4 | Complete |
-| ADNR-01 | Phase 10.5 | Pending |
-| ADNR-02 | Phase 10.5 | Pending |
-| ADNR-03 | Phase 10.5 | Pending |
+| ADNR-01 | Phase 10.5 | Complete |
+| ADNR-02 | Phase 10.5 | Partial |
+| ADNR-03 | Phase 10.5 | Complete |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
@@ -106,4 +106,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-29 after executing Phase 10.4 Alternate desktop auth and bootstrap stabilization*
+*Last updated: 2026-03-29 after executing Phase 10.5 Alternate desktop navigation rescue and auth renewal*

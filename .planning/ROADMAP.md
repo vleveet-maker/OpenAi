@@ -25,8 +25,8 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 10.2: Hidden runtime reliability review and alternative browser runtime decision** - (INSERTED) completed 2026-03-28; control-plane truth is explicit, hidden-runtime evidence is recorded, and Phase 11 is now blocked by an explicit runtime decision
 - [x] **Phase 10.3: Alternative non-visible native browser runtime design** - (INSERTED) completed 2026-03-28; alternate desktop runtime foundation and control-plane integration landed, but no worker passed the bounded live proof
 - [ ] **Phase 10.4: Alternate desktop auth and bootstrap stabilization** - (INSERTED) executed 2026-03-29 with a negative runtime decision: proof now cleanly distinguishes `dad` auth loss from `wife`/`shared-1` navigation bootstrap failure, but no worker reached `phase11Ready=true`
-- [ ] **Phase 10.5: Alternate desktop navigation rescue and auth renewal** - (INSERTED) planned 2026-03-29; rescue `alternate_desktop` navigation on `wife/shared-1`, wire explicit non-visible validation into the control plane, and renew `dad` auth through the same runtime
-- [ ] **Phase 11: Rollout smoke confidence** - blocked after Phase 10.5; rollout smoke must not proceed until the new alternate-desktop follow-up produces at least one `phase11Ready=true` worker
+- [ ] **Phase 10.5: Alternate desktop navigation rescue and auth renewal** - (INSERTED) executed 2026-03-29; `wife` produced the first proof-backed `phase11Ready=true` path in alternate desktop, while `dad` auth renewal and `shared-1` assignment-timeout cleanup remain explicit debt
+- [ ] **Phase 11: Rollout smoke confidence** - unblocked after Phase 10.5; `wife` is now the canonical proof worker for rollout-smoke planning and execution
 
 ## Phase Details
 
@@ -76,15 +76,16 @@ Plans:
 **Depends on:** Phase 10.4
 **Plans:** 3 plans
 
+**Current status:** Executed on 2026-03-29. Wave 1 landed bounded navigation rescue with branch-level evidence, Wave 2 moved non-visible validation into host-controller/control-api/internal admin, and Wave 3 produced the first proof-backed passing worker on `wife`. The phase remains partial overall because `dad` still needs auth renewal and `shared-1` still has assignment-timeout proof noise, but Phase 11 is now unblocked from `wife`.
 **Success Criteria** (what must be TRUE):
   1. At least one non-auth-blocked alternate-desktop worker can escape the current `bootstrap_navigation_failed` tail and reach usable fresh-chat bootstrap or full `phase11Ready=true`.
   2. `dad` can move through visible auth, return to `alternate_desktop`, and be revalidated through a control-plane path instead of staying only as `bootstrap_auth_required`.
   3. Phase 10.5 ends with a worker-by-worker written decision that either names a `phase11Ready=true` worker or keeps Phase 11 blocked with an explicit remaining tail.
 
 Plans:
-- [ ] `10.5-01-PLAN.md` - alternate-desktop navigation rescue ladder and worker-agent evidence hardening
-- [ ] `10.5-02-PLAN.md` - host-controller/control-api validation wiring and dad auth-renewal flow
-- [ ] `10.5-03-PLAN.md` - bounded rescue proof, operator docs, and final Phase 11 unblock decision
+- [x] `10.5-01-PLAN.md` - alternate-desktop navigation rescue ladder and worker-agent evidence hardening
+- [x] `10.5-02-PLAN.md` - host-controller/control-api validation wiring and dad auth-renewal flow
+- [x] `10.5-03-PLAN.md` - bounded rescue proof, operator docs, and final Phase 11 unblock decision
 
 ### Phase 10.3: Alternative non-visible native browser runtime design (INSERTED)
 
@@ -155,7 +156,7 @@ Plans:
   1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
   2. The latest smoke result is visible in operator surfaces or logs without digging through raw process output.
   3. The rollout confidence path is documented clearly enough that it can be rerun whenever ChatGPT UI drift is suspected.
-**Current status:** Blocked after Phase 10.5 insertion. Rollout confidence resumes only after the new alternate-desktop follow-up gets at least one worker to `phase11Ready=true`.
+**Current status:** Unblocked after Phase 10.5. `wife` is now the named passing worker and should be used as the canonical rollout-confidence target while `dad` and `shared-1` continue as explicit stabilization debt.
 
 ## Progress
 
@@ -170,16 +171,16 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 | 10.2 Hidden runtime reliability review and alternative browser runtime decision | RREV-01, RREV-02, RREV-03 | Complete | 2026-03-28 |
 | 10.3 Alternative non-visible native browser runtime design | NVRT-01, NVRT-02, NVRT-03 | Complete | 2026-03-28 |
 | 10.4 Alternate desktop auth and bootstrap stabilization | ADST-01, ADST-02, ADST-03 | Partial | 2026-03-29 |
-| 10.5 Alternate desktop navigation rescue and auth renewal | ADNR-01, ADNR-02, ADNR-03 | Planned | - |
-| 11. Rollout smoke confidence | CONF-01, CONF-02 | Blocked | - |
+| 10.5 Alternate desktop navigation rescue and auth renewal | ADNR-01, ADNR-02, ADNR-03 | Partial | 2026-03-29 |
+| 11. Rollout smoke confidence | CONF-01, CONF-02 | Ready to plan | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: execute `Phase 10.5`
-- Carry-forward debt from `v1.1`: current ChatGPT `Temporary Chat`/model-picker live recheck is now joined by a harder blocker: the selected non-visible runtime still has not produced `phase11Ready=true`
+- Current next action: plan `Phase 11`
+- Carry-forward debt from `Phase 10.5`: `wife` is rollout-ready, but `dad` still needs auth renewal and `shared-1` still carries assignment-timeout proof noise
 
 ## Next Up
 
-- `$gsd-execute-phase 10.5`
-- then return to `Phase 11` only after the follow-up proves `phase11Ready=true`
+- `$gsd-plan-phase 11`
+- then use `wife` as the canonical worker for rollout smoke while carrying `dad` and `shared-1` debt explicitly

@@ -19,6 +19,8 @@ describe("edge nginx template", () => {
     expect(template).toContain("listen 8080;");
     expect(template).toContain("listen 8081;");
     expect(template).toContain("location ^~ /internal/");
+    expect(template).toContain("proxy_read_timeout 300s;");
+    expect(template).toContain("proxy_send_timeout 300s;");
     expect(template).toContain('proxy_set_header x-internal-admin-token "${INTERNAL_ADMIN_TOKEN}";');
     expect(template).toContain("proxy_pass http://control_api_upstream;");
     expect(template).toContain("proxy_pass http://session_client_upstream;");

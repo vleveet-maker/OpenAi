@@ -29,7 +29,8 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 4. Use `Start pool` when you need the proxied native worker pool in alternate desktop non-visible runtime.
 5. If a worker needs first login or reauth, use `Start visible login` or `Start visible reauth` for that worker.
 6. Finish the manual step in the visible browser, then press `Complete login -> non-visible runtime`.
-7. Use `Stop pool` when the household browsers are no longer needed.
+7. Press `Validate non-visible runtime` and wait for the proof result before treating that worker as rollout-ready.
+8. Use `Stop pool` when the household browsers are no longer needed.
 
 ## Pool Status Meanings
 
@@ -43,17 +44,24 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 ## Validation Gate
 
 - This setup is not considered live-complete until at least one worker has been manually logged in visibly, switched back to alternate desktop runtime, and passed relay smoke without any visible desktop browser.
-- The canonical maintainer probe is:
-  `powershell -ExecutionPolicy Bypass -File .\infra\host-worker\test-alternate-desktop-runtime.ps1 -WorkerId dad`
-- Phase 11 remains blocked until the alternate-desktop probe records `phase11Ready=true`.
+- The operator-facing validation path is now:
+  - `Start visible login` or `Start visible reauth`
+  - complete the manual ChatGPT step
+  - `Complete login -> non-visible runtime`
+  - `Validate non-visible runtime`
+- The bounded rescue/proof order is now:
+  - `wife` first
+  - `dad` second
+  - `shared-1` third
+- Phase 11 is now unblocked from `wife`, which produced the first proof-backed alternate-desktop success.
 - Every probe appends a row to `infra/data/host-worker-logs/runtime-matrix.jsonl` so alternate-desktop viability is evidence-backed instead of anecdotal.
 
-## Current Phase 10.4 Result
+## Current Phase 10.5 Result
 
-- `wife` is now the primary bootstrap target. The latest bounded proof keeps it reachable in `alternate_desktop`, but bootstrap currently fails at `navigation` with `bootstrap_navigation_failed`.
-- `dad` is now the auth-recovery target. The latest bounded proof shows a clean `auth_check` classification of `bootstrap_auth_required`.
-- `shared-1` is now the proof-noise cleanup target. Its latest bounded proof is reachable, but still fails at `navigation` with `bootstrap_navigation_failed`.
-- Because no worker produced `phase11Ready=true`, Phase 11 remains blocked and the next required step is another focused follow-up on alternate-desktop auth and navigation bootstrap rescue.
+- `wife` is now the canonical passing worker. The latest live proof reached `Temporary Chat`, selected `GPT-5.4 Thinking`, sent a real prompt, and returned `smoke-ok` in `alternate_desktop`.
+- `dad` remains the auth-recovery target. The latest control-plane validation still returns `bootstrap_auth_required` at `auth_check`.
+- `shared-1` remains the cleanup target. It stays reachable in `alternate_desktop`, but its latest proof still ends as `assignment_timeout`.
+- Phase 11 can now resume with `wife` as the named proof worker, but `dad` and `shared-1` stay as explicit carry-forward stabilization debt.
 
 ## Notes
 

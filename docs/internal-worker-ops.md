@@ -64,6 +64,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - Wait for the authenticated ChatGPT page to stabilize.
 - Confirm that a clean `Temporary Chat` can be opened and that the preferred reasoning model is still available.
 - Return to `/internal/admin` and press `Complete login -> non-visible runtime` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
+- For host-native workers, then press `Validate non-visible runtime` and wait for the result before trusting that worker for rollout confidence.
 - Confirm the worker returns to `ready`.
 - Treat the durable browser profile as the persistence layer; do not copy credentials into sidecar files or environment variables.
 
@@ -74,6 +75,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - When a Docker-backed worker reaches `reauth_required`, press `Start reauth` on `/internal/admin`.
 - Complete the login, CAPTCHA, or challenge step manually in the visible browser or browser access viewer.
 - Return to `/internal/admin` and press `Complete login -> non-visible runtime` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
+- For host-native workers, then press `Validate non-visible runtime`.
 - Confirm the worker returns to `ready`.
 - If reauth fails repeatedly, leave the worker in `reauth_required` or `disconnected` instead of pretending it is safe to route sessions there.
 - If a worker logs in successfully but fresh chat bootstrap still fails, treat that as a selector/runtime issue rather than a healthy ready state.
@@ -102,15 +104,19 @@ This document is for the household operator only. Worker browsers stay internal-
 - Phase 8 selector defaults live behind `WORKER_PREFERRED_REASONING_MODEL_LABELS`; if you need to pin a different latest reasoning model, update that env var instead of hardcoding a different label in the UI.
 - `test-host-worker-relay.ps1` is a Phase 10 drift hardening probe for maintainers. Use it to isolate a specific host-native worker and verify current-ui relay behavior; do not treat it as the final operator smoke flow.
 - `test-alternate-desktop-runtime.ps1` is the canonical alternate-desktop validation path. Use it after `Complete login -> non-visible runtime`.
-- Phase 11 remains blocked until `test-alternate-desktop-runtime.ps1` reports `phase11Ready=true` on at least one worker.
+- The bounded rescue order is now:
+  - `wife`
+  - `dad`
+  - `shared-1`
+- Phase 11 is no longer globally blocked. `wife` is the first passing worker and is now the canonical rollout-confidence target.
 - Current target split for the bounded proof is:
-  - `wife`: primary bootstrap target
+  - `wife`: passing rollout-confidence target
   - `dad`: auth-recovery target
   - `shared-1`: proof-noise cleanup target
-- The current Phase 10.4 live result is still negative for rollout confidence:
-  - `dad` returned `proofFailureClass=auth_required`, `bootstrapFailureCode=bootstrap_auth_required`, `bootstrapStep=auth_check`
-  - `wife` returned `proofFailureClass=bootstrap_failed`, `bootstrapFailureCode=bootstrap_navigation_failed`, `bootstrapStep=navigation`
-  - `shared-1` returned `proofFailureClass=bootstrap_failed`, `bootstrapFailureCode=bootstrap_navigation_failed`, `bootstrapStep=navigation`
+- The current Phase 10.5 live result is mixed but usable:
+  - `wife` reached usable `alternate_desktop` proof and returned `smoke-ok`
+  - `dad` still returns `proofFailureClass=auth_required`, `bootstrapFailureCode=bootstrap_auth_required`, `bootstrapStep=auth_check`
+  - `shared-1` still returns `proofFailureClass=assignment_timeout`
 
 ## Smoke Checklist
 
