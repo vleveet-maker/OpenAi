@@ -49,9 +49,9 @@
 
 ### Repeatable Alternate Desktop Stability Gate
 
-- [ ] **RSG-01**: A non-visible validation run can target one named worker deterministically without depending on global session assignment luck or producing `assignment_timeout` false negatives
+- [x] **RSG-01**: A non-visible validation run can target one named worker deterministically without depending on global session assignment luck or producing `assignment_timeout` false negatives
 - [ ] **RSG-02**: At least one alternate-desktop worker can produce repeatable proof, defined for `v1.2` as two consecutive successful non-visible validations with a real relay pass and a reset on any auth/bootstrap/relay failure
-- [ ] **RSG-03**: Internal operator surfaces and milestone state expose whether a worker is still provisional or has reached the repeatable stability gate, and `Phase 11` only unblocks from that repeated proof
+- [x] **RSG-03**: Internal operator surfaces and milestone state expose whether a worker is still provisional or has reached the repeatable stability gate, and `Phase 11` only unblocks from that repeated proof
 
 ### Rollout Confidence
 
@@ -102,9 +102,9 @@
 | ADNR-01 | Phase 10.5 | Complete |
 | ADNR-02 | Phase 10.5 | Partial |
 | ADNR-03 | Phase 10.5 | Complete |
-| RSG-01 | Phase 10.5.1 | Pending |
+| RSG-01 | Phase 10.5.1 | Complete |
 | RSG-02 | Phase 10.5.1 | Pending |
-| RSG-03 | Phase 10.5.1 | Pending |
+| RSG-03 | Phase 10.5.1 | Complete |
 | CONF-01 | Phase 11 | Pending |
 | CONF-02 | Phase 11 | Pending |
 
@@ -115,4 +115,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-29 while planning Phase 10.5.1 Repeatable alternate desktop stability gate*
+*Last updated: 2026-03-29 after executing Phase 10.5.1 Repeatable alternate desktop stability gate*

@@ -65,6 +65,10 @@ This document is for the household operator only. Worker browsers stay internal-
 - Confirm that a clean `Temporary Chat` can be opened and that the preferred reasoning model is still available.
 - Return to `/internal/admin` and press `Complete login -> non-visible runtime` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
 - For host-native workers, then press `Validate non-visible runtime` and wait for the result before trusting that worker for rollout confidence.
+- `Validate non-visible runtime` now feeds the repeatability gate:
+  - first successful pass -> `provisional (1/2)`
+  - second consecutive successful pass -> `stable (2/2)`
+  - any failure -> reset to `unstable (0/2)`
 - Confirm the worker returns to `ready`.
 - Treat the durable browser profile as the persistence layer; do not copy credentials into sidecar files or environment variables.
 
@@ -108,15 +112,15 @@ This document is for the household operator only. Worker browsers stay internal-
   - `wife`
   - `dad`
   - `shared-1`
-- Phase 11 is no longer globally blocked. `wife` is the first passing worker and is now the canonical rollout-confidence target.
+- Phase 11 is blocked again until at least one worker reaches `Repeatability: stable (2/2)`.
 - Current target split for the bounded proof is:
-  - `wife`: passing rollout-confidence target
+  - `wife`: primary repeatability target
   - `dad`: auth-recovery target
-  - `shared-1`: proof-noise cleanup target
-- The current Phase 10.5 live result is mixed but usable:
-  - `wife` reached usable `alternate_desktop` proof and returned `smoke-ok`
+  - `shared-1`: secondary navigation/bootstrap target
+- The current Phase 10.5.1 live result is negative but precise:
+  - `wife` failed repeated proof twice with `bootstrap_navigation_failed @ navigation`
   - `dad` still returns `proofFailureClass=auth_required`, `bootstrapFailureCode=bootstrap_auth_required`, `bootstrapStep=auth_check`
-  - `shared-1` still returns `proofFailureClass=assignment_timeout`
+  - `shared-1` now returns `proofFailureClass=bootstrap_failed`, `bootstrapFailureCode=bootstrap_navigation_failed`, `bootstrapStep=navigation`
 
 ## Smoke Checklist
 

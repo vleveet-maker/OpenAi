@@ -43,25 +43,33 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 
 ## Validation Gate
 
-- This setup is not considered live-complete until at least one worker has been manually logged in visibly, switched back to alternate desktop runtime, and passed relay smoke without any visible desktop browser.
+- This setup is not considered live-complete until at least one worker has been manually logged in visibly, switched back to alternate desktop runtime, and then reached a repeatability gate of `2/2` consecutive successful non-visible validations with a real relay pass.
 - The operator-facing validation path is now:
   - `Start visible login` or `Start visible reauth`
   - complete the manual ChatGPT step
   - `Complete login -> non-visible runtime`
   - `Validate non-visible runtime`
+- Repeatability meanings are now:
+  - `unstable (0/2)`: not rollout-ready
+  - `provisional (1/2)`: one good pass exists, but it is not yet trusted
+  - `stable (2/2)`: repeated proof is good enough to reopen rollout smoke
+- Any auth, bootstrap, relay, or worker-assignment failure resets the gate back to `unstable`.
 - The bounded rescue/proof order is now:
   - `wife` first
   - `dad` second
   - `shared-1` third
-- Phase 11 is now unblocked from `wife`, which produced the first proof-backed alternate-desktop success.
+- Phase 11 is blocked again. The earlier one-off `wife` success from Phase 10.5 is now historical evidence only, not a rollout gate by itself.
 - Every probe appends a row to `infra/data/host-worker-logs/runtime-matrix.jsonl` so alternate-desktop viability is evidence-backed instead of anecdotal.
 
-## Current Phase 10.5 Result
+## Current Phase 10.5.1 Result
 
-- `wife` is now the canonical passing worker. The latest live proof reached `Temporary Chat`, selected `GPT-5.4 Thinking`, sent a real prompt, and returned `smoke-ok` in `alternate_desktop`.
-- `dad` remains the auth-recovery target. The latest control-plane validation still returns `bootstrap_auth_required` at `auth_check`.
-- `shared-1` remains the cleanup target. It stays reachable in `alternate_desktop`, but its latest proof still ends as `assignment_timeout`.
-- Phase 11 can now resume with `wife` as the named proof worker, but `dad` and `shared-1` stay as explicit carry-forward stabilization debt.
+- `wife` is still the strongest candidate, but the repeatability gate failed:
+  - pass 1 after deterministic worker-pinned proof -> `bootstrap_navigation_failed @ navigation`
+  - controlled alternate-desktop restart
+  - pass 2 -> `bootstrap_navigation_failed @ navigation`
+- `dad` remains the auth-recovery target. The latest control-plane validation returns `bootstrap_auth_required @ auth_check`.
+- `shared-1` now shares the same navigation bootstrap tail as `wife`: `bootstrap_navigation_failed @ navigation`.
+- Phase 11 stays blocked until a follow-up stabilization phase produces at least one worker with `Repeatability: stable (2/2)`.
 
 ## Notes
 

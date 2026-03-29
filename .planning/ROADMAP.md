@@ -26,8 +26,8 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 10.3: Alternative non-visible native browser runtime design** - (INSERTED) completed 2026-03-28; alternate desktop runtime foundation and control-plane integration landed, but no worker passed the bounded live proof
 - [ ] **Phase 10.4: Alternate desktop auth and bootstrap stabilization** - (INSERTED) executed 2026-03-29 with a negative runtime decision: proof now cleanly distinguishes `dad` auth loss from `wife`/`shared-1` navigation bootstrap failure, but no worker reached `phase11Ready=true`
 - [ ] **Phase 10.5: Alternate desktop navigation rescue and auth renewal** - (INSERTED) executed 2026-03-29; `wife` produced the first proof-backed `phase11Ready=true` path in alternate desktop, while `dad` auth renewal and `shared-1` assignment-timeout cleanup remain explicit debt
-- [ ] **Phase 10.5.1: Repeatable alternate desktop stability gate** - (INSERTED) planned 2026-03-29; repeatability must be proven before Phase 11 resumes because the latest live revalidation regressed all three workers away from a stable passing state
-- [ ] **Phase 11: Rollout smoke confidence** - blocked again pending Phase 10.5.1; rollout smoke should resume only after at least one worker proves repeatable non-visible stability
+- [ ] **Phase 10.5.1: Repeatable alternate desktop stability gate** - (INSERTED) executed 2026-03-29; validation is now worker-pinned and repeatability truth is explicit, but `wife` failed the same navigation bootstrap step twice in a row and no worker reached `stable (2/2)`
+- [ ] **Phase 11: Rollout smoke confidence** - blocked after the negative 10.5.1 repeatability decision; rollout smoke should resume only after a new stabilization follow-up produces at least one `stable (2/2)` worker
 
 ## Phase Details
 
@@ -77,7 +77,7 @@ Plans:
 **Depends on:** Phase 10.4
 **Plans:** 3 plans
 
-**Current status:** Executed on 2026-03-29. Wave 1 landed bounded navigation rescue with branch-level evidence, Wave 2 moved non-visible validation into host-controller/control-api/internal admin, and Wave 3 produced the first proof-backed passing worker on `wife`. The phase remains partial overall because `dad` still needs auth renewal and `shared-1` still has assignment-timeout proof noise, but Phase 11 is now unblocked from `wife`.
+**Current status:** Executed on 2026-03-29. Wave 1 landed bounded navigation rescue with branch-level evidence, Wave 2 moved non-visible validation into host-controller/control-api/internal admin, and Wave 3 produced the first proof-backed passing worker on `wife`. That one-off success is now historical evidence only: Phase 10.5.1 re-gated rollout because repeatability was not proven.
 **Success Criteria** (what must be TRUE):
   1. At least one non-auth-blocked alternate-desktop worker can escape the current `bootstrap_navigation_failed` tail and reach usable fresh-chat bootstrap or full `phase11Ready=true`.
   2. `dad` can move through visible auth, return to `alternate_desktop`, and be revalidated through a control-plane path instead of staying only as `bootstrap_auth_required`.
@@ -95,16 +95,16 @@ Plans:
 **Depends on:** Phase 10.5
 **Plans:** 3 plans
 
-**Current status:** Planned on 2026-03-29. The latest live revalidation showed `0` repeatably working workers: `dad -> bootstrap_auth_required@auth_check`, `wife -> bootstrap_navigation_failed@navigation`, and `shared-1 -> bootstrap_navigation_failed@navigation`. This phase now sits between the one-off `wife` success from Phase 10.5 and any Phase 11 rollout-smoke work.
+**Current status:** Executed on 2026-03-29 with a negative repeatability decision. Validation is now deterministic and the repeatability gate is visible, but the repeated live proof ended with `wife -> bootstrap_navigation_failed@navigation` twice in a row, `dad -> bootstrap_auth_required@auth_check`, and `shared-1 -> bootstrap_navigation_failed@navigation`.
 **Success Criteria** (what must be TRUE):
   1. Validation and proof can target one named worker deterministically, without assignment-timeout noise from the shared pool.
   2. At least one worker reaches a repeatable gate of two consecutive non-visible validation passes with a real relay success, and that gate resets on failure.
   3. Operator/admin state and milestone artifacts distinguish a one-off passing worker from a repeatably stable worker, so Phase 11 only resumes from repeated proof.
 
 Plans:
-- [ ] `10.5.1-01-PLAN.md` - targeted validation isolation and worker-pinned proof path
-- [ ] `10.5.1-02-PLAN.md` - repeatability gate state, counters, and operator truth
-- [ ] `10.5.1-03-PLAN.md` - bounded repeated proof, docs, and final unblock decision
+- [x] `10.5.1-01-PLAN.md` - targeted validation isolation and worker-pinned proof path
+- [x] `10.5.1-02-PLAN.md` - repeatability gate state, counters, and operator truth
+- [x] `10.5.1-03-PLAN.md` - bounded repeated proof, docs, and final unblock decision
 
 ### Phase 10.3: Alternative non-visible native browser runtime design (INSERTED)
 
@@ -191,16 +191,16 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 | 10.3 Alternative non-visible native browser runtime design | NVRT-01, NVRT-02, NVRT-03 | Complete | 2026-03-28 |
 | 10.4 Alternate desktop auth and bootstrap stabilization | ADST-01, ADST-02, ADST-03 | Partial | 2026-03-29 |
 | 10.5 Alternate desktop navigation rescue and auth renewal | ADNR-01, ADNR-02, ADNR-03 | Partial | 2026-03-29 |
-| 10.5.1 Repeatable alternate desktop stability gate | RSG-01, RSG-02, RSG-03 | Ready to execute | - |
+| 10.5.1 Repeatable alternate desktop stability gate | RSG-01, RSG-02, RSG-03 | Partial | 2026-03-29 |
 | 11. Rollout smoke confidence | CONF-01, CONF-02 | Blocked on 10.5.1 | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: execute `Phase 10.5.1`
-- Carry-forward debt from `Phase 10.5`: `wife` passed once, but repeatability is not yet proven; `dad` still needs auth renewal and `shared-1` still carries assignment/bootstrapping proof noise
+- Current next action: insert a stabilization follow-up after `Phase 10.5.1`
+- Carry-forward debt from `Phase 10.5.1`: `wife` failed repeated proof twice at `bootstrap_navigation_failed@navigation`; `dad` still needs auth renewal; `shared-1` now shares the same navigation bootstrap tail
 
 ## Next Up
 
-- `$gsd-execute-phase 10.5.1`
+- `$gsd-insert-phase 10.5.2 "Alternate desktop repeatability rescue"`
 - then resume `Phase 11` only after at least one worker proves repeatable non-visible stability
