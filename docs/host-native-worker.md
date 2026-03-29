@@ -6,7 +6,7 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 
 - `Start pool` uses the alternate desktop non-visible runtime.
 - `Start visible login` is used only for first login or manual reauthentication.
-- `Complete login -> non-visible runtime` returns the same durable worker profile to routine alternate-desktop operation.
+- `Complete login and validate` returns the same profile to alternate-desktop operation and immediately records a non-visible validation result.
 - Routine household use should run without any visible desktop browser.
 - If the non-visible runtime loses auth after manual login, treat that as runtime architecture review evidence rather than a signal to keep silently retrying.
 
@@ -28,8 +28,8 @@ Use this mode when Docker browser workers are less reliable than native Chromium
    `http://127.0.0.1:8081/internal/admin`
 4. Use `Start pool` when you need the proxied native worker pool in alternate desktop non-visible runtime.
 5. If a worker needs first login or reauth, use `Start visible login` or `Start visible reauth` for that worker.
-6. Finish the manual step in the visible browser, then press `Complete login -> non-visible runtime`.
-7. Press `Validate non-visible runtime` and wait for the proof result before treating that worker as rollout-ready.
+6. Finish the manual step in the visible browser, then press `Complete login and validate`.
+7. Use `Validate non-visible runtime` for later rechecks or repeatability passes after that first complete-and-validate hand-off.
 8. Use `Stop pool` when the household browsers are no longer needed.
 
 ## Pool Status Meanings
@@ -47,8 +47,8 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 - The operator-facing validation path is now:
   - `Start visible login` or `Start visible reauth`
   - complete the manual ChatGPT step
-  - `Complete login -> non-visible runtime`
-  - `Validate non-visible runtime`
+  - `Complete login and validate`
+  - `Validate non-visible runtime` for additional repeatability passes
 - Repeatability meanings are now:
   - `unstable (0/2)`: not rollout-ready
   - `provisional (1/2)`: one good pass exists, but it is not yet trusted
@@ -56,20 +56,23 @@ Use this mode when Docker browser workers are less reliable than native Chromium
 - Any auth, bootstrap, relay, or worker-assignment failure resets the gate back to `unstable`.
 - The bounded rescue/proof order is now:
   - `wife` first
-  - `dad` second
-  - `shared-1` third
+  - `shared-1` second
+  - `dad` third
 - Phase 11 is blocked again. The earlier one-off `wife` success from Phase 10.5 is now historical evidence only, not a rollout gate by itself.
 - Every probe appends a row to `infra/data/host-worker-logs/runtime-matrix.jsonl` so alternate-desktop viability is evidence-backed instead of anecdotal.
 
-## Current Phase 10.5.1 Result
+## Current Phase 10.5.1.1 Result
 
-- `wife` is still the strongest candidate, but the repeatability gate failed:
-  - pass 1 after deterministic worker-pinned proof -> `bootstrap_navigation_failed @ navigation`
-  - controlled alternate-desktop restart
+- `wife` durable profile failed twice in a row after controlled alternate-desktop restarts:
+  - pass 1 -> `bootstrap_navigation_failed @ navigation`
   - pass 2 -> `bootstrap_navigation_failed @ navigation`
+- `wife` fresh-profile diagnostic proved that visible auth is alive:
+  - visible bootstrap reached `Temporary Chat`
+  - preferred model stayed `GPT-5.4 Thinking`
+  - but `Complete login and validate` still returned `bootstrap_navigation_failed @ navigation` in alternate desktop
+- `shared-1` still matches the same durable alternate-desktop navigation tail: `bootstrap_navigation_failed @ navigation`.
 - `dad` remains the auth-recovery target. The latest control-plane validation returns `bootstrap_auth_required @ auth_check`.
-- `shared-1` now shares the same navigation bootstrap tail as `wife`: `bootstrap_navigation_failed @ navigation`.
-- Phase 11 stays blocked until a follow-up stabilization phase produces at least one worker with `Repeatability: stable (2/2)`.
+- Phase 11 stays blocked until a follow-up stabilization phase proves one worker at `Repeatability: stable (2/2)` and fixes the alternate-desktop hand-off/runtime tail rather than only refreshing cookies.
 
 ## Notes
 

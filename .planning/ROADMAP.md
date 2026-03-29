@@ -27,8 +27,8 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [ ] **Phase 10.4: Alternate desktop auth and bootstrap stabilization** - (INSERTED) executed 2026-03-29 with a negative runtime decision: proof now cleanly distinguishes `dad` auth loss from `wife`/`shared-1` navigation bootstrap failure, but no worker reached `phase11Ready=true`
 - [ ] **Phase 10.5: Alternate desktop navigation rescue and auth renewal** - (INSERTED) executed 2026-03-29; `wife` produced the first proof-backed `phase11Ready=true` path in alternate desktop, while `dad` auth renewal and `shared-1` assignment-timeout cleanup remain explicit debt
 - [ ] **Phase 10.5.1: Repeatable alternate desktop stability gate** - (INSERTED) executed 2026-03-29; validation is now worker-pinned and repeatability truth is explicit, but `wife` failed the same navigation bootstrap step twice in a row and no worker reached `stable (2/2)`
-- [ ] **Phase 10.5.1.1: Alternate desktop repeatability rescue** - (INSERTED) planned 2026-03-29; urgent follow-up will try bounded navigation rescue on `wife/shared-1`, route `dad` through explicit auth renewal, and only reopen rollout smoke from a fresh `stable (2/2)` proof
-- [ ] **Phase 11: Rollout smoke confidence** - blocked after the negative 10.5.1 repeatability decision; rollout smoke should resume only after a new stabilization follow-up produces at least one `stable (2/2)` worker
+- [ ] **Phase 10.5.1.1: Alternate desktop repeatability rescue** - (INSERTED) executed 2026-03-29; fresh proof confirmed that visible auth still works on `wife`, but durable and fresh-profile alternate-desktop paths both still fall back to `bootstrap_navigation_failed@navigation`, so Phase 11 remains blocked
+- [ ] **Phase 11: Rollout smoke confidence** - blocked after the negative 10.5.1.1 rescue decision; rollout smoke should resume only after a new follow-up stabilizes or replaces the alternate-desktop hand-off/runtime and produces at least one `stable (2/2)` worker
 
 ## Phase Details
 
@@ -114,16 +114,16 @@ Plans:
 **Depends on:** Phase 10.5.1
 **Plans:** 3 plans
 
-**Current status:** Planned on 2026-03-29. This urgent follow-up exists because Phase 10.5.1 ended with `wife` failing `bootstrap_navigation_failed @ navigation` twice in a row, `shared-1` matching the same tail, and `dad` still sitting in `bootstrap_auth_required`. The rescue now also includes one temporary fresh-profile diagnostic branch if durable profiles remain suspicious after bounded rescue.
+**Current status:** Executed on 2026-03-29 with a negative unblock decision. `wife` durable proof still failed twice at `bootstrap_navigation_failed @ navigation`, `shared-1` matched the same tail, and `dad` remained `bootstrap_auth_required @ auth_check`. One temporary fresh-profile diagnostic on `wife` confirmed that visible auth still works and reaches `Temporary Chat` with `GPT-5.4 Thinking`, but the same profile still failed after the alternate-desktop hand-off.
 **Success Criteria** (what must be TRUE):
   1. At least one non-auth-blocked alternate-desktop worker (`wife` or `shared-1`) can exit the current `bootstrap_navigation_failed @ navigation` tail through a bounded rescue ladder instead of immediately failing at navigation.
   2. `dad` can move through visible auth renewal and return to alternate-desktop validation through internal admin and control-plane routes, not only via manual PowerShell recovery.
   3. The phase ends with a fresh repeated proof that either names one `stable (2/2)` worker or keeps Phase 11 blocked with precise branch-level evidence.
 
 Plans:
-- [ ] `10.5.1.1-01-PLAN.md` - alternate-desktop navigation rescue ladder and bootstrap branch evidence
-- [ ] `10.5.1.1-02-PLAN.md` - dad auth-renewal control-plane path and operator truth
-- [ ] `10.5.1.1-03-PLAN.md` - repeated rescue proof, docs, and final Phase 11 unblock decision
+- [x] `10.5.1.1-01-PLAN.md` - alternate-desktop navigation rescue ladder and bootstrap branch evidence
+- [x] `10.5.1.1-02-PLAN.md` - dad auth-renewal control-plane path and operator truth
+- [x] `10.5.1.1-03-PLAN.md` - repeated rescue proof, docs, and final Phase 11 unblock decision
 
 ### Phase 10.3: Alternative non-visible native browser runtime design (INSERTED)
 
@@ -211,16 +211,16 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 | 10.4 Alternate desktop auth and bootstrap stabilization | ADST-01, ADST-02, ADST-03 | Partial | 2026-03-29 |
 | 10.5 Alternate desktop navigation rescue and auth renewal | ADNR-01, ADNR-02, ADNR-03 | Partial | 2026-03-29 |
 | 10.5.1 Repeatable alternate desktop stability gate | RSG-01, RSG-02, RSG-03 | Partial | 2026-03-29 |
-| 10.5.1.1 Alternate desktop repeatability rescue | ADRR-01, ADNR-02, RSG-02 | Planned | - |
+| 10.5.1.1 Alternate desktop repeatability rescue | ADRR-01, ADNR-02, RSG-02 | Partial | 2026-03-29 |
 | 11. Rollout smoke confidence | CONF-01, CONF-02 | Blocked on 10.5.1.1 | - |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: execute `Phase 10.5.1.1`
-- Carry-forward debt from `Phase 10.5.1`: `wife` failed repeated proof twice at `bootstrap_navigation_failed@navigation`; `dad` still needs auth renewal; `shared-1` now shares the same navigation bootstrap tail
+- Current next action: insert the follow-up after `Phase 10.5.1.1` before any `Phase 11` work
+- Carry-forward debt from `Phase 10.5.1.1`: `wife` visible auth works but alternate desktop still fails after hand-off; `shared-1` still shares the navigation bootstrap tail; `dad` still needs auth renewal
 
 ## Next Up
 
-- `$gsd-execute-phase 10.5.1.1`
+- `$gsd-insert-phase 10.5.1.2 "Alternate desktop handoff stabilization or runtime replacement"`
 - then resume `Phase 11` only after at least one worker proves repeatable non-visible stability

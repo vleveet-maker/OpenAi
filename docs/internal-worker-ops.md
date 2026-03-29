@@ -63,8 +63,8 @@ This document is for the household operator only. Worker browsers stay internal-
 - Complete ChatGPT login manually inside the visible browser or protected viewer, depending on worker runtime.
 - Wait for the authenticated ChatGPT page to stabilize.
 - Confirm that a clean `Temporary Chat` can be opened and that the preferred reasoning model is still available.
-- Return to `/internal/admin` and press `Complete login -> non-visible runtime` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
-- For host-native workers, then press `Validate non-visible runtime` and wait for the result before trusting that worker for rollout confidence.
+- Return to `/internal/admin` and press `Complete login and validate` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
+- For host-native workers, use `Validate non-visible runtime` later when you want another repeatability pass without reopening visible auth.
 - `Validate non-visible runtime` now feeds the repeatability gate:
   - first successful pass -> `provisional (1/2)`
   - second consecutive successful pass -> `stable (2/2)`
@@ -78,7 +78,7 @@ This document is for the household operator only. Worker browsers stay internal-
 - When a host-native worker reaches `reauth_required`, press `Start visible reauth` on `/internal/admin`.
 - When a Docker-backed worker reaches `reauth_required`, press `Start reauth` on `/internal/admin`.
 - Complete the login, CAPTCHA, or challenge step manually in the visible browser or browser access viewer.
-- Return to `/internal/admin` and press `Complete login -> non-visible runtime` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
+- Return to `/internal/admin` and press `Complete login and validate` for host-native workers, or `Complete login/reauth` for Docker-backed viewer flows.
 - For host-native workers, then press `Validate non-visible runtime`.
 - Confirm the worker returns to `ready`.
 - If reauth fails repeatedly, leave the worker in `reauth_required` or `disconnected` instead of pretending it is safe to route sessions there.
@@ -107,20 +107,21 @@ This document is for the household operator only. Worker browsers stay internal-
 - Repeated profile corruption: preserve the existing profile directory for investigation before replacing it.
 - Phase 8 selector defaults live behind `WORKER_PREFERRED_REASONING_MODEL_LABELS`; if you need to pin a different latest reasoning model, update that env var instead of hardcoding a different label in the UI.
 - `test-host-worker-relay.ps1` is a Phase 10 drift hardening probe for maintainers. Use it to isolate a specific host-native worker and verify current-ui relay behavior; do not treat it as the final operator smoke flow.
-- `test-alternate-desktop-runtime.ps1` is the canonical alternate-desktop validation path. Use it after `Complete login -> non-visible runtime`.
+- `test-alternate-desktop-runtime.ps1` is the canonical alternate-desktop validation path. Use it after `Complete login and validate`, or for later repeatability rechecks from `Validate non-visible runtime`.
 - The bounded rescue order is now:
   - `wife`
-  - `dad`
   - `shared-1`
+  - `dad`
 - Phase 11 is blocked again until at least one worker reaches `Repeatability: stable (2/2)`.
 - Current target split for the bounded proof is:
   - `wife`: primary repeatability target
-  - `dad`: auth-recovery target
   - `shared-1`: secondary navigation/bootstrap target
-- The current Phase 10.5.1 live result is negative but precise:
-  - `wife` failed repeated proof twice with `bootstrap_navigation_failed @ navigation`
+  - `dad`: auth-recovery target
+- The current Phase 10.5.1.1 live result is negative but more precise:
+  - `wife` durable profile failed repeated proof twice with `bootstrap_navigation_failed @ navigation`
+  - `wife` fresh-profile visible auth succeeded, but `Complete login and validate` still fell back to `bootstrap_navigation_failed @ navigation` in alternate desktop
   - `dad` still returns `proofFailureClass=auth_required`, `bootstrapFailureCode=bootstrap_auth_required`, `bootstrapStep=auth_check`
-  - `shared-1` now returns `proofFailureClass=bootstrap_failed`, `bootstrapFailureCode=bootstrap_navigation_failed`, `bootstrapStep=navigation`
+  - `shared-1` returns `proofFailureClass=bootstrap_failed`, `bootstrapFailureCode=bootstrap_navigation_failed`, `bootstrapStep=navigation`
 
 ## Smoke Checklist
 
@@ -129,5 +130,5 @@ This document is for the household operator only. Worker browsers stay internal-
 - `http://<host>:8080/internal/browser/...` is unavailable.
 - `/internal/admin` can open a worker browser access viewer.
 - Manual ChatGPT login completes inside the viewer.
-- `Complete login -> non-visible runtime` returns a host-native worker to alternate desktop runtime.
+- `Complete login and validate` returns a host-native worker to alternate desktop runtime and immediately records one proof attempt.
 - `test-alternate-desktop-runtime.ps1` passes with `phase11Ready=true` before the worker is treated as live-complete.
