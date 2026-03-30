@@ -1,0 +1,20 @@
+# Dependencies
+**/node_modules/
+
+# Build artifacts
+dist/
+
+# OS noise
+Thumbs.db
+.DS_Store
+
+# Local browser runtime data
+infra/data/host-profiles/*
+!infra/data/host-profiles/README-FIRST.txt
+infra/data/host-profile-diagnostics/
+infra/data/host-worker-state/
+
+# Local proxy secrets and generated runtime config
+infra/data/proxy/share-links.local.json
+infra/data/proxy/sing-box/config.json
+infra/data/proxy/logs/

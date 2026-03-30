@@ -1,0 +1,26 @@
+﻿{
+    "packageName":  "owmcgp-windows-browser-block-20260330-165722",
+    "builtAt":  "2026-03-30T16:57:23.0712251+03:00",
+    "packageType":  "windows_browser_block",
+    "includesLocalProxyShareLinks":  true,
+    "includesSingBoxBinary":  true,
+    "workerIds":  [
+                      "dad",
+                      "wife",
+                      "shared-1",
+                      "shared-2",
+                      "shared-3",
+                      "shared-4",
+                      "shared-5",
+                      "shared-6",
+                      "shared-7"
+                  ],
+    "relayHost":  "77.66.186.75",
+    "relaySshPort":  2222,
+    "relayUser":  "mi50",
+    "notes":  [
+                  "Linux stays the public relay/API edge.",
+                  "This package does not claim that logged-in browser sessions transfer between Windows machines.",
+                  "Use interactive logon on the target Windows Server for browser workers."
+              ]
+}

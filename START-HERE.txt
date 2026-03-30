@@ -1,0 +1,19 @@
+﻿OWMCGP Windows Browser Block
+
+1. Unpack this archive on the target Windows Server.
+2. Install prerequisites: Node.js LTS, Chrome or Edge, OpenSSH client.
+3. Run:
+   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\bootstrap-browser-block.ps1
+4. Start host-controller:
+   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\start-browser-block.ps1
+5. Start reverse tunnels:
+   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\start-reverse-tunnels.ps1 -RemoteHost 77.66.186.75 -RemotePort 2222 -RemoteUser mi50 -IncludeHostController
+6. Optional autostart on interactive logon:
+   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\register-browser-block-tasks.ps1 -RemoteHost 77.66.186.75 -RemotePort 2222 -RemoteUser mi50
+7. Verify the nine-worker block:
+   powershell -ExecutionPolicy Bypass -File .\\infra\\host-worker\\test-windows-browser-block-matrix.ps1
+
+Proxy share links are INCLUDED in infra\\data\\proxy\\share-links.local.json. Treat this archive as sensitive.
+
+Important: this package prepares the Windows block and its nine worker slots.
+Manual login for the nine ChatGPT accounts still happens on the target Windows Server.
