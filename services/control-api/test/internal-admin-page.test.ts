@@ -86,7 +86,7 @@ afterEach(() => {
 });
 
 describe("internal admin page", () => {
-  it("renders alternate-desktop controls and observability endpoints", async () => {
+  it("renders compact-visible baseline controls and observability endpoints", async () => {
     const { app, runtime } = createTestRuntime();
     cleanupCallbacks.push(() => runtime.dispose());
 
@@ -96,26 +96,35 @@ describe("internal admin page", () => {
       .expect(200);
 
     expect(response.text).toContain("Start pool");
+    expect(response.text).toContain("Start alternate desktop pool");
     expect(response.text).toContain("Stop pool");
-    expect(response.text).toContain("alternate desktop non-visible runtime");
+    expect(response.text).toContain("Latest rollout smoke");
+    expect(response.text).toContain("No rollout smoke captured yet.");
+    expect(response.text).toContain("Start pool now uses compact visible fallback");
+    expect(response.text).toContain("Routine runtime");
+    expect(response.text).toContain("Routine window mode");
     expect(response.text).toContain("Start visible login");
     expect(response.text).toContain("Start visible reauth");
     expect(response.text).toContain("Complete login and validate");
+    expect(response.text).toContain("Use compact visible runtime");
     expect(response.text).toContain("Start fresh-profile diagnostic");
     expect(response.text).toContain("Temporary profile does not delete the durable profile.");
     expect(response.text).toContain("Validate non-visible runtime");
     expect(response.text).toContain("Repeatability");
     expect(response.text).toContain("Alternate desktop");
     expect(response.text).toContain("Visible auth");
+    expect(response.text).toContain("Compact visible");
     expect(response.text).toContain("architecture review required");
     expect(response.text).toContain("/internal/host-pool");
     expect(response.text).toContain("degraded");
     expect(response.text).toContain("failed");
     expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/start");
+    expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/complete-compact-visible");
     expect(response.text).toContain("/internal/workers/\" + workerId + \"/manual-auth/complete-and-validate");
     expect(response.text).toContain("/internal/workers/\" + workerId + \"/diagnostic-profile/start");
     expect(response.text).toContain("/internal/workers/\" + workerId + \"/validate-runtime");
     expect(response.text).toContain("/internal/workers/");
     expect(response.text).toContain("/internal/observability/summary");
+    expect(response.text).toContain("/internal/rollout-smoke/latest");
   });
 });

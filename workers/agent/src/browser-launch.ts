@@ -10,6 +10,7 @@ export type WorkerRuntimeMode =
 export type WorkerRuntimeClass =
   | "host_hidden_runtime"
   | "host_visible_auth"
+  | "host_visible_compact"
   | "host_alternate_desktop"
   | "docker_headed_xvfb";
 

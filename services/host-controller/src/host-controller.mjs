@@ -7,7 +7,7 @@ import { loadProxyShareLinks, writeSingBoxConfig } from "./proxy-links.mjs";
 
 const POWERSHELL_EXE = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
 
-function normalizeRuntimeMode(value, fallback = "alternate_desktop") {
+function normalizeRuntimeMode(value, fallback = "visible_auth") {
   return value === "visible_auth" || value === "hidden_runtime" || value === "alternate_desktop"
     ? value
     : fallback;
@@ -15,6 +15,12 @@ function normalizeRuntimeMode(value, fallback = "alternate_desktop") {
 
 function normalizeProfileStrategy(value, fallback = "durable") {
   return value === "diagnostic_fresh" || value === "durable"
+    ? value
+    : fallback;
+}
+
+function normalizeBrowserWindowMode(value, fallback = "CompactCorner") {
+  return value === "Normal" || value === "Minimized" || value === "CompactCorner"
     ? value
     : fallback;
 }
@@ -108,6 +114,36 @@ function withStartupFields(
     startupStatus,
     runtimeMode: workerStatus.runtimeMode ?? fallbackRuntimeMode
   };
+}
+
+function resolveDesiredRuntimeClass(runtimeMode, browserWindowMode) {
+  if (runtimeMode === "visible_auth") {
+    return browserWindowMode === "CompactCorner"
+      ? "host_visible_compact"
+      : "host_visible_auth";
+  }
+
+  if (runtimeMode === "alternate_desktop") {
+    return "host_alternate_desktop";
+  }
+
+  return "host_hidden_runtime";
+}
+
+function workerMatchesRequestedRuntime(
+  workerStatus,
+  runtimeMode,
+  browserWindowMode
+) {
+  if (!hasWorkerHealth(workerStatus)) {
+    return false;
+  }
+
+  return (
+    workerStatus.runtimeMode === runtimeMode &&
+    workerStatus.runtimeClass ===
+      resolveDesiredRuntimeClass(runtimeMode, browserWindowMode)
+  );
 }
 
 export class HostController {
@@ -276,17 +312,22 @@ export class HostController {
   async startWorker(
     workerId,
     runtimeMode = this.config.defaultWorkerRuntimeMode,
-    profileStrategy = "durable"
+    profileStrategy = "durable",
+    browserWindowMode = this.config.browserWindowMode
   ) {
     const worker = this.requireWorker(workerId);
     const proxyRuntime = await this.ensureProxyReady();
     const resolvedRuntimeMode = normalizeRuntimeMode(
       runtimeMode,
-      this.config.defaultWorkerRuntimeMode ?? "alternate_desktop"
+      this.config.defaultWorkerRuntimeMode ?? "visible_auth"
     );
     const resolvedProfileStrategy = normalizeProfileStrategy(
       profileStrategy,
       "durable"
+    );
+    const resolvedBrowserWindowMode = normalizeBrowserWindowMode(
+      browserWindowMode,
+      this.config.browserWindowMode ?? "CompactCorner"
     );
     const resolvedProfilePath = await this.resolveWorkerProfilePath(
       worker,
@@ -299,7 +340,13 @@ export class HostController {
       resolvedRuntimeMode
     );
 
-    if (hasWorkerHealth(existingStatus)) {
+    if (
+      workerMatchesRequestedRuntime(
+        existingStatus,
+        resolvedRuntimeMode,
+        resolvedBrowserWindowMode
+      )
+    ) {
       return {
         ...withStartupFields(
           existingStatus,
@@ -309,8 +356,14 @@ export class HostController {
         workerId,
         proxyServerUrl: proxyRuntime.proxyServerUrl,
         profileStrategy: resolvedProfileStrategy,
-        profilePath: resolvedProfilePath
+        profilePath: resolvedProfilePath,
+        browserWindowMode: resolvedBrowserWindowMode
       };
+    }
+
+    if (existingStatus.agentListening || existingStatus.browserListening) {
+      await this.requestWorkerStop(worker);
+      await this.waitForWorkerStop(worker);
     }
 
     await this.requestWorkerStart(
@@ -319,7 +372,8 @@ export class HostController {
       proxyRuntime.proxyServerUrl,
       {
         profilePath: resolvedProfilePath,
-        profileStrategy: resolvedProfileStrategy
+        profileStrategy: resolvedProfileStrategy,
+        browserWindowMode: resolvedBrowserWindowMode
       }
     );
 
@@ -330,17 +384,19 @@ export class HostController {
 
     return {
       ...startedStatus,
-      workerId,
-      proxyServerUrl: proxyRuntime.proxyServerUrl,
-      runtimeMode: startedStatus.runtimeMode ?? resolvedRuntimeMode,
-      profileStrategy: resolvedProfileStrategy,
-      profilePath: resolvedProfilePath
-    };
+        workerId,
+        proxyServerUrl: proxyRuntime.proxyServerUrl,
+        runtimeMode: startedStatus.runtimeMode ?? resolvedRuntimeMode,
+        profileStrategy: resolvedProfileStrategy,
+        profilePath: resolvedProfilePath,
+        browserWindowMode: resolvedBrowserWindowMode
+      };
   }
 
   async stopWorker(workerId) {
     const worker = this.requireWorker(workerId);
     await this.requestWorkerStop(worker);
+    await this.waitForWorkerStop(worker);
 
     return {
       workerId,
@@ -354,15 +410,29 @@ export class HostController {
     return this.runAlternateDesktopValidation(worker);
   }
 
-  async startPool(runtimeMode = this.config.defaultWorkerRuntimeMode) {
+  async startPool(
+    runtimeMode = this.config.defaultWorkerRuntimeMode,
+    browserWindowMode = this.config.browserWindowMode
+  ) {
     const results = [];
     const resolvedRuntimeMode = normalizeRuntimeMode(
       runtimeMode,
-      this.config.defaultWorkerRuntimeMode ?? "alternate_desktop"
+      this.config.defaultWorkerRuntimeMode ?? "visible_auth"
+    );
+    const resolvedBrowserWindowMode = normalizeBrowserWindowMode(
+      browserWindowMode,
+      this.config.browserWindowMode ?? "CompactCorner"
     );
 
     for (const worker of this.config.workers) {
-      results.push(await this.startWorker(worker.workerId, resolvedRuntimeMode));
+      results.push(
+        await this.startWorker(
+          worker.workerId,
+          resolvedRuntimeMode,
+          "durable",
+          resolvedBrowserWindowMode
+        )
+      );
       await sleep(500);
     }
 
@@ -371,6 +441,7 @@ export class HostController {
     return {
       action: "pool_start_requested",
       runtimeMode: resolvedRuntimeMode,
+      browserWindowMode: resolvedBrowserWindowMode,
       proxyListening: health.proxyListening,
       proxyServerUrl: health.proxyServerUrl,
       poolStatus: health.poolStatus,
@@ -397,6 +468,22 @@ export class HostController {
     }
 
     return withStartupFields(latestStatus, "startup_timeout", runtimeMode);
+  }
+
+  async waitForWorkerStop(worker, timeoutMs = 10_000, pollIntervalMs = 500) {
+    const deadline = Date.now() + timeoutMs;
+    let latestStatus = await this.getWorkerStatus(worker, null);
+
+    while (Date.now() < deadline) {
+      if (!latestStatus.agentListening && !latestStatus.browserListening) {
+        return latestStatus;
+      }
+
+      await sleep(pollIntervalMs);
+      latestStatus = await this.getWorkerStatus(worker, null);
+    }
+
+    throw new Error(`stop_worker_timeout:${worker.workerId}`);
   }
 
   async stopProxyRuntime() {
@@ -533,6 +620,10 @@ export class HostController {
       startOptions.profileStrategy,
       "durable"
     );
+    const browserWindowMode = normalizeBrowserWindowMode(
+      startOptions.browserWindowMode,
+      this.config.browserWindowMode ?? "CompactCorner"
+    );
     const escapedArguments = [
       "-ExecutionPolicy",
       "Bypass",
@@ -546,11 +637,11 @@ export class HostController {
       toPowerShellRuntimeMode(runtimeMode),
       "-ProfileStrategy",
       profileStrategy === "diagnostic_fresh" ? "DiagnosticFresh" : "Durable",
-      "-ProfilePath",
-      profilePath,
-      "-BrowserWindowMode",
-      this.config.browserWindowMode
-    ].map((value) => `'${String(value).replaceAll("'", "''")}'`);
+        "-ProfilePath",
+        profilePath,
+        "-BrowserWindowMode",
+        browserWindowMode
+      ].map((value) => `'${String(value).replaceAll("'", "''")}'`);
     const command = `$argList = @(${escapedArguments.join(", ")}); Start-Process -FilePath '${POWERSHELL_EXE}' -ArgumentList $argList -WindowStyle Hidden`;
     const child = spawn(
       POWERSHELL_EXE,

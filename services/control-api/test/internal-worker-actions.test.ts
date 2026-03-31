@@ -247,7 +247,8 @@ describe("internal worker manual auth transitions", () => {
     expect(hostControllerClient.startWorker).toHaveBeenCalledWith(
       "dad",
       "visible_auth",
-      "durable"
+      "durable",
+      "Normal"
     );
     expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
     expect(response.body.action).toBe("manual_auth_start_requested");
@@ -346,7 +347,8 @@ describe("internal worker manual auth transitions", () => {
     expect(hostControllerClient.startWorker).toHaveBeenCalledWith(
       "dad",
       "visible_auth",
-      "diagnostic_fresh"
+      "diagnostic_fresh",
+      "Normal"
     );
     expect(response.body.action).toBe("diagnostic_profile_started");
     expect(response.body.profileStrategy).toBe("diagnostic_fresh");
@@ -381,6 +383,44 @@ describe("internal worker manual auth transitions", () => {
     expect(response.body.action).toBe("diagnostic_profile_completed_and_validated");
     expect(response.body.worker.lastValidationResult).toBe(
       "diagnostic_profile_completed_and_validated:alternate_desktop_usable"
+    );
+  });
+
+  it("can complete manual auth into compact visible runtime", async () => {
+    const { app, runtime, hostControllerClient, healthMonitor } = createTestRuntime("host");
+    cleanupCallbacks.push(() => {
+      runtime.dispose();
+    });
+    runtime.workerRegistry.updateWorker("dad", {
+      status: "reauth_required",
+      reason: "compact visible transition test",
+      runtimeStatus: "reauth_required",
+      runtimeMode: "visible_auth",
+      headless: false,
+      cdpAttached: true,
+      lastValidationResult: "manual_auth_started"
+    });
+
+    const response = await request(app)
+      .post("/internal/workers/dad/manual-auth/complete-compact-visible")
+      .set("x-internal-admin-token", "secret")
+      .expect(202);
+
+    expect(hostControllerClient.stopWorker).toHaveBeenCalledWith("dad");
+    expect(hostControllerClient.startWorker).toHaveBeenCalledWith(
+      "dad",
+      "visible_auth",
+      "durable",
+      "CompactCorner"
+    );
+    expect(healthMonitor.runHealthSweep).toHaveBeenCalled();
+    expect(response.body.action).toBe("manual_auth_completed_compact_visible_started");
+    expect(response.body.runtimeMode).toBe("visible_auth");
+    expect(response.body.runtimeClass).toBe("host_visible_compact");
+    expect(response.body.worker.runtimeClass).toBe("host_visible_compact");
+    expect(response.body.worker.status.status).toBe("ready");
+    expect(response.body.worker.lastValidationResult).toBe(
+      "manual_auth_completed_compact_visible"
     );
   });
 
@@ -442,6 +482,10 @@ describe("internal worker manual auth transitions", () => {
       .post("/internal/workers/dad/manual-auth/complete")
       .set("x-internal-admin-token", "secret")
       .expect(409);
+    const completeCompactResponse = await request(app)
+      .post("/internal/workers/dad/manual-auth/complete-compact-visible")
+      .set("x-internal-admin-token", "secret")
+      .expect(409);
     const completeAndValidateResponse = await request(app)
       .post("/internal/workers/dad/manual-auth/complete-and-validate")
       .set("x-internal-admin-token", "secret")
@@ -453,6 +497,7 @@ describe("internal worker manual auth transitions", () => {
 
     expect(startResponse.body.error).toBe("manual_auth_unsupported");
     expect(completeResponse.body.error).toBe("manual_auth_unsupported");
+    expect(completeCompactResponse.body.error).toBe("manual_auth_unsupported");
     expect(completeAndValidateResponse.body.error).toBe("manual_auth_unsupported");
     expect(diagnosticResponse.body.error).toBe("diagnostic_profile_unsupported");
     expect(hostControllerClient.stopWorker).not.toHaveBeenCalled();

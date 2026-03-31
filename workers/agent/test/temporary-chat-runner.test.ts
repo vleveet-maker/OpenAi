@@ -35,6 +35,7 @@ class FakePage {
   public temporaryChatClicks = 0;
   public modelPickerClicks = 0;
   public temporaryOnboardingContinueClicks = 0;
+  public memoryDialogDismissClicks = 0;
   public selectedModel: string | null = null;
   public gotoCallCount = 0;
   public reloadCallCount = 0;
@@ -43,6 +44,8 @@ class FakePage {
   private temporaryEntryClicked = false;
   private modelPickerOpen = false;
   private temporaryOnboardingVisible = false;
+  private memoryDialogVisible = false;
+  private directTemporaryVisibilityChecks = 0;
 
   constructor(
     private readonly options: {
@@ -52,6 +55,8 @@ class FakePage {
       showAuthButtons?: boolean;
       newChatAvailable?: boolean;
       directTemporaryAvailable?: boolean;
+      temporaryAriaLabelAvailable?: boolean;
+      directTemporaryVisibleAfterChecks?: number;
       modelMenuTemporaryAvailable?: boolean;
       temporaryConfirmationAvailable?: boolean;
       modelPickerAvailable?: boolean;
@@ -60,6 +65,7 @@ class FakePage {
       modelMenuInitiallyOpen?: boolean;
       keepDirectTemporaryVisibleWhenModelMenuOpen?: boolean;
       temporaryOnboardingVisible?: boolean;
+      memoryDialogVisible?: boolean;
       composerAvailable?: boolean;
       gotoThrows?: boolean;
       gotoBehaviors?: Array<"throw" | "success">;
@@ -75,7 +81,12 @@ class FakePage {
       this.currentUrl = options.authUrl;
     }
 
+    if (this.currentUrl.includes("temporary-chat=true")) {
+      this.temporaryModeActive = true;
+    }
+
     this.modelPickerOpen = options.modelMenuInitiallyOpen === true;
+    this.memoryDialogVisible = options.memoryDialogVisible === true;
   }
 
   url(): string {
@@ -123,19 +134,47 @@ class FakePage {
     }
   }
 
+  private surfaceBlockedByMemoryDialog(): boolean {
+    return this.memoryDialogVisible;
+  }
+
   getByRole(role: string, options?: { name?: string | RegExp }): FakeLocator {
     const namePattern = options?.name instanceof RegExp ? options.name : null;
     const availableModels =
       this.options.availableModels ?? ["GPT-5.4 Thinking", "GPT-5.4"];
 
     if (
-      (role === "link" || role === "button") &&
-      namePattern?.test("New chat")
+      role === "button" &&
+      ["Not now", "Не сейчас", "Maybe later"].some((label) =>
+        namePattern?.test(label)
+      )
     ) {
       return new FakeLocator(
         () => ({
-          count: this.options.newChatAvailable === false ? 0 : 1,
-          visible: this.options.newChatAvailable !== false
+          count: this.memoryDialogVisible ? 1 : 0,
+          visible: this.memoryDialogVisible
+        }),
+        {
+          click: async () => {
+            this.memoryDialogDismissClicks += 1;
+            this.memoryDialogVisible = false;
+          }
+        }
+      );
+    }
+
+    if (
+      (role === "link" || role === "button") &&
+      ["New chat", "Новый чат"].some((label) => namePattern?.test(label))
+    ) {
+      return new FakeLocator(
+        () => ({
+          count:
+            this.options.newChatAvailable === false || this.surfaceBlockedByMemoryDialog()
+              ? 0
+              : 1,
+          visible:
+            this.options.newChatAvailable !== false && !this.surfaceBlockedByMemoryDialog()
         }),
         {
           click: async () => {
@@ -147,37 +186,53 @@ class FakePage {
 
     if (
       (role === "button" || role === "link") &&
-      ["Temporary Chat", "Temporary", "Р’РєР»СЋС‡РёС‚СЊ РІСЂРµРјРµРЅРЅС‹Р№ С‡Р°С‚"].some((label) =>
+      ["Temporary Chat", "Temporary", "Включить временный чат"].some((label) =>
         namePattern?.test(label)
       )
     ) {
       return new FakeLocator(
-        () => ({
-          count:
-            this.options.directTemporaryAvailable === false
-              ? 0
-              : this.modelPickerOpen &&
-                  this.options.keepDirectTemporaryVisibleWhenModelMenuOpen !== true
+        () => {
+          this.directTemporaryVisibilityChecks += 1;
+          const delayedStillHidden =
+            (this.options.directTemporaryVisibleAfterChecks ?? 0) > 0 &&
+            this.directTemporaryVisibilityChecks <
+              (this.options.directTemporaryVisibleAfterChecks ?? 0);
+
+          return {
+            count:
+              this.options.directTemporaryAvailable === false
                 ? 0
-                : this.temporaryModeActive &&
-                    this.options.temporaryConfirmationAvailable === false
+                : this.surfaceBlockedByMemoryDialog()
                   ? 0
-                : this.temporaryEntryClicked && !this.temporaryModeActive
+                : delayedStillHidden
                   ? 0
-                : 1,
-          visible:
-            this.options.directTemporaryAvailable === false
-              ? false
-              : this.modelPickerOpen &&
-                  this.options.keepDirectTemporaryVisibleWhenModelMenuOpen !== true
+                  : this.modelPickerOpen &&
+                      this.options.keepDirectTemporaryVisibleWhenModelMenuOpen !== true
+                    ? 0
+                    : this.temporaryModeActive &&
+                        this.options.temporaryConfirmationAvailable === false
+                      ? 0
+                    : this.temporaryEntryClicked && !this.temporaryModeActive
+                      ? 0
+                    : 1,
+            visible:
+              this.options.directTemporaryAvailable === false
                 ? false
-                : this.temporaryModeActive &&
-                    this.options.temporaryConfirmationAvailable === false
+                : this.surfaceBlockedByMemoryDialog()
                   ? false
-                : this.temporaryEntryClicked && !this.temporaryModeActive
+                : delayedStillHidden
                   ? false
-                : true
-        }),
+                  : this.modelPickerOpen &&
+                      this.options.keepDirectTemporaryVisibleWhenModelMenuOpen !== true
+                    ? false
+                    : this.temporaryModeActive &&
+                        this.options.temporaryConfirmationAvailable === false
+                      ? false
+                    : this.temporaryEntryClicked && !this.temporaryModeActive
+                      ? false
+                    : true
+          };
+        },
         {
           click: async () => {
             this.temporaryChatClicks += 1;
@@ -193,13 +248,14 @@ class FakePage {
 
     if (
       (role === "button" || role === "link" || role === "menuitem") &&
-      ["Temporary", "Temporary Chat", "Р’СЂРµРјРµРЅРЅС‹Р№ С‡Р°С‚"].some((label) =>
+      ["Temporary", "Temporary Chat", "Временный чат"].some((label) =>
         namePattern?.test(label)
       )
     ) {
       return new FakeLocator(
         () => ({
           count:
+            !this.surfaceBlockedByMemoryDialog() &&
             this.modelPickerOpen &&
             this.options.modelMenuTemporaryAvailable !== false
               ? 1
@@ -208,6 +264,7 @@ class FakePage {
                 ? 1
                 : 0,
           visible:
+            !this.surfaceBlockedByMemoryDialog() &&
             this.modelPickerOpen &&
             this.options.modelMenuTemporaryAvailable !== false
               ? true
@@ -326,7 +383,7 @@ class FakePage {
 
     if (
       role === "button" &&
-      ["Continue", "РџСЂРѕРґРѕР»Р¶РёС‚СЊ"].some((label) => namePattern?.test(label))
+      ["Continue", "Продолжить"].some((label) => namePattern?.test(label))
     ) {
       return new FakeLocator(
         () => ({
@@ -514,6 +571,38 @@ class FakePage {
       );
     }
 
+    if (
+      selector.includes("button[aria-label*='temporary'") ||
+      selector.includes("button[aria-label*='врем'")
+    ) {
+      return new FakeLocator(
+        () => ({
+          count:
+            this.options.temporaryAriaLabelAvailable === true &&
+            !this.surfaceBlockedByMemoryDialog() &&
+            !this.modelPickerOpen &&
+            !(this.temporaryEntryClicked && !this.temporaryModeActive)
+              ? 1
+              : 0,
+          visible:
+            this.options.temporaryAriaLabelAvailable === true &&
+            !this.surfaceBlockedByMemoryDialog() &&
+            !this.modelPickerOpen &&
+            !(this.temporaryEntryClicked && !this.temporaryModeActive)
+        }),
+        {
+          click: async () => {
+            this.temporaryChatClicks += 1;
+            this.temporaryEntryClicked = true;
+            this.temporaryModeActive =
+              this.options.temporaryConfirmationAvailable !== false;
+            this.temporaryOnboardingVisible =
+              this.options.temporaryOnboardingVisible === true;
+          }
+        }
+      );
+    }
+
     if (selector.includes("[data-testid*='temporary']")) {
       return new FakeLocator(() => ({
         count:
@@ -644,6 +733,71 @@ describe("runTemporaryChatBootstrap", () => {
     expect(page.temporaryOnboardingContinueClicks).toBe(1);
   });
 
+  it("dismisses the memory dialog before opening a Temporary Chat", async () => {
+    const page = new FakePage({
+      memoryDialogVisible: true
+    });
+
+    const result = await runTemporaryChatBootstrap(new FakeBrowserContext([page]), {
+      lockKey: "shared-2:memory-dialog",
+      startUrl: "https://chatgpt.com/",
+      preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+    });
+
+    expect(result).toMatchObject({
+      status: "ready",
+      conversationMode: "temporary",
+      modelLabel: "GPT-5.4 Thinking",
+      failureCode: null,
+      step: "complete",
+      composerReady: true,
+      runtimeUsability: "usable"
+    });
+    expect(page.memoryDialogDismissClicks).toBe(1);
+    expect(page.newChatClicks).toBe(1);
+    expect(page.temporaryChatClicks).toBe(1);
+  });
+
+  it("waits for the Temporary Chat control to appear after opening a fresh chat", async () => {
+    const page = new FakePage({
+      directTemporaryVisibleAfterChecks: 3
+    });
+
+    const result = await runTemporaryChatBootstrap(new FakeBrowserContext([page]), {
+      lockKey: "shared:delayed-temporary-entry",
+      startUrl: "https://chatgpt.com/",
+      preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+    });
+
+    expect(result.status).toBe("ready");
+    expect(result.conversationMode).toBe("temporary");
+    expect(page.temporaryChatClicks).toBe(1);
+  });
+
+  it("uses a temporary-chat aria-label fallback when role-based entry selectors are missing", async () => {
+    const page = new FakePage({
+      directTemporaryAvailable: false,
+      temporaryAriaLabelAvailable: true
+    });
+
+    const result = await runTemporaryChatBootstrap(new FakeBrowserContext([page]), {
+      lockKey: "shared-4:temporary-aria",
+      startUrl: "https://chatgpt.com/",
+      preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+    });
+
+    expect(result).toMatchObject({
+      status: "ready",
+      conversationMode: "temporary",
+      modelLabel: "GPT-5.4 Thinking",
+      failureCode: null,
+      step: "complete",
+      composerReady: true,
+      runtimeUsability: "usable"
+    });
+    expect(page.temporaryChatClicks).toBe(1);
+  });
+
   it("continues from the current surface when no New chat control is present", async () => {
     const page = new FakePage({
       newChatAvailable: false
@@ -765,7 +919,9 @@ describe("runTemporaryChatBootstrap", () => {
     expect(result.runtimeUsability).toBe("surface_unusable");
   });
 
-  it("fails with temporary_entry_not_found when neither direct nor model-menu temporary entry exists", async () => {
+  it(
+    "fails with temporary_entry_not_found when neither direct nor model-menu temporary entry exists",
+    async () => {
     const page = new FakePage({
       directTemporaryAvailable: false,
       modelMenuTemporaryAvailable: false
@@ -781,7 +937,9 @@ describe("runTemporaryChatBootstrap", () => {
     );
 
     expect(result.failureCode).toBe("temporary_entry_not_found");
-  });
+    },
+    10_000
+  );
 
   it("fails with temporary_confirmation_not_found when Temporary mode never becomes visible", async () => {
     const page = new FakePage({
@@ -799,6 +957,25 @@ describe("runTemporaryChatBootstrap", () => {
 
     expect(result.failureCode).toBe("temporary_confirmation_not_found");
     expect(result.step).toBe("temporary_confirmation");
+  });
+
+  it("reuses an already-active temporary chat surface when the URL already targets temporary mode", async () => {
+    const page = new FakePage({
+      initialUrl: "https://chatgpt.com/?temporary-chat=true"
+    });
+
+    const result = await runTemporaryChatBootstrap(
+      new FakeBrowserContext([page]),
+      {
+        lockKey: "shared-1:already-temporary-surface",
+        startUrl: "https://chatgpt.com/",
+        preferredReasoningModelLabels: ["GPT-5.4 Thinking", "GPT-5.4"]
+      }
+    );
+
+    expect(result.status).toBe("ready");
+    expect(result.pageUrl).toContain("temporary-chat=true");
+    expect(page.temporaryChatClicks).toBe(0);
   });
 
   it("fails with model_picker_not_found when the current UI exposes no model picker", async () => {

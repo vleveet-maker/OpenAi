@@ -27,6 +27,47 @@ function Get-WorkerStatePath {
   return Join-Path $RepoRootPath "infra\\data\\host-worker-state\\$CurrentWorkerId.json"
 }
 
+function Get-MainBrowserProcessIds {
+  param(
+    [int]$CurrentCdpPort,
+    [string]$CurrentProfilePath
+  )
+
+  return Get-CimInstance Win32_Process |
+    Where-Object {
+      ($_.Name -eq "msedge.exe" -or $_.Name -eq "chrome.exe") -and
+      $_.CommandLine -match "remote-debugging-port=$CurrentCdpPort" -and
+      $_.CommandLine -notmatch "--type=" -and
+      $_.CommandLine -match [regex]::Escape($CurrentProfilePath)
+    } |
+    Select-Object -ExpandProperty ProcessId -Unique
+}
+
+function Try-StopProcessGracefully {
+  param(
+    [int]$ProcessId,
+    [int]$TimeoutMs = 8000
+  )
+
+  $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+
+  if (-not $process) {
+    return $true
+  }
+
+  if ($process.MainWindowHandle -eq 0) {
+    return $false
+  }
+
+  $null = $process.CloseMainWindow()
+
+  try {
+    return $process.WaitForExit($TimeoutMs)
+  } catch {
+    return $false
+  }
+}
+
 $resolvedRepoRoot = Resolve-RepoRoot -Candidate $RepoRoot
 $resolvedProfilePath =
   if ($ProfilePath -and $ProfilePath.Trim().Length -gt 0) {
@@ -35,6 +76,16 @@ $resolvedProfilePath =
     Join-Path $resolvedRepoRoot "infra\\data\\host-profiles\\$WorkerId"
   }
 $workerStatePath = Get-WorkerStatePath -RepoRootPath $resolvedRepoRoot -CurrentWorkerId $WorkerId
+
+$mainBrowserProcessIds = @(Get-MainBrowserProcessIds -CurrentCdpPort $CdpPort -CurrentProfilePath $resolvedProfilePath)
+
+foreach ($processId in $mainBrowserProcessIds) {
+  $null = Try-StopProcessGracefully -ProcessId $processId
+}
+
+if ($mainBrowserProcessIds.Count -gt 0) {
+  Start-Sleep -Milliseconds 500
+}
 
 $portOwners = @()
 

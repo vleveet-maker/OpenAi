@@ -76,6 +76,11 @@ export const temporaryEnabledNamePatterns = [
   /выключить временный чат/i
 ];
 export const temporaryOnboardingContinueNamePatterns = [/continue/i, /продолж/i];
+export const memoryDialogDismissNamePatterns = [
+  /not now/i,
+  /не сейчас/i,
+  /maybe later/i
+];
 
 export const newChatSelectorCandidates: BootstrapLocatorCandidateDefinition[] = [
   {
@@ -117,6 +122,14 @@ export const temporaryEntrySelectorCandidates: BootstrapLocatorCandidateDefiniti
     {
       id: "temporary_button_localized",
       locate: (page) => page.getByRole("button", { name: /temporary|временн/i }).last()
+    },
+    {
+      id: "temporary_button_aria_label",
+      locate: (page) => page.locator("button[aria-label*='temporary' i]").last()
+    },
+    {
+      id: "temporary_button_aria_label_localized",
+      locate: (page) => page.locator("button[aria-label*='врем' i]").last()
     },
     {
       id: "temporary_chat_link",
@@ -194,6 +207,25 @@ export const temporaryOnboardingContinueSelectorCandidates: BootstrapLocatorCand
     }
   ];
 
+export const memoryDialogDismissSelectorCandidates: BootstrapLocatorCandidateDefinition[] =
+  [
+    {
+      id: "memory_dialog_not_now_button",
+      locate: (page) =>
+        page.getByRole("button", { name: memoryDialogDismissNamePatterns[0] }).last()
+    },
+    {
+      id: "memory_dialog_not_now_localized_button",
+      locate: (page) =>
+        page.getByRole("button", { name: memoryDialogDismissNamePatterns[1] }).last()
+    },
+    {
+      id: "memory_dialog_maybe_later_button",
+      locate: (page) =>
+        page.getByRole("button", { name: memoryDialogDismissNamePatterns[2] }).last()
+    }
+  ];
+
 export const modelPickerButtonSelectorCandidates: BootstrapLocatorCandidateDefinition[] =
   [
     {
@@ -204,11 +236,11 @@ export const modelPickerButtonSelectorCandidates: BootstrapLocatorCandidateDefin
       id: "model_picker_testid",
       locate: (page) => page.locator("[data-testid*='model-picker']").last()
     },
-  {
-    id: "model_button_role",
-    locate: (page) => page.getByRole("button", { name: /thinking|gpt|model/i }).last()
-  }
-];
+    {
+      id: "model_button_role",
+      locate: (page) => page.getByRole("button", { name: /thinking|gpt|model/i }).last()
+    }
+  ];
 
 export const modelOptionSelectorCandidates: ModelOptionLocatorCandidateDefinition[] = [
   {

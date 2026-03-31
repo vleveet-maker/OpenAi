@@ -8,13 +8,13 @@ param(
   [string]$StartUrl = "https://chatgpt.com/",
   [string]$ProxyServer = "",
   [ValidateSet("VisibleAuth", "HiddenRuntime", "AlternateDesktop")]
-  [string]$RuntimeMode = "AlternateDesktop",
+  [string]$RuntimeMode = "VisibleAuth",
   [ValidateSet("Durable", "DiagnosticFresh")]
   [string]$ProfileStrategy = "Durable",
   [ValidateSet("CurrentExecutable", "ChannelMsedge")]
   [string]$HiddenLaunchVariant = "CurrentExecutable",
-  [ValidateSet("Normal", "Minimized")]
-  [string]$BrowserWindowMode = "Minimized",
+  [ValidateSet("Normal", "Minimized", "CompactCorner")]
+  [string]$BrowserWindowMode = "CompactCorner",
   [string]$RepoRoot = "",
   [switch]$DetachAgent,
   [switch]$SkipInstall
@@ -63,6 +63,123 @@ function Test-CdpEndpoint {
   }
 }
 
+function Update-JsonTextSetting {
+  param(
+    [string]$FilePath
+  )
+
+  if (-not (Test-Path -LiteralPath $FilePath)) {
+    return
+  }
+
+  $content = Get-Content -LiteralPath $FilePath -Raw -ErrorAction SilentlyContinue
+
+  if (-not $content) {
+    return
+  }
+
+  $updated = $content `
+    -replace '"exit_type"\s*:\s*"Crashed"', '"exit_type":"Normal"' `
+    -replace '"exited_cleanly"\s*:\s*false', '"exited_cleanly":true' `
+    -replace '"session_restore_prompt"\s*:\s*\{\s*"ignored"\s*:\s*false\s*\}', '"session_restore_prompt":{"ignored":true}'
+
+  if ($updated -ne $content) {
+    Set-Content -LiteralPath $FilePath -Value $updated -Encoding utf8
+  }
+}
+
+function Clear-SessionRestoreArtifacts {
+  param(
+    [string]$CurrentProfilePath
+  )
+
+  $defaultProfilePath = Join-Path $CurrentProfilePath "Default"
+
+  foreach ($path in @(
+    (Join-Path $CurrentProfilePath "Local State"),
+    (Join-Path $defaultProfilePath "Preferences")
+  )) {
+    Update-JsonTextSetting -FilePath $path
+  }
+
+  foreach ($filePath in @(
+    (Join-Path $defaultProfilePath "Last Session"),
+    (Join-Path $defaultProfilePath "Last Tabs"),
+    (Join-Path $defaultProfilePath "Current Session"),
+    (Join-Path $defaultProfilePath "Current Tabs")
+  )) {
+    if (Test-Path -LiteralPath $filePath) {
+      Remove-Item -LiteralPath $filePath -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  $sessionsDirectory = Join-Path $defaultProfilePath "Sessions"
+
+  if (Test-Path -LiteralPath $sessionsDirectory) {
+    Get-ChildItem -Force -LiteralPath $sessionsDirectory -ErrorAction SilentlyContinue |
+      Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  }
+}
+
+function Get-CompactWindowSlotIndex {
+  param([string]$CurrentWorkerId)
+
+  switch ($CurrentWorkerId) {
+    "dad" { return 0 }
+    "wife" { return 1 }
+    "shared-1" { return 2 }
+    "shared-2" { return 3 }
+    "shared-3" { return 4 }
+    "shared-4" { return 5 }
+    "shared-5" { return 6 }
+    default { return 0 }
+  }
+}
+
+function Get-CompactWindowPlacement {
+  param([string]$CurrentWorkerId)
+
+  $defaultWidth = 430
+  $defaultHeight = 320
+  $defaultMargin = 16
+  $slotIndex = Get-CompactWindowSlotIndex -CurrentWorkerId $CurrentWorkerId
+
+  try {
+    Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+    $workArea = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    $width = [Math]::Min($defaultWidth, [Math]::Max(320, $workArea.Width - ($defaultMargin * 2)))
+    $rows = 3
+    $columnIndex = [Math]::Floor($slotIndex / $rows)
+    $rowIndex = $slotIndex % $rows
+    $availableHeight = $workArea.Height - ($defaultMargin * ($rows + 1))
+    $height = [Math]::Min($defaultHeight, [Math]::Max(220, [Math]::Floor($availableHeight / $rows)))
+    $x = $workArea.Right - $width - $defaultMargin - ($columnIndex * ($width + $defaultMargin))
+    $y = $workArea.Top + $defaultMargin + ($rowIndex * ($height + $defaultMargin))
+
+    if (($y + $height) -gt ($workArea.Bottom - $defaultMargin)) {
+      $y = [Math]::Max($workArea.Top + $defaultMargin, $workArea.Bottom - $height - $defaultMargin)
+    }
+
+    if ($x -lt ($workArea.Left + $defaultMargin)) {
+      $x = $workArea.Left + $defaultMargin
+    }
+
+    return @{
+      Width = $width
+      Height = $height
+      X = $x
+      Y = $y
+    }
+  } catch {
+    return @{
+      Width = $defaultWidth
+      Height = $defaultHeight
+      X = 1440
+      Y = 16 + ($slotIndex * ($defaultHeight + $defaultMargin))
+    }
+  }
+}
+
 function Get-WorkerStateDirectory {
   param([string]$RepoRootPath)
 
@@ -99,12 +216,26 @@ $null = New-Item -ItemType Directory -Force -Path $logsDirectory
 $null = New-Item -ItemType Directory -Force -Path $workerStateDirectory
 
 if ($RuntimeMode -eq "VisibleAuth" -and -not (Test-CdpEndpoint -Port $CdpPort)) {
+  Clear-SessionRestoreArtifacts -CurrentProfilePath $resolvedProfilePath
+
   $browserArgs = @(
+    "--hide-crash-restore-bubble",
+    "--disable-session-crashed-bubble",
+    "--no-first-run",
+    "--no-default-browser-check",
     "--remote-debugging-port=$CdpPort",
     "--user-data-dir=$resolvedProfilePath",
     "--new-window",
     $StartUrl
   )
+
+  if ($BrowserWindowMode -eq "CompactCorner") {
+    $placement = Get-CompactWindowPlacement -CurrentWorkerId $WorkerId
+    $browserArgs = @(
+      "--window-size=$($placement.Width),$($placement.Height)",
+      "--window-position=$($placement.X),$($placement.Y)"
+    ) + $browserArgs
+  }
 
   if ($ProxyServer -and $ProxyServer.Trim().Length -gt 0) {
     $browserArgs = @(
@@ -177,7 +308,11 @@ $env:WORKER_RUNTIME_MODE =
   }
 $env:WORKER_RUNTIME_CLASS =
   if ($RuntimeMode -eq "VisibleAuth") {
-    "host_visible_auth"
+    if ($BrowserWindowMode -eq "CompactCorner") {
+      "host_visible_compact"
+    } else {
+      "host_visible_auth"
+    }
   } elseif ($RuntimeMode -eq "AlternateDesktop") {
     "host_alternate_desktop"
   } else {
@@ -190,6 +325,7 @@ $env:WORKER_HEADLESS =
     "false"
   }
 $env:WORKER_RUNTIME_DESKTOP_NAME = $runtimeDesktopName
+$env:WORKER_BROWSER_WINDOW_MODE = $BrowserWindowMode
 $env:WORKER_PROXY_SERVER = $ProxyServer
 $env:WORKER_CDP_ENDPOINT_URL = $cdpEndpointUrl
 $env:WORKER_START_URL = $StartUrl
@@ -226,6 +362,8 @@ if ($DetachAgent) {
     $StartUrl,
     "-RuntimeMode",
     $RuntimeMode,
+    "-BrowserWindowMode",
+    $BrowserWindowMode,
     "-RepoRoot",
     $resolvedRepoRoot
   )) {
@@ -263,6 +401,7 @@ if ($DetachAgent) {
   -ProfilePath $resolvedProfilePath `
   -StartUrl $StartUrl `
   -RuntimeMode $RuntimeMode `
+  -BrowserWindowMode $BrowserWindowMode `
   -ProxyServer $ProxyServer `
   -CdpEndpointUrl $env:WORKER_CDP_ENDPOINT_URL `
   -RuntimeDesktopName $runtimeDesktopName `

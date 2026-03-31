@@ -1,0 +1,8 @@
+{
+  "apiToken": "replace-with-strong-random-token",
+  "listenHost": "127.0.0.1",
+  "listenPort": 4010,
+  "defaultWorkerId": "",
+  "allowedWorkerIds": [],
+  "requestTimeoutMs": 180000
+}

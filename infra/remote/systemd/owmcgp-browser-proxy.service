@@ -1,0 +1,17 @@
+[Unit]
+Description=One Hour With My ChatGPT browser proxy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mi50
+WorkingDirectory=/srv/owmcgp-browser-runtime
+ExecStart=/usr/local/bin/sing-box run -c /etc/owmcgp/browser-proxy-config.json
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

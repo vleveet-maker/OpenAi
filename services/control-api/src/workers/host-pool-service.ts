@@ -1,6 +1,8 @@
 import type {
   HostControllerClient,
   HostControllerHealthSnapshot,
+  HostControllerBrowserWindowMode,
+  HostControllerRuntimeMode,
   HostControllerWorkerStatus
 } from "./host-controller-client.js";
 import type {
@@ -22,6 +24,13 @@ export interface HostPoolSnapshot {
   controllerReachable: boolean;
   proxyListening: boolean;
   proxyServerUrl: string | null;
+  routineRuntimeMode: HostControllerRuntimeMode;
+  routineRuntimeClass:
+    | "host_visible_auth"
+    | "host_visible_compact"
+    | "host_hidden_runtime"
+    | "host_alternate_desktop";
+  routineBrowserWindowMode: HostControllerBrowserWindowMode;
   updatedAt: string;
   lastError: string | null;
   workers: Array<
@@ -36,8 +45,9 @@ export interface HostPoolServiceOptions {
   workerRegistry?: WorkerRegistry;
 }
 
-const DEFAULT_HOST_ROUTINE_RUNTIME_MODE = "alternate_desktop";
-const DEFAULT_HOST_ROUTINE_RUNTIME_CLASS = "host_alternate_desktop";
+const DEFAULT_HOST_ROUTINE_RUNTIME_MODE = "visible_auth";
+const DEFAULT_HOST_ROUTINE_RUNTIME_CLASS = "host_visible_compact";
+const DEFAULT_HOST_ROUTINE_BROWSER_WINDOW_MODE = "CompactCorner";
 
 export class HostPoolServiceError extends Error {
   constructor(
@@ -52,6 +62,9 @@ export class HostPoolServiceError extends Error {
 function cloneSnapshot(snapshot: HostPoolSnapshot): HostPoolSnapshot {
   return {
     ...snapshot,
+    routineRuntimeMode: snapshot.routineRuntimeMode,
+    routineRuntimeClass: snapshot.routineRuntimeClass,
+    routineBrowserWindowMode: snapshot.routineBrowserWindowMode,
     workers: snapshot.workers.map((worker) => ({
       ...worker
     }))
@@ -99,9 +112,11 @@ function normalizeWorkerRow(
       : null);
   const runtimeClass =
     worker.runtimeClass ??
-    (runtimeMode === "alternate_desktop"
+    (runtimeMode === DEFAULT_HOST_ROUTINE_RUNTIME_MODE
       ? DEFAULT_HOST_ROUTINE_RUNTIME_CLASS
-      : registryWorker?.runtimeClass ?? null);
+      : runtimeMode === "alternate_desktop"
+        ? "host_alternate_desktop"
+        : registryWorker?.runtimeClass ?? null);
   const runtimeDesktopName =
     worker.runtimeDesktopName ?? registryWorker?.runtimeDesktopName ?? null;
 
@@ -124,6 +139,9 @@ export class HostPoolService {
     controllerReachable: false,
     proxyListening: false,
     proxyServerUrl: null,
+    routineRuntimeMode: DEFAULT_HOST_ROUTINE_RUNTIME_MODE,
+    routineRuntimeClass: DEFAULT_HOST_ROUTINE_RUNTIME_CLASS,
+    routineBrowserWindowMode: DEFAULT_HOST_ROUTINE_BROWSER_WINDOW_MODE,
     updatedAt: new Date().toISOString(),
     lastError: null,
     workers: []
@@ -137,7 +155,11 @@ export class HostPoolService {
     return cloneSnapshot(this.snapshot);
   }
 
-  async startPool(now: Date = new Date()): Promise<HostPoolSnapshot> {
+  async startPool(
+    runtimeMode?: HostControllerRuntimeMode,
+    browserWindowMode?: HostControllerBrowserWindowMode,
+    now: Date = new Date()
+  ): Promise<HostPoolSnapshot> {
     if (this.activeAction) {
       throw new HostPoolServiceError(
         409,
@@ -146,17 +168,35 @@ export class HostPoolService {
       );
     }
 
+    const requestedRuntimeMode =
+      runtimeMode ?? DEFAULT_HOST_ROUTINE_RUNTIME_MODE;
+    const requestedBrowserWindowMode =
+      browserWindowMode ?? DEFAULT_HOST_ROUTINE_BROWSER_WINDOW_MODE;
+    const requestedRuntimeClass =
+      requestedRuntimeMode === "visible_auth" &&
+      requestedBrowserWindowMode === "CompactCorner"
+        ? "host_visible_compact"
+        : requestedRuntimeMode === "alternate_desktop"
+          ? "host_alternate_desktop"
+          : "host_visible_auth";
+
     this.activeAction = "starting";
     this.snapshot = {
       ...this.snapshot,
       status: "starting",
       lastAction: "start_requested",
+      routineRuntimeMode: requestedRuntimeMode,
+      routineRuntimeClass: requestedRuntimeClass,
+      routineBrowserWindowMode: requestedBrowserWindowMode,
       updatedAt: now.toISOString(),
       lastError: null
     };
 
     try {
-      await this.options.hostControllerClient.startPool();
+      await this.options.hostControllerClient.startPool(
+        requestedRuntimeMode,
+        requestedBrowserWindowMode
+      );
     } catch (error: unknown) {
       const detail =
         error instanceof Error ? error.message : "host pool start failed";
@@ -192,6 +232,9 @@ export class HostPoolService {
       ...this.snapshot,
       status: "stopping",
       lastAction: "stop_requested",
+      routineRuntimeMode: this.snapshot.routineRuntimeMode,
+      routineRuntimeClass: this.snapshot.routineRuntimeClass,
+      routineBrowserWindowMode: this.snapshot.routineBrowserWindowMode,
       updatedAt: now.toISOString(),
       lastError: null
     };
@@ -247,6 +290,9 @@ export class HostPoolService {
         controllerReachable: true,
         proxyListening: health.proxyListening,
         proxyServerUrl: health.proxyServerUrl,
+        routineRuntimeMode: this.snapshot.routineRuntimeMode,
+        routineRuntimeClass: this.snapshot.routineRuntimeClass,
+        routineBrowserWindowMode: this.snapshot.routineBrowserWindowMode,
         updatedAt: now.toISOString(),
         lastError:
           nextStatus === "failed" ? this.snapshot.lastError : null,
@@ -258,6 +304,9 @@ export class HostPoolService {
         ...this.snapshot,
         status: "failed",
         controllerReachable: false,
+        routineRuntimeMode: this.snapshot.routineRuntimeMode,
+        routineRuntimeClass: this.snapshot.routineRuntimeClass,
+        routineBrowserWindowMode: this.snapshot.routineBrowserWindowMode,
         updatedAt: now.toISOString(),
         lastError:
           error instanceof Error ? error.message : "host controller unavailable"

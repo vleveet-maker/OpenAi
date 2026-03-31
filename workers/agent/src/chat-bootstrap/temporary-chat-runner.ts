@@ -3,6 +3,7 @@ import type { BrowserContext, Page } from "playwright";
 import {
   buildModelOptionTarget,
   composerReadySelectorCandidates,
+  memoryDialogDismissSelectorCandidates,
   modelOptionSelectorCandidates,
   modelPickerButtonSelectorCandidates,
   newChatSelectorCandidates,
@@ -60,6 +61,7 @@ interface NavigationAttemptResult {
 
 const bootstrapLocks = new Map<string, Promise<void>>();
 const TRANSIENT_UI_POLL_INTERVAL_MS = 150;
+const TEMPORARY_ENTRY_APPEAR_TIMEOUT_MS = 2_500;
 const TEMPORARY_CONFIRMATION_TIMEOUT_MS = 3_000;
 const TEMPORARY_ONBOARDING_TIMEOUT_MS = 1_500;
 const CHATGPT_URL_PREFIXES = [
@@ -134,6 +136,28 @@ async function waitForTemporaryConfirmation(
 
     if (confirmation) {
       return confirmation;
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, TRANSIENT_UI_POLL_INTERVAL_MS);
+    });
+  }
+
+  return null;
+}
+
+async function waitForLocatorCandidates(
+  page: BootstrapPageLike,
+  candidates: BootstrapLocatorCandidateDefinition[],
+  timeoutMs: number
+): Promise<ResolvedBootstrapLocator | null> {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() <= deadline) {
+    const resolved = await resolveUsableLocator(page, candidates);
+
+    if (resolved) {
+      return resolved;
     }
 
     await new Promise((resolve) => {
@@ -502,9 +526,10 @@ async function openTemporaryEntry(
   failureCode: WorkerChatBootstrapFailureCode | null;
   stepDetail: string | null;
 }> {
-  const directTemporaryEntry = await resolveUsableLocator(
+  const directTemporaryEntry = await waitForLocatorCandidates(
     page,
-    temporaryEntrySelectorCandidates
+    temporaryEntrySelectorCandidates,
+    TEMPORARY_ENTRY_APPEAR_TIMEOUT_MS
   );
 
   if (directTemporaryEntry) {
@@ -515,26 +540,33 @@ async function openTemporaryEntry(
     };
   }
 
-  const picker = await resolveUsableLocator(page, modelPickerButtonSelectorCandidates);
+  const picker = await waitForLocatorCandidates(
+    page,
+    modelPickerButtonSelectorCandidates,
+    TEMPORARY_ENTRY_APPEAR_TIMEOUT_MS
+  );
 
   if (!picker) {
     return {
       failureCode: "model_picker_not_found",
-      stepDetail: "temporary entry fallback model picker not found"
+      stepDetail:
+        "temporary entry fallback model picker not found after waiting for the fresh chat surface"
     };
   }
 
   await picker.locator.click();
 
-  const menuTemporaryEntry = await resolveUsableLocator(
+  const menuTemporaryEntry = await waitForLocatorCandidates(
     page,
-    temporaryEntrySelectorCandidates
+    temporaryEntrySelectorCandidates,
+    TEMPORARY_ENTRY_APPEAR_TIMEOUT_MS
   );
 
   if (!menuTemporaryEntry) {
     return {
       failureCode: "temporary_entry_not_found",
-      stepDetail: "temporary entry menu item not visible after opening model picker"
+      stepDetail:
+        "temporary entry control did not appear after waiting for the fresh chat surface and reopening the model picker"
     };
   }
 
@@ -543,6 +575,23 @@ async function openTemporaryEntry(
     failureCode: null,
     stepDetail: `temporary entry selector: ${menuTemporaryEntry.selectorId}`
   };
+}
+
+async function pageAlreadyInTemporaryMode(
+  page: BootstrapPageLike
+): Promise<boolean> {
+  const currentUrl = page.url().trim().toLowerCase();
+
+  if (currentUrl.includes("temporary-chat=true")) {
+    return true;
+  }
+
+  const confirmation = await resolveUsableLocator(
+    page,
+    temporaryConfirmationSelectorCandidates
+  );
+
+  return confirmation !== null;
 }
 
 async function dismissTemporaryOnboarding(
@@ -567,6 +616,22 @@ async function dismissTemporaryOnboarding(
   }
 
   return null;
+}
+
+async function dismissMemoryDialog(
+  page: BootstrapPageLike
+): Promise<string | null> {
+  const dismissButton = await resolveUsableLocator(
+    page,
+    memoryDialogDismissSelectorCandidates
+  );
+
+  if (!dismissButton) {
+    return null;
+  }
+
+  await dismissButton.locator.click();
+  return `memory dialog selector: ${dismissButton.selectorId}`;
 }
 
 async function selectPreferredReasoningModel(
@@ -698,6 +763,14 @@ export async function runTemporaryChatBootstrap(
       );
     }
 
+    currentStep = "surface_entry";
+    currentStepDetail = "dismissing memory dialog if present";
+    const memoryDialogDetail = await dismissMemoryDialog(page);
+
+    if (memoryDialogDetail) {
+      currentStepDetail = memoryDialogDetail;
+    }
+
     currentStep = "new_chat";
     currentStepDetail = "opening a fresh chat surface";
     const newChat = await resolveUsableLocator(page, newChatSelectorCandidates);
@@ -724,33 +797,56 @@ export async function runTemporaryChatBootstrap(
       }
     }
 
+    currentStep = "surface_entry";
+    currentStepDetail = combineStepDetails(
+      currentStepDetail,
+      "rechecking for a blocking memory dialog after fresh chat entry"
+    );
+    const postNewChatMemoryDialogDetail = await dismissMemoryDialog(page);
+
+    if (postNewChatMemoryDialogDetail) {
+      currentStepDetail = combineStepDetails(
+        currentStepDetail,
+        postNewChatMemoryDialogDetail
+      );
+    }
+
     currentStep = "temporary_entry";
     currentStepDetail = "opening Temporary Chat";
-    const temporaryEntry = await openTemporaryEntry(page);
+    const temporaryModeAlreadyActive = await pageAlreadyInTemporaryMode(page);
 
-    if (temporaryEntry.failureCode) {
-      return buildFailureResult(
-        page,
-        temporaryEntry.failureCode,
-        currentStep,
-        combineStepDetails(navigationDetail, temporaryEntry.stepDetail)
+    if (!temporaryModeAlreadyActive) {
+      const temporaryEntry = await openTemporaryEntry(page);
+
+      if (temporaryEntry.failureCode) {
+        return buildFailureResult(
+          page,
+          temporaryEntry.failureCode,
+          currentStep,
+          combineStepDetails(navigationDetail, temporaryEntry.stepDetail)
+        );
+      }
+      currentStepDetail = temporaryEntry.stepDetail;
+
+      currentStep = "temporary_confirmation";
+      currentStepDetail = "waiting for Temporary Chat confirmation";
+      const temporaryConfirmed = await waitForTemporaryConfirmation(page);
+
+      if (!temporaryConfirmed) {
+        return buildFailureResult(
+          page,
+          "temporary_confirmation_not_found",
+          currentStep,
+          combineStepDetails(navigationDetail, currentStepDetail)
+        );
+      }
+      currentStepDetail = `temporary confirmation selector: ${temporaryConfirmed.selectorId}`;
+    } else {
+      currentStepDetail = combineStepDetails(
+        navigationDetail,
+        "temporary chat already active on current surface"
       );
     }
-    currentStepDetail = temporaryEntry.stepDetail;
-
-    currentStep = "temporary_confirmation";
-    currentStepDetail = "waiting for Temporary Chat confirmation";
-    const temporaryConfirmed = await waitForTemporaryConfirmation(page);
-
-    if (!temporaryConfirmed) {
-      return buildFailureResult(
-        page,
-        "temporary_confirmation_not_found",
-        currentStep,
-        combineStepDetails(navigationDetail, currentStepDetail)
-      );
-    }
-    currentStepDetail = `temporary confirmation selector: ${temporaryConfirmed.selectorId}`;
 
     currentStep = "temporary_onboarding";
     currentStepDetail = "dismissing Temporary Chat onboarding if present";

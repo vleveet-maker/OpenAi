@@ -23,7 +23,11 @@ $proxyServer = "http://127.0.0.1:7897"
 $scripts = @(
   "start-dad-host-worker.ps1",
   "start-wife-host-worker.ps1",
-  "start-shared-1-host-worker.ps1"
+  "start-shared-1-host-worker.ps1",
+  "start-shared-2-host-worker.ps1",
+  "start-shared-3-host-worker.ps1",
+  "start-shared-4-host-worker.ps1",
+  "start-shared-5-host-worker.ps1"
 )
 
 foreach ($scriptName in $scripts) {
@@ -36,8 +40,10 @@ foreach ($scriptName in $scripts) {
     "-DetachAgent",
     "-ProxyServer",
     $proxyServer,
+    "-RuntimeMode",
+    "VisibleAuth",
     "-BrowserWindowMode",
-    "Minimized"
+    "CompactCorner"
   )
 
   if ($SkipInstall) {

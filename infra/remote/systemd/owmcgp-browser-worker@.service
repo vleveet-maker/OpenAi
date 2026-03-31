@@ -1,0 +1,20 @@
+[Unit]
+Description=One Hour With My ChatGPT browser worker (%i)
+After=network-online.target tigervncserver@:2.service owmcgp-browser-proxy.service
+Wants=network-online.target tigervncserver@:2.service
+
+[Service]
+Type=simple
+User=Donat
+Group=Donat
+WorkingDirectory=/opt/owmcgp-remote-relay/services/worker-agent
+EnvironmentFile=/etc/owmcgp/browser-workers.common.env
+EnvironmentFile=-/etc/owmcgp/workers/%i.env
+ExecStart=/bin/bash /opt/owmcgp-remote-relay/runtime/start-browser-worker.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

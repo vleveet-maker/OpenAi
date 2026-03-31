@@ -42,9 +42,12 @@ import {
 import { createInternalHostPoolRouter } from "./routes/internal-host-pool.js";
 import { createInternalObservabilityRouter } from "./routes/internal-observability.js";
 import { createPublicChatRouter } from "./routes/public-chat.js";
+import { createPublicOpenAiCompatibleRouter } from "./routes/public-openai-compatible.js";
+import { createPublicRemoteRelayRouter } from "./routes/public-remote-relay.js";
 import {
   createInternalRecoveryRouter
 } from "./routes/internal-recovery.js";
+import { createInternalRolloutSmokeRouter } from "./routes/internal-rollout-smoke.js";
 import { createInternalWorkerActionsRouter } from "./routes/internal-worker-actions.js";
 import { createInternalWorkersRouter } from "./routes/internal-workers.js";
 import { createPublicSessionsRouter } from "./routes/public-sessions.js";
@@ -76,6 +79,10 @@ import {
   createWorkerRegistry,
   type WorkerRegistry
 } from "./workers/worker-registry.js";
+import {
+  createRemoteRelayService,
+  type RemoteRelayService
+} from "./remote/remote-relay-service.js";
 
 export interface ControlApiRuntime {
   config: ControlApiConfig;
@@ -89,6 +96,7 @@ export interface ControlApiRuntime {
   chatRelayService: ChatRelayService;
   operatorEventStore: OperatorEventStore;
   observabilityService: OperatorObservabilityService;
+  remoteRelayService: RemoteRelayService;
   hostControllerClient: HostControllerClient;
   hostPoolService: HostPoolService;
   dockerEngineClient: DockerEngineClient;
@@ -102,6 +110,8 @@ export interface ControlApiRuntimeOptions {
   hostControllerClient?: HostControllerClient;
   dockerEngineClient?: DockerEngineClient;
   healthMonitor?: WorkerHealthMonitor;
+  findFallbackWorkerId?: () => Promise<string | null>;
+  listFallbackWorkerIds?: () => Promise<string[]>;
 }
 
 export function createControlApiRuntime(
@@ -209,6 +219,87 @@ export function createControlApiRuntime(
     hostControllerClient,
     workerRegistry
   });
+  const remoteRelayService = createRemoteRelayService({
+    serviceName: config.serviceName,
+    requestTimeoutMs: config.remoteRelayRequestTimeoutMs ?? 180_000,
+    topologyHint: config.remoteRelayTopologyHint ?? "pending",
+    workerCount: config.workerDefinitions.length,
+    defaultWorkerId: config.remoteRelayDefaultWorkerId,
+    sessionService,
+    chatRelayService,
+    listFallbackWorkerIds:
+      options.listFallbackWorkerIds ??
+      (async () => {
+        const availableWorkerIds: string[] = [];
+
+        for (const worker of config.workerDefinitions) {
+          if (sessionService.hasActiveSessionForWorker(worker.workerId)) {
+            continue;
+          }
+
+          try {
+            const response = await fetch(new URL("/health", `${worker.agentBaseUrl}/`), {
+              signal: AbortSignal.timeout(config.workerHealthTimeoutMs)
+            });
+
+            if (!response.ok) {
+              continue;
+            }
+
+            const payload = (await response.json()) as {
+              runtimeStatus?: string;
+              browserContextReady?: boolean;
+            };
+
+            if (
+              payload.runtimeStatus === "ready" &&
+              payload.browserContextReady === true
+            ) {
+              availableWorkerIds.push(worker.workerId);
+            }
+          } catch {
+            // Ignore and keep scanning other workers.
+          }
+        }
+
+        return availableWorkerIds;
+      }),
+    findFallbackWorkerId:
+      options.findFallbackWorkerId ??
+      (async () => {
+        for (const worker of config.workerDefinitions) {
+          if (sessionService.hasActiveSessionForWorker(worker.workerId)) {
+            continue;
+          }
+
+          try {
+            const response = await fetch(new URL("/health", `${worker.agentBaseUrl}/`), {
+              signal: AbortSignal.timeout(config.workerHealthTimeoutMs)
+            });
+
+            if (!response.ok) {
+              continue;
+            }
+
+            const payload = (await response.json()) as {
+              runtimeStatus?: string;
+              browserContextReady?: boolean;
+            };
+
+            if (
+              payload.runtimeStatus === "ready" &&
+              payload.browserContextReady === true
+            ) {
+              return worker.workerId;
+            }
+          } catch {
+            // Ignore and keep scanning other workers.
+          }
+        }
+
+        return null;
+      })
+  });
 
   sessionService.bootstrap();
   chatBootstrapService.scheduleBootstrapForActiveSessions();
@@ -225,6 +316,7 @@ export function createControlApiRuntime(
     chatRelayService,
     operatorEventStore,
     observabilityService,
+    remoteRelayService,
     hostControllerClient,
     hostPoolService,
     dockerEngineClient,
@@ -268,11 +360,13 @@ export function createControlApiApp(
     sessionService,
     workerRegistry,
     chatRelayService,
+    remoteRelayService,
     hostPoolService,
     dockerEngineClient,
     healthMonitor
   } = runtime;
   const app = express();
+  const controlApiMode = config.mode ?? "full_app";
 
   app.disable("x-powered-by");
   app.set("trust proxy", true);
@@ -291,64 +385,92 @@ export function createControlApiApp(
     })
   );
 
-  app.use(
-    createPublicSessionsRouter({
-      sessionService
-    })
-  );
-  app.use(
-    createPublicChatRouter({
-      chatRelayService
-    })
-  );
+  if (controlApiMode === "full_app") {
+    app.use(
+      createPublicSessionsRouter({
+        sessionService
+      })
+    );
+    app.use(
+      createPublicChatRouter({
+        chatRelayService
+      })
+    );
+  }
+
+  if (controlApiMode === "remote_relay") {
+    if (!config.remoteRelayApiToken) {
+      throw new Error(
+        "REMOTE_RELAY_API_TOKEN is required when CONTROL_API_MODE=remote_relay"
+      );
+    }
+
+    app.use(
+      createPublicRemoteRelayRouter({
+        remoteRelayService,
+        apiToken: config.remoteRelayApiToken
+      })
+    );
+    app.use(
+      createPublicOpenAiCompatibleRouter({
+        remoteRelayService,
+        apiToken: config.remoteRelayApiToken
+      })
+    );
+  }
 
   const internalAdminGuard = requireInternalAdmin({
     internalAdminToken: config.internalAdminToken
   });
 
-  app.use(
-    internalAdminGuard,
-    createInternalWorkersRouter({ workerRegistry }),
-    createInternalBrowserAccessRouter({
-      service: browserAccessService
-    }),
-    createInternalHostPoolRouter({
-      hostPoolService
-    }),
-    createInternalObservabilityRouter({
-      observabilityService: runtime.observabilityService
-    }),
-    createInternalAdminPageRouter()
-  );
-  app.get("/internal/bootstrap", internalAdminGuard, (_request, response) => {
-    response.json({
-      service: config.serviceName,
-      host: config.host,
-      port: config.port,
-      workerCount: config.workerDefinitions.length,
-      statuses: config.workerDefinitions.map((worker) => ({
-        workerId: worker.workerId,
-        containerName: worker.containerName,
-        defaultStatus: worker.defaultStatus
-      }))
+  if (controlApiMode === "full_app") {
+    app.use(
+      internalAdminGuard,
+      createInternalWorkersRouter({ workerRegistry }),
+      createInternalBrowserAccessRouter({
+        service: browserAccessService
+      }),
+      createInternalHostPoolRouter({
+        hostPoolService
+      }),
+      createInternalObservabilityRouter({
+        observabilityService: runtime.observabilityService
+      }),
+      createInternalRolloutSmokeRouter({
+        statePath: config.rolloutSmokeStatePath
+      }),
+      createInternalAdminPageRouter()
+    );
+    app.get("/internal/bootstrap", internalAdminGuard, (_request, response) => {
+      response.json({
+        service: config.serviceName,
+        host: config.host,
+        port: config.port,
+        workerCount: config.workerDefinitions.length,
+        statuses: config.workerDefinitions.map((worker) => ({
+          workerId: worker.workerId,
+          containerName: worker.containerName,
+          defaultStatus: worker.defaultStatus
+        }))
+      });
     });
-  });
-  app.use(
-    internalAdminGuard,
-    createInternalRecoveryRouter({
-      browserAccessService
-    }),
-    createInternalWorkerActionsRouter({
-      workerRegistry,
-      sessionService,
-      dockerEngineClient,
-      hostControllerClient: runtime.hostControllerClient,
-      healthMonitor,
-      eventRecorder: runtime.observabilityService
-    })
-  );
+    app.use(
+      internalAdminGuard,
+      createInternalRecoveryRouter({
+        browserAccessService
+      }),
+      createInternalWorkerActionsRouter({
+        workerRegistry,
+        sessionService,
+        dockerEngineClient,
+        hostControllerClient: runtime.hostControllerClient,
+        healthMonitor,
+        eventRecorder: runtime.observabilityService
+      })
+    );
 
-  registerSessionClientRoutes(app, runtime);
+    registerSessionClientRoutes(app, runtime);
+  }
 
   return app;
 }

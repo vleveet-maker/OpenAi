@@ -31,6 +31,7 @@ export interface WorkerRecord {
   runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop";
   runtimeClass?:
     | "host_visible_auth"
+    | "host_visible_compact"
     | "host_hidden_runtime"
     | "host_alternate_desktop"
     | "docker_headed_xvfb";
@@ -81,6 +82,7 @@ export interface WorkerRegistryUpdate {
   runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop" | null;
   runtimeClass?:
     | "host_visible_auth"
+    | "host_visible_compact"
     | "host_hidden_runtime"
     | "host_alternate_desktop"
     | "docker_headed_xvfb"
@@ -154,10 +156,10 @@ export class WorkerRegistry {
         status: createWorkerStatusRecord(definition.defaultStatus, "registry bootstrap"),
         runtimeStatus: definition.defaultStatus,
         runtimeMode:
-          definition.runtimeType === "host" ? "alternate_desktop" : undefined,
+          definition.runtimeType === "host" ? "visible_auth" : undefined,
         runtimeClass:
           definition.runtimeType === "host"
-            ? "host_alternate_desktop"
+            ? "host_visible_compact"
             : undefined,
         runtimeCapability: defaultRuntimeCapabilityForStatus(definition.defaultStatus),
         stabilityGateStatus: "unstable",

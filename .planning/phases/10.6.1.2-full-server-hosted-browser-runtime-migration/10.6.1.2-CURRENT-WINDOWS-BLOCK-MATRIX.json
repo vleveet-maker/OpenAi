@@ -1,0 +1,100 @@
+﻿{
+    "generatedAt":  "2026-03-30T16:40:48.5014760+03:00",
+    "workerCount":  7,
+    "usableCount":  7,
+    "unusableCount":  0,
+    "path":  "host-controller -\u003e worker-agent/internal/chat/bootstrap -\u003e worker-agent/internal/relay/messages",
+    "workers":  [
+                    {
+                        "workerId":  "dad",
+                        "usable":  true,
+                        "runtimeMode":  "visible_auth",
+                        "runtimeClass":  "host_visible_compact",
+                        "runtimeStatus":  "ready",
+                        "conversationMode":  "temporary",
+                        "modelLabel":  "GPT-5.4 Thinking",
+                        "reply":  "dad-windows-block-ok",
+                        "bootstrapFailureCode":  null,
+                        "relayFailureCode":  null,
+                        "detail":  "ok"
+                    },
+                    {
+                        "workerId":  "wife",
+                        "usable":  true,
+                        "runtimeMode":  "visible_auth",
+                        "runtimeClass":  "host_visible_compact",
+                        "runtimeStatus":  "ready",
+                        "conversationMode":  "temporary",
+                        "modelLabel":  "GPT-5.4 Thinking",
+                        "reply":  "wife-windows-block-ok",
+                        "bootstrapFailureCode":  null,
+                        "relayFailureCode":  null,
+                        "detail":  "ok"
+                    },
+                    {
+                        "workerId":  "shared-1",
+                        "usable":  true,
+                        "runtimeMode":  "visible_auth",
+                        "runtimeClass":  "host_visible_compact",
+                        "runtimeStatus":  "ready",
+                        "conversationMode":  "temporary",
+                        "modelLabel":  "GPT-5.4 Thinking",
+                        "reply":  "shared-1-windows-block-ok",
+                        "bootstrapFailureCode":  null,
+                        "relayFailureCode":  null,
+                        "detail":  "ok"
+                    },
+                    {
+                        "workerId":  "shared-2",
+                        "usable":  true,
+                        "runtimeMode":  "visible_auth",
+                        "runtimeClass":  "host_visible_compact",
+                        "runtimeStatus":  "ready",
+                        "conversationMode":  "temporary",
+                        "modelLabel":  "GPT-5.4 Thinking",
+                        "reply":  "shared-2-windows-block-ok",
+                        "bootstrapFailureCode":  null,
+                        "relayFailureCode":  null,
+                        "detail":  "ok"
+                    },
+                    {
+                        "workerId":  "shared-3",
+                        "usable":  true,
+                        "runtimeMode":  "visible_auth",
+                        "runtimeClass":  "host_visible_compact",
+                        "runtimeStatus":  "ready",
+                        "conversationMode":  "temporary",
+                        "modelLabel":  "GPT-5.4 Thinking",
+                        "reply":  "shared-3-windows-block-ok",
+                        "bootstrapFailureCode":  null,
+                        "relayFailureCode":  null,
+                        "detail":  "ok"
+                    },
+                    {
+                        "workerId":  "shared-4",
+                        "usable":  true,
+                        "runtimeMode":  "visible_auth",
+                        "runtimeClass":  "host_visible_compact",
+                        "runtimeStatus":  "ready",
+                        "conversationMode":  "temporary",
+                        "modelLabel":  "GPT-5.4 Thinking",
+                        "reply":  "shared-4-windows-block-ok",
+                        "bootstrapFailureCode":  null,
+                        "relayFailureCode":  null,
+                        "detail":  "ok"
+                    },
+                    {
+                        "workerId":  "shared-5",
+                        "usable":  true,
+                        "runtimeMode":  "visible_auth",
+                        "runtimeClass":  "host_visible_compact",
+                        "runtimeStatus":  "ready",
+                        "conversationMode":  "temporary",
+                        "modelLabel":  "GPT-5.4 Thinking",
+                        "reply":  "shared-5-windows-block-ok",
+                        "bootstrapFailureCode":  null,
+                        "relayFailureCode":  null,
+                        "detail":  "ok"
+                    }
+                ]
+}

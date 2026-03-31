@@ -7,6 +7,7 @@ import {
 } from "./workers/worker-status.js";
 
 export type WorkerRuntimeType = "docker" | "host";
+export type ControlApiMode = "full_app" | "remote_relay";
 
 export interface WorkerDefinition {
   workerId: string;
@@ -20,9 +21,15 @@ export interface WorkerDefinition {
 
 export interface ControlApiConfig {
   serviceName: string;
+  mode?: ControlApiMode;
   host: string;
   port: number;
+  rolloutSmokeStatePath?: string;
+  remoteRelayDefaultWorkerId?: string;
   internalAdminToken?: string;
+  remoteRelayApiToken?: string;
+  remoteRelayRequestTimeoutMs?: number;
+  remoteRelayTopologyHint?: string;
   hostControllerBaseUrl?: string;
   hostControllerToken?: string;
   autoStartHostWorkers: boolean;
@@ -49,6 +56,13 @@ const DEFAULT_SESSION_CLIENT_DIST_PATH = resolve(
   "apps",
   "session-client",
   "dist"
+);
+const DEFAULT_ROLLOUT_SMOKE_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "rollout-smoke",
+  "latest.json"
 );
 const DEFAULT_DOCKER_SOCKET_PATH = "/var/run/docker.sock";
 
@@ -133,9 +147,19 @@ function parseWorkerDefinitions(raw: string | undefined): WorkerDefinition[] | n
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ControlApiConfig {
   return {
     serviceName: env.CONTROL_API_NAME ?? "control-api",
+    mode: env.CONTROL_API_MODE === "remote_relay" ? "remote_relay" : "full_app",
     host: env.CONTROL_API_HOST ?? "0.0.0.0",
     port: parseInteger(env.CONTROL_API_PORT, 4010),
+    rolloutSmokeStatePath:
+      env.ROLLOUT_SMOKE_STATE_PATH ?? DEFAULT_ROLLOUT_SMOKE_STATE_PATH,
+    remoteRelayDefaultWorkerId: env.REMOTE_RELAY_DEFAULT_WORKER_ID?.trim() || undefined,
     internalAdminToken: env.INTERNAL_ADMIN_TOKEN,
+    remoteRelayApiToken: env.REMOTE_RELAY_API_TOKEN,
+    remoteRelayRequestTimeoutMs: parseInteger(
+      env.REMOTE_RELAY_REQUEST_TIMEOUT_MS,
+      180_000
+    ),
+    remoteRelayTopologyHint: env.REMOTE_RELAY_TOPOLOGY_HINT ?? "pending",
     hostControllerBaseUrl: env.HOST_CONTROLLER_BASE_URL,
     hostControllerToken: env.HOST_CONTROLLER_TOKEN,
     autoStartHostWorkers: parseBoolean(env.AUTO_START_HOST_WORKERS, true),

@@ -2,11 +2,11 @@ param(
   [switch]$SkipInstall,
   [string]$ProxyServer = "",
   [ValidateSet("VisibleAuth", "HiddenRuntime", "AlternateDesktop")]
-  [string]$RuntimeMode = "AlternateDesktop",
+  [string]$RuntimeMode = "VisibleAuth",
   [ValidateSet("CurrentExecutable", "ChannelMsedge")]
   [string]$HiddenLaunchVariant = "CurrentExecutable",
-  [ValidateSet("Normal", "Minimized")]
-  [string]$BrowserWindowMode = "Minimized",
+  [ValidateSet("Normal", "Minimized", "CompactCorner")]
+  [string]$BrowserWindowMode = "CompactCorner",
   [switch]$DetachAgent
 )
 

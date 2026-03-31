@@ -1,0 +1,44 @@
+[
+  {
+    "workerId": "dad",
+    "displayName": "Dad",
+    "agentPort": 4021,
+    "profilePath": "/srv/owmcgp-browser-runtime/profiles/dad"
+  },
+  {
+    "workerId": "wife",
+    "displayName": "Wife",
+    "agentPort": 4022,
+    "profilePath": "/srv/owmcgp-browser-runtime/profiles/wife"
+  },
+  {
+    "workerId": "shared-1",
+    "displayName": "Shared 1",
+    "agentPort": 4023,
+    "profilePath": "/srv/owmcgp-browser-runtime/profiles/shared-1"
+  },
+  {
+    "workerId": "shared-2",
+    "displayName": "Shared 2",
+    "agentPort": 4024,
+    "profilePath": "/srv/owmcgp-browser-runtime/profiles/shared-2"
+  },
+  {
+    "workerId": "shared-3",
+    "displayName": "Shared 3",
+    "agentPort": 4025,
+    "profilePath": "/srv/owmcgp-browser-runtime/profiles/shared-3"
+  },
+  {
+    "workerId": "shared-4",
+    "displayName": "Shared 4",
+    "agentPort": 4026,
+    "profilePath": "/srv/owmcgp-browser-runtime/profiles/shared-4"
+  },
+  {
+    "workerId": "shared-5",
+    "displayName": "Shared 5",
+    "agentPort": 4027,
+    "profilePath": "/srv/owmcgp-browser-runtime/profiles/shared-5"
+  }
+]

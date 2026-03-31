@@ -35,6 +35,64 @@ function Test-CdpEndpoint {
   }
 }
 
+function Update-JsonTextSetting {
+  param(
+    [string]$FilePath
+  )
+
+  if (-not (Test-Path -LiteralPath $FilePath)) {
+    return
+  }
+
+  $content = Get-Content -LiteralPath $FilePath -Raw -ErrorAction SilentlyContinue
+
+  if (-not $content) {
+    return
+  }
+
+  $updated = $content `
+    -replace '"exit_type"\s*:\s*"Crashed"', '"exit_type":"Normal"' `
+    -replace '"exited_cleanly"\s*:\s*false', '"exited_cleanly":true' `
+    -replace '"session_restore_prompt"\s*:\s*\{\s*"ignored"\s*:\s*false\s*\}', '"session_restore_prompt":{"ignored":true}'
+
+  if ($updated -ne $content) {
+    Set-Content -LiteralPath $FilePath -Value $updated -Encoding utf8
+  }
+}
+
+function Clear-SessionRestoreArtifacts {
+  param(
+    [string]$CurrentProfilePath
+  )
+
+  $defaultProfilePath = Join-Path $CurrentProfilePath "Default"
+
+  foreach ($path in @(
+    (Join-Path $CurrentProfilePath "Local State"),
+    (Join-Path $defaultProfilePath "Preferences")
+  )) {
+    Update-JsonTextSetting -FilePath $path
+  }
+
+  foreach ($filePath in @(
+    (Join-Path $defaultProfilePath "Last Session"),
+    (Join-Path $defaultProfilePath "Last Tabs"),
+    (Join-Path $defaultProfilePath "Current Session"),
+    (Join-Path $defaultProfilePath "Current Tabs")
+  )) {
+    if (Test-Path -LiteralPath $filePath) {
+      Remove-Item -LiteralPath $filePath -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  $sessionsDirectory = Join-Path $defaultProfilePath "Sessions"
+
+  if (Test-Path -LiteralPath $sessionsDirectory) {
+    Get-ChildItem -Force -LiteralPath $sessionsDirectory -ErrorAction SilentlyContinue |
+      Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  }
+}
+
 function Get-WorkerStatePath {
   param(
     [string]$RepoRootPath,
@@ -247,7 +305,12 @@ $null = New-Item -ItemType Directory -Force -Path $stateDirectory
 
 $desktopName = "OWMCGPT-$WorkerId"
 $workingDirectory = Split-Path -Parent $BrowserExecutablePath
+Clear-SessionRestoreArtifacts -CurrentProfilePath $ProfilePath
 $browserArguments = @(
+  "--hide-crash-restore-bubble",
+  "--disable-session-crashed-bubble",
+  "--no-first-run",
+  "--no-default-browser-check",
   "--remote-debugging-port=$CdpPort",
   "--user-data-dir=$ProfilePath",
   "--new-window",

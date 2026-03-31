@@ -115,14 +115,20 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
 
   await withServer(
     {
-      async startPool(runtimeMode) {
+      async startPool(runtimeMode, browserWindowMode) {
         calls.push({
           action: "start",
-          runtimeMode
+          runtimeMode,
+          browserWindowMode
         });
         return {
           action: "pool_start_requested",
-          runtimeMode: runtimeMode ?? "alternate_desktop",
+          runtimeMode: runtimeMode ?? "visible_auth",
+          runtimeClass:
+            (runtimeMode ?? "visible_auth") === "visible_auth"
+              ? "host_visible_compact"
+              : "host_alternate_desktop",
+          browserWindowMode: browserWindowMode ?? "CompactCorner",
           proxyListening: true,
           proxyServerUrl: "http://127.0.0.1:7897",
           poolStatus: "degraded",
@@ -130,7 +136,11 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
             workerId: "dad",
             status: "started",
             startupStatus: "started",
-            runtimeMode: runtimeMode ?? "alternate_desktop",
+            runtimeMode: runtimeMode ?? "visible_auth",
+            runtimeClass:
+              (runtimeMode ?? "visible_auth") === "visible_auth"
+                ? "host_visible_compact"
+                : "host_alternate_desktop",
             agentListening: true,
             browserListening: false,
             runtimeStatus: "starting"
@@ -156,13 +166,16 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
           "x-host-controller-token": "secret"
         },
         body: JSON.stringify({
-          runtimeMode: "alternate_desktop"
+          runtimeMode: "visible_auth",
+          browserWindowMode: "CompactCorner"
         })
       });
       assert.equal(startResponse.status, 202);
       const startBody = await startResponse.json();
       assert.equal(startBody.action, "pool_start_requested");
-      assert.equal(startBody.runtimeMode, "alternate_desktop");
+      assert.equal(startBody.runtimeMode, "visible_auth");
+      assert.equal(startBody.runtimeClass, "host_visible_compact");
+      assert.equal(startBody.browserWindowMode, "CompactCorner");
       assert.equal(startBody.poolStatus, "degraded");
       assert.equal(startBody.proxyListening, true);
       assert.equal(startBody.proxyServerUrl, "http://127.0.0.1:7897");
@@ -185,21 +198,23 @@ test("POST /pool/start and POST /pool/stop return structured lifecycle payloads"
 
       assert.deepEqual(calls, [{
         action: "start",
-        runtimeMode: "alternate_desktop"
+        runtimeMode: "visible_auth",
+        browserWindowMode: "CompactCorner"
       }, "stop"]);
     }
   );
 });
 
-test("POST /workers/:id/start forwards explicit runtimeMode", async () => {
+test("POST /workers/:id/start forwards explicit runtimeMode and browserWindowMode", async () => {
   const calls = [];
 
   await withServer(
     {
-      async startWorker(workerId, runtimeMode) {
+      async startWorker(workerId, runtimeMode, _profileStrategy, browserWindowMode) {
         calls.push({
           workerId,
-          runtimeMode
+          runtimeMode,
+          browserWindowMode
         });
 
         return {
@@ -221,7 +236,8 @@ test("POST /workers/:id/start forwards explicit runtimeMode", async () => {
           "x-host-controller-token": "secret"
         },
         body: JSON.stringify({
-          runtimeMode: "visible_auth"
+          runtimeMode: "visible_auth",
+          browserWindowMode: "CompactCorner"
         })
       });
 
@@ -232,7 +248,8 @@ test("POST /workers/:id/start forwards explicit runtimeMode", async () => {
       assert.equal(body.startupStatus, "started");
       assert.deepEqual(calls, [{
         workerId: "dad",
-        runtimeMode: "visible_auth"
+        runtimeMode: "visible_auth",
+        browserWindowMode: "CompactCorner"
       }]);
     }
   );

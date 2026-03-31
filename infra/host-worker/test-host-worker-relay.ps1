@@ -1,8 +1,10 @@
 param(
   [Parameter(Mandatory = $true)]
   [string]$WorkerId,
-  [string]$SessionLabel = "Phase 10 Relay Smoke",
+  [string]$SessionLabel = "Compact visible relay smoke",
   [string]$ExpectedReply = "smoke-ok",
+  [string]$ExpectedConversationMode = "Temporary Chat",
+  [string]$ExpectedModelLabel = "GPT-5.4 Thinking",
   [string]$PublicBaseUrl = "http://127.0.0.1:8080",
   [string]$InternalBaseUrl = "http://127.0.0.1:8081",
   [string]$InternalAdminToken = "local-internal-admin-token",
@@ -10,6 +12,7 @@ param(
   [string]$HostControllerToken = "local-host-controller-token",
   [int]$TimeoutSeconds = 120,
   [int]$PollIntervalMs = 1500,
+  [switch]$KeepWorkerRunning,
   [switch]$ReturnJson
 )
 
@@ -111,6 +114,20 @@ function Get-SessionMessagesSnapshot {
   }
 }
 
+function Get-WorkerStatusSnapshot {
+  param([string]$WorkerId)
+
+  if ([string]::IsNullOrWhiteSpace($WorkerId)) {
+    return $null
+  }
+
+  try {
+    return Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$WorkerId/status" -Headers $internalHeaders
+  } catch {
+    return $null
+  }
+}
+
 $hostControllerHeaders = @{
   "x-host-controller-token" = $HostControllerToken
 }
@@ -119,10 +136,16 @@ $internalHeaders = @{
 }
 $sessionId = $null
 $probeResult = $null
+$workerStartedForProbe = $false
 
 try {
-  Write-Host "[phase-10] Ensuring host pool is started..."
-  $null = Invoke-JsonRequest -Method "POST" -Url "$HostControllerBaseUrl/pool/start" -Headers $hostControllerHeaders -Body @{}
+  Write-Host "[compact-visible] Starting $WorkerId in CompactCorner mode..."
+  $null = Invoke-JsonRequest -Method "POST" -Url "$HostControllerBaseUrl/workers/$WorkerId/start" -Headers $hostControllerHeaders -Body @{
+    runtimeMode = "visible_auth"
+    profileStrategy = "durable"
+    browserWindowMode = "CompactCorner"
+  }
+  $workerStartedForProbe = $true
 
   $health = Wait-Until -Description "host controller to report the target worker reachable" -Condition {
     $snapshot = Invoke-JsonRequest -Method "GET" -Url "$HostControllerBaseUrl/health" -Headers $hostControllerHeaders
@@ -139,7 +162,7 @@ try {
     return $null
   }
 
-  $null = Wait-Until -Description "control-api to report the target worker ready" -Condition {
+  $readyWorkerStatus = Wait-Until -Description "control-api to report the target worker ready" -Condition {
     $status = Invoke-JsonRequest -Method "GET" -Url "$InternalBaseUrl/internal/workers/$WorkerId/status" -Headers $internalHeaders
 
     if ($status.status -eq "ready") {
@@ -149,7 +172,7 @@ try {
     return $null
   }
 
-  Write-Host "[phase-10] Creating a worker-pinned validation session for $WorkerId..."
+  Write-Host "[compact-visible] Creating a worker-pinned validation session for $WorkerId..."
   $sessionResponse = Invoke-JsonRequest -Method "POST" -Url "$InternalBaseUrl/internal/workers/$WorkerId/validation-session" -Headers $internalHeaders -Body @{
     requestedForLabel = $SessionLabel
   }
@@ -180,7 +203,7 @@ try {
     return $null
   }
 
-  Write-Host "[phase-10] Waiting for fresh chat bootstrap on $WorkerId..."
+  Write-Host "[compact-visible] Waiting for Temporary Chat bootstrap on $WorkerId..."
   $bootstrapSnapshot = Wait-Until -Description "fresh chat bootstrap to become ready" -Condition {
     $snapshot = Invoke-JsonRequest -Method "GET" -Url "$PublicBaseUrl/api/sessions/$sessionId/messages"
 
@@ -196,7 +219,7 @@ try {
   }
 
   $prompt = "Please reply with exactly: $ExpectedReply"
-  Write-Host "[phase-10] Sending relay probe: $prompt"
+  Write-Host "[compact-visible] Sending relay probe: $prompt"
   $null = Invoke-JsonRequest -Method "POST" -Url "$PublicBaseUrl/api/sessions/$sessionId/messages" -Body @{
     bodyText = $prompt
   }
@@ -228,18 +251,73 @@ try {
     throw "Expected assistant reply '$ExpectedReply' but received '$($finalAssistant.body)'."
   }
 
+  $finalWorkerStatus =
+    Wait-Until -Description "worker truth to reflect successful compact-visible relay" -Condition {
+      $status = Get-WorkerStatusSnapshot -WorkerId $WorkerId
+
+      if (
+        $status -and
+        ($status.runtimeCapability -eq "usable" -or
+          ($status.lastRelayAt -and -not $status.lastRelayFailureCode))
+      ) {
+        return $status
+      }
+
+      return $null
+    }
   $probeResult = [pscustomobject]@{
     workerId = $WorkerId
+    runtimeMode =
+      if ($finalWorkerStatus) {
+        $finalWorkerStatus.runtimeMode
+      } else {
+        $readyWorkerStatus.runtimeMode
+      }
+    runtimeClass =
+      if ($finalWorkerStatus) {
+        $finalWorkerStatus.runtimeClass
+      } else {
+        $readyWorkerStatus.runtimeClass
+      }
+    runtimeCapability =
+      if ($finalWorkerStatus) {
+        $finalWorkerStatus.runtimeCapability
+      } else {
+        $readyWorkerStatus.runtimeCapability
+      }
+    proofUsability = "usable"
+    stabilityGateStatus =
+      if ($finalWorkerStatus) {
+        $finalWorkerStatus.stabilityGateStatus
+      } else {
+        $readyWorkerStatus.stabilityGateStatus
+      }
+    stabilityPassCount =
+      if ($finalWorkerStatus) {
+        $finalWorkerStatus.stabilityPassCount
+      } else {
+        $readyWorkerStatus.stabilityPassCount
+      }
+    bootstrapResult = $bootstrapSnapshot.chatBootstrap.status
+    bootstrapFailureCode = $bootstrapSnapshot.chatBootstrap.failureCode
+    conversationMode = $bootstrapSnapshot.chatBootstrap.conversationMode
+    expectedConversationMode = $ExpectedConversationMode
+    conversationModeMatchesExpectation =
+      $bootstrapSnapshot.chatBootstrap.conversationMode -eq "temporary"
+    modelLabel = $bootstrapSnapshot.chatBootstrap.modelLabel
+    expectedModelLabel = $ExpectedModelLabel
+    modelMatchesExpectation =
+      $bootstrapSnapshot.chatBootstrap.modelLabel -eq $ExpectedModelLabel
+    relayResult = $finalAssistant.state
+    relayFailureCode = $finalAssistant.failureCode
+    assistantReplyText = $finalAssistant.body
+    proofPath = "CompactCorner -> Temporary Chat -> GPT-5.4 Thinking -> relay"
     sessionId = $sessionId
     outcome = "relay_complete"
-    runtimeUsability = $bootstrapSnapshot.chatBootstrap.runtimeUsability
-    challengeDetected = [bool]$bootstrapSnapshot.chatBootstrap.challengeDetected
-    pageUrl = $bootstrapSnapshot.chatBootstrap.pageUrl
     failureCode = $null
-    assistantBody = $finalAssistant.body
   }
 
-  Write-Host "[phase-10] Relay probe succeeded on $WorkerId with reply '$ExpectedReply'."
+  Write-Host "[compact-visible] Relay probe succeeded on $WorkerId with reply '$ExpectedReply'."
 } catch {
   if (-not $ReturnJson) {
     throw
@@ -259,17 +337,12 @@ try {
       $null
     }
 
+  $workerStatus = Get-WorkerStatusSnapshot -WorkerId $WorkerId
   $outcome = "probe_failed"
   $failureCode = $null
-  $runtimeUsability = $null
-  $challengeDetected = $false
-  $pageUrl = $null
 
   if ($snapshot -and $snapshot.chatBootstrap) {
     $failureCode = $snapshot.chatBootstrap.failureCode
-    $runtimeUsability = $snapshot.chatBootstrap.runtimeUsability
-    $challengeDetected = [bool]$snapshot.chatBootstrap.challengeDetected
-    $pageUrl = $snapshot.chatBootstrap.pageUrl
 
     if ($snapshot.chatBootstrap.status -eq "failed") {
       $outcome = "bootstrap_failed"
@@ -286,18 +359,61 @@ try {
 
   $probeResult = [pscustomobject]@{
     workerId = $WorkerId
-    sessionId = $sessionId
-    outcome = $outcome
-    runtimeUsability = $runtimeUsability
-    challengeDetected = $challengeDetected
-    pageUrl = $pageUrl
-    failureCode = $failureCode
-    assistantBody =
+    runtimeMode = $workerStatus.runtimeMode
+    runtimeClass = $workerStatus.runtimeClass
+    runtimeCapability = $workerStatus.runtimeCapability
+    proofUsability = "unusable"
+    stabilityGateStatus = $workerStatus.stabilityGateStatus
+    stabilityPassCount = $workerStatus.stabilityPassCount
+    bootstrapResult =
+      if ($snapshot -and $snapshot.chatBootstrap) {
+        $snapshot.chatBootstrap.status
+      } else {
+        "unknown"
+      }
+    bootstrapFailureCode = $failureCode
+    conversationMode =
+      if ($snapshot -and $snapshot.chatBootstrap) {
+        $snapshot.chatBootstrap.conversationMode
+      } else {
+        "unknown"
+      }
+    expectedConversationMode = $ExpectedConversationMode
+    conversationModeMatchesExpectation =
+      $snapshot -and $snapshot.chatBootstrap -and
+      $snapshot.chatBootstrap.conversationMode -eq "temporary"
+    modelLabel =
+      if ($snapshot -and $snapshot.chatBootstrap) {
+        $snapshot.chatBootstrap.modelLabel
+      } else {
+        $null
+      }
+    expectedModelLabel = $ExpectedModelLabel
+    modelMatchesExpectation =
+      $snapshot -and $snapshot.chatBootstrap -and
+      $snapshot.chatBootstrap.modelLabel -eq $ExpectedModelLabel
+    relayResult =
+      if ($lastAssistant) {
+        $lastAssistant.state
+      } else {
+        $null
+      }
+    relayFailureCode =
+      if ($lastAssistant) {
+        $lastAssistant.failureCode
+      } else {
+        $null
+      }
+    assistantReplyText =
       if ($lastAssistant) {
         $lastAssistant.body
       } else {
         $null
       }
+    proofPath = "CompactCorner -> Temporary Chat -> GPT-5.4 Thinking -> relay"
+    sessionId = $sessionId
+    outcome = $outcome
+    failureCode = $failureCode
     detail = "$_"
   }
 } finally {
@@ -308,8 +424,18 @@ try {
       Write-Warning "Failed to end probe session ${sessionId}: $_"
     }
   }
+
+  if ($workerStartedForProbe -and -not $KeepWorkerRunning) {
+    try {
+      $null = Invoke-JsonRequest -Method "POST" -Url "$HostControllerBaseUrl/workers/$WorkerId/stop" -Headers $hostControllerHeaders -Body @{}
+    } catch {
+      Write-Warning "Failed to stop probe worker ${WorkerId}: $_"
+    }
+  }
 }
 
 if ($ReturnJson) {
   return $probeResult
 }
+
+$probeResult | ConvertTo-Json -Depth 8

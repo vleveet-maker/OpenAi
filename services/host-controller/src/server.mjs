@@ -52,7 +52,11 @@ function parseStartWorkerOptionsFromBody(rawBody, fallback = {}) {
       profileStrategy:
         typeof parsed?.profileStrategy === "string"
           ? parsed.profileStrategy
-          : fallback.profileStrategy
+          : fallback.profileStrategy,
+      browserWindowMode:
+        typeof parsed?.browserWindowMode === "string"
+          ? parsed.browserWindowMode
+          : fallback.browserWindowMode
     };
   } catch {
     return fallback;
@@ -97,8 +101,10 @@ export function createHostControllerServer(
 
       if (request.method === "POST" && url.pathname === "/pool/start") {
         const body = await readRequestBody(request);
+        const startOptions = parseStartWorkerOptionsFromBody(body);
         const result = await controller.startPool(
-          parseStartWorkerOptionsFromBody(body).runtimeMode
+          startOptions.runtimeMode,
+          startOptions.browserWindowMode
         );
         sendJson(response, 202, {
           ...result,
@@ -127,7 +133,8 @@ export function createHostControllerServer(
           const result = await controller.startWorker(
             workerAction.workerId,
             startOptions.runtimeMode,
-            startOptions.profileStrategy
+            startOptions.profileStrategy,
+            startOptions.browserWindowMode
           );
           sendJson(
             response,

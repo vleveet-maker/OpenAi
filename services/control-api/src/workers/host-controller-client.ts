@@ -4,6 +4,10 @@ export type HostControllerRuntimeMode =
   | "alternate_desktop";
 
 export type HostControllerProfileStrategy = "durable" | "diagnostic_fresh";
+export type HostControllerBrowserWindowMode =
+  | "Normal"
+  | "Minimized"
+  | "CompactCorner";
 
 export type HostControllerWorkerStartupStatus =
   | "already_running"
@@ -23,6 +27,7 @@ export interface HostControllerWorkerStatus {
   runtimeMode?: "visible_auth" | "hidden_runtime" | "alternate_desktop" | null;
   runtimeClass?:
     | "host_visible_auth"
+    | "host_visible_compact"
     | "host_hidden_runtime"
     | "host_alternate_desktop"
     | "docker_headed_xvfb"
@@ -61,6 +66,13 @@ export interface AlternateDesktopValidationResult {
 export interface HostControllerPoolResult extends HostControllerHealthSnapshot {
   action: string;
   runtimeMode?: HostControllerRuntimeMode;
+  runtimeClass?:
+    | "host_visible_auth"
+    | "host_visible_compact"
+    | "host_hidden_runtime"
+    | "host_alternate_desktop"
+    | "docker_headed_xvfb";
+  browserWindowMode?: HostControllerBrowserWindowMode;
   profileStrategy?: HostControllerProfileStrategy;
   profilePath?: string | null;
 }
@@ -69,13 +81,17 @@ export interface HostControllerClient {
   startWorker(
     workerId: string,
     runtimeMode?: HostControllerRuntimeMode,
-    profileStrategy?: HostControllerProfileStrategy
+    profileStrategy?: HostControllerProfileStrategy,
+    browserWindowMode?: HostControllerBrowserWindowMode
   ): Promise<HostControllerPoolResult | Record<string, unknown>>;
   stopWorker(workerId: string): Promise<void>;
   validateAlternateDesktop(
     workerId: string
   ): Promise<AlternateDesktopValidationResult>;
-  startPool(): Promise<HostControllerPoolResult>;
+  startPool(
+    runtimeMode?: HostControllerRuntimeMode,
+    browserWindowMode?: HostControllerBrowserWindowMode
+  ): Promise<HostControllerPoolResult>;
   stopPool(): Promise<HostControllerPoolResult>;
   getHealth(): Promise<HostControllerHealthSnapshot>;
   listWorkers(): Promise<HostControllerHealthSnapshot>;
@@ -151,10 +167,11 @@ export function createHostControllerClient(
   }
 
   return {
-    async startWorker(workerId, runtimeMode, profileStrategy) {
+    async startWorker(workerId, runtimeMode, profileStrategy, browserWindowMode) {
       return post(`/workers/${workerId}/start`, workerId, {
         ...(runtimeMode ? { runtimeMode } : {}),
-        ...(profileStrategy ? { profileStrategy } : {})
+        ...(profileStrategy ? { profileStrategy } : {}),
+        ...(browserWindowMode ? { browserWindowMode } : {})
       });
     },
     async stopWorker(workerId) {
@@ -166,8 +183,11 @@ export function createHostControllerClient(
         workerId
       );
     },
-    async startPool() {
-      return post<HostControllerPoolResult>("/pool/start");
+    async startPool(runtimeMode, browserWindowMode) {
+      return post<HostControllerPoolResult>("/pool/start", undefined, {
+        ...(runtimeMode ? { runtimeMode } : {}),
+        ...(browserWindowMode ? { browserWindowMode } : {})
+      });
     },
     async stopPool() {
       return post<HostControllerPoolResult>("/pool/stop");
@@ -193,7 +213,8 @@ export function createNoopHostControllerClient(): HostControllerClient {
     async startWorker(
       _workerId: string,
       _runtimeMode?: HostControllerRuntimeMode,
-      _profileStrategy?: HostControllerProfileStrategy
+      _profileStrategy?: HostControllerProfileStrategy,
+      _browserWindowMode?: HostControllerBrowserWindowMode
     ) {
       return {};
     },
@@ -216,10 +237,15 @@ export function createNoopHostControllerClient(): HostControllerClient {
         detail: "host controller disabled"
       };
     },
-    async startPool() {
+    async startPool(
+      _runtimeMode?: HostControllerRuntimeMode,
+      _browserWindowMode?: HostControllerBrowserWindowMode
+    ) {
       return {
         action: "pool_start_requested",
-        runtimeMode: "alternate_desktop",
+        runtimeMode: "visible_auth",
+        runtimeClass: "host_visible_compact",
+        browserWindowMode: "CompactCorner",
         ...idleSnapshot
       };
     },

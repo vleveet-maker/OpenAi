@@ -125,6 +125,9 @@ describe("internal host pool routes", () => {
 
     expect(idleResponse.body.pool.status).toBe("idle");
     expect(idleResponse.body.pool.proxyListening).toBe(false);
+    expect(idleResponse.body.pool.routineRuntimeMode).toBe("visible_auth");
+    expect(idleResponse.body.pool.routineRuntimeClass).toBe("host_visible_compact");
+    expect(idleResponse.body.pool.routineBrowserWindowMode).toBe("CompactCorner");
     expect(idleResponse.body.pool.workers[0].workerId).toBe("dad");
     expect(idleResponse.body.pool.workers[0].runtimeCapability).toBe("unreachable");
 
@@ -153,6 +156,7 @@ describe("internal host pool routes", () => {
   });
 
   it("returns 202 for start and stop and reflects ready then idle states", async () => {
+    const startCalls: Array<Record<string, unknown>> = [];
     let health: HostControllerHealthSnapshot = {
       proxyListening: false,
       proxyServerUrl: "http://127.0.0.1:7897",
@@ -170,7 +174,11 @@ describe("internal host pool routes", () => {
     const { app, runtime } = createTestRuntime({
       async startWorker() {},
       async stopWorker() {},
-      async startPool() {
+      async startPool(runtimeMode, browserWindowMode) {
+        startCalls.push({
+          runtimeMode,
+          browserWindowMode
+        });
         health = {
           proxyListening: true,
           proxyServerUrl: "http://127.0.0.1:7897",
@@ -222,13 +230,24 @@ describe("internal host pool routes", () => {
     const startResponse = await request(app)
       .post("/internal/host-pool/start")
       .set("x-internal-admin-token", "secret")
-      .send({})
+      .send({
+        runtimeMode: "visible_auth",
+        browserWindowMode: "CompactCorner"
+      })
       .expect(202);
 
     expect(startResponse.body.action).toBe("start_requested");
     expect(startResponse.body.pool.status).toBe("ready");
     expect(startResponse.body.pool.proxyListening).toBe(true);
+    expect(startResponse.body.pool.routineRuntimeClass).toBe("host_visible_compact");
+    expect(startResponse.body.pool.routineBrowserWindowMode).toBe("CompactCorner");
     expect(startResponse.body.pool.workers[0].runtimeCapability).toBe("reachable_but_unusable");
+    expect(startCalls).toEqual([
+      {
+        runtimeMode: "visible_auth",
+        browserWindowMode: "CompactCorner"
+      }
+    ]);
 
     const stopResponse = await request(app)
       .post("/internal/host-pool/stop")

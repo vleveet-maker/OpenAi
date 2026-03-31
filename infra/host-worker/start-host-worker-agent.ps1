@@ -9,6 +9,8 @@ param(
   [string]$RuntimeDesktopName = "",
   [ValidateSet("VisibleAuth", "HiddenRuntime", "AlternateDesktop")]
   [string]$RuntimeMode = "AlternateDesktop",
+  [ValidateSet("Normal", "Minimized", "CompactCorner")]
+  [string]$BrowserWindowMode = "Minimized",
   [string]$ProxyServer = "",
   [string]$RepoRoot = "",
   [switch]$SkipInstall
@@ -71,7 +73,11 @@ $env:WORKER_RUNTIME_MODE =
   }
 $env:WORKER_RUNTIME_CLASS =
   if ($RuntimeMode -eq "VisibleAuth") {
-    "host_visible_auth"
+    if ($BrowserWindowMode -eq "CompactCorner") {
+      "host_visible_compact"
+    } else {
+      "host_visible_auth"
+    }
   } elseif ($RuntimeMode -eq "AlternateDesktop") {
     "host_alternate_desktop"
   } else {
@@ -86,6 +92,7 @@ $env:WORKER_HEADLESS =
 $env:WORKER_PROXY_SERVER = $ProxyServer
 $env:WORKER_CDP_ENDPOINT_URL = $CdpEndpointUrl
 $env:WORKER_RUNTIME_DESKTOP_NAME = $RuntimeDesktopName
+$env:WORKER_BROWSER_WINDOW_MODE = $BrowserWindowMode
 $env:WORKER_START_URL = $StartUrl
 $env:BROWSER_ACCESS_HTTP_PORT = "0"
 

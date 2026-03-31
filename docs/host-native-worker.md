@@ -1,88 +1,152 @@
 # Host-Native Worker
 
-Use this mode when Docker browser workers are less reliable than native Chromium on the Windows host.
+Текущий рабочий fallback для `v1.2` это `compact visible`: маленькие окна в углу экрана, а не hidden runtime и не обычные большие окна.
 
-## Runtime Policy
+## Current Runtime Policy
 
-- `Start pool` uses the alternate desktop non-visible runtime.
-- `Start visible login` is used only for first login or manual reauthentication.
-- `Complete login and validate` returns the same profile to alternate-desktop operation and immediately records a non-visible validation result.
-- Routine household use should run without any visible desktop browser.
-- If the non-visible runtime loses auth after manual login, treat that as runtime architecture review evidence rather than a signal to keep silently retrying.
+- `Start pool` запускает household pool в `compact visible`.
+- `Start alternate desktop pool` нужен только для явной non-visible проверки, а не как обычный путь.
+- `Start visible login` и `Start visible reauth` нужны только для ручного логина или ручной повторной авторизации.
+- `Use compact visible runtime` оставляет конкретный worker в маленьком рабочем окне после ручного логина.
+- `Complete login and validate` и `Validate non-visible runtime` используются только если мы отдельно перепроверяем non-visible путь.
+- Браузеры открываются только когда они реально нужны, держатся маленькими в углу и после proof или recovery снова закрываются.
 
-## Phase 10.2 Runtime Decision
+## Official Worker Set
 
-- Phase 10.2 runtime decision: `block_phase_11_pending_new_runtime_design`.
-- The current host hidden runtime is not selected for rollout because live evidence showed challenge or non-usable startup behavior after the visible-auth handoff.
-- The explicit `docker_headed_xvfb` candidate is also not selected: a live bootstrap probe on `worker-dad` returned `bootstrap_challenge_detected` with a Cloudflare challenge URL.
-- Phase 11 must not use the current host hidden runtime or the current Docker/Xvfb candidate as its assumed steady-state path.
-- The next required step is a new runtime design phase for a more reliable non-visible browser runtime.
+- `dad` -> agent `4021`, CDP `9222`
+- `wife` -> agent `4022`, CDP `9223`
+- `shared-1` -> agent `4023`, CDP `9224`
+- `shared-2` -> agent `4024`, CDP `9225`
+- `shared-3` -> agent `4025`, CDP `9226`
+- `shared-4` -> agent `4026`, CDP `9227`
+- `shared-5` -> agent `4027`, CDP `9228`
 
-## Three-Worker Setup
+Профили живут на хосте и сохраняют логин отдельно для каждого worker.
 
-1. Start the stack with the host-native override:
+## Routine Start
+
+1. Подними стек с host-native override:
    `docker compose -f infra/docker-compose.yml -f infra/docker-compose.host-native.yml up -d edge control-api session-client`
-2. Ensure the local proxy share links exist in the ignored file:
+2. Проверь, что локальные proxy share links есть в:
    `infra/data/proxy/share-links.local.json`
-3. Open the internal admin surface:
+3. Открой internal admin:
    `http://127.0.0.1:8081/internal/admin`
-4. Use `Start pool` when you need the proxied native worker pool in alternate desktop non-visible runtime.
-5. If a worker needs first login or reauth, use `Start visible login` or `Start visible reauth` for that worker.
-6. Finish the manual step in the visible browser, then press `Complete login and validate`.
-7. Use `Validate non-visible runtime` for later rechecks or repeatability passes after that first complete-and-validate hand-off.
-8. Use `Stop pool` when the household browsers are no longer needed.
+4. Нажми `Start pool`, если нужен обычный household runtime.
+5. Используй `Start visible login` или `Start visible reauth`, если конкретному worker нужен ручной вход.
+6. После ручного входа для обычной работы выбирай `Use compact visible runtime`.
+7. Когда проверка или recovery закончены, нажми `Stop pool` или останови конкретный worker, чтобы окна не оставались открытыми.
 
 ## Pool Status Meanings
 
-- `idle`: the proxy is not listening and the host workers are down.
-- `starting`: start was requested and the system is waiting for the proxy and hidden workers to come online.
-- `ready`: proxy is listening and all configured host workers are reachable.
-- `degraded`: partial success. Some part of the pool is reachable, but not all of it.
-- `stopping`: stop was requested and the system is waiting for workers or proxy to shut down.
-- `failed`: the last lifecycle action failed and the last error should be reviewed in internal admin.
+- `idle`: proxy и host workers сейчас остановлены
+- `starting`: идёт запуск
+- `ready`: proxy слушает, workers доступны
+- `degraded`: часть пула поднялась, часть нет
+- `stopping`: идёт остановка
+- `failed`: последний lifecycle action завершился ошибкой
 
-## Validation Gate
+## Compact Visible Proof Path
 
-- This setup is not considered live-complete until at least one worker has been manually logged in visibly, switched back to alternate desktop runtime, and then reached a repeatability gate of `2/2` consecutive successful non-visible validations with a real relay pass.
-- The operator-facing validation path is now:
-  - `Start visible login` or `Start visible reauth`
-  - complete the manual ChatGPT step
-  - `Complete login and validate`
-  - `Validate non-visible runtime` for additional repeatability passes
-- Repeatability meanings are now:
-  - `unstable (0/2)`: not rollout-ready
-  - `provisional (1/2)`: one good pass exists, but it is not yet trusted
-  - `stable (2/2)`: repeated proof is good enough to reopen rollout smoke
-- Any auth, bootstrap, relay, or worker-assignment failure resets the gate back to `unstable`.
-- The bounded rescue/proof order is now:
-  - `wife` first
-  - `shared-1` second
-  - `dad` third
-- Phase 11 is blocked again. The earlier one-off `wife` success from Phase 10.5 is now historical evidence only, not a rollout gate by itself.
-- Every probe appends a row to `infra/data/host-worker-logs/runtime-matrix.jsonl` so alternate-desktop viability is evidence-backed instead of anecdotal.
+Канонический proof теперь такой:
 
-## Current Phase 10.5.1.1 Result
+`CompactCorner -> Temporary Chat -> GPT-5.4 Thinking -> relay`
 
-- `wife` durable profile failed twice in a row after controlled alternate-desktop restarts:
-  - pass 1 -> `bootstrap_navigation_failed @ navigation`
-  - pass 2 -> `bootstrap_navigation_failed @ navigation`
-- `wife` fresh-profile diagnostic proved that visible auth is alive:
-  - visible bootstrap reached `Temporary Chat`
-  - preferred model stayed `GPT-5.4 Thinking`
-  - but `Complete login and validate` still returned `bootstrap_navigation_failed @ navigation` in alternate desktop
-- `shared-1` still matches the same durable alternate-desktop navigation tail: `bootstrap_navigation_failed @ navigation`.
-- `dad` remains the auth-recovery target. The latest control-plane validation returns `bootstrap_auth_required @ auth_check`.
-- Phase 11 stays blocked until a follow-up stabilization phase proves one worker at `Repeatability: stable (2/2)` and fixes the alternate-desktop hand-off/runtime tail rather than only refreshing cookies.
+Используй один worker за раз:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\host-worker\test-host-worker-relay.ps1 -WorkerId wife
+```
+
+Что делает этот script:
+
+- стартует только выбранный worker в `CompactCorner`
+- ждёт `Temporary Chat`
+- проверяет модель `GPT-5.4 Thinking`
+- отправляет один smoke relay
+- по умолчанию потом снова закрывает worker
+
+Если окно нужно оставить открытым для ручной проверки:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\host-worker\test-host-worker-relay.ps1 -WorkerId wife -KeepWorkerRunning
+```
+
+## Restore Pages Popup
+
+`Restore pages` это реальная runtime-проблема, а не просто косметика.
+
+Сейчас suppression делается так:
+
+- сначала мягкое закрытие браузера через `CloseMainWindow()`
+- потом чистка только crash/session-restore артефактов
+- затем запуск с флагами:
+  - `--hide-crash-restore-bubble`
+  - `--disable-session-crashed-bubble`
+  - `--no-first-run`
+  - `--no-default-browser-check`
+
+Что важно:
+
+- durable profile и login state не стираются
+- cookies специально не чистятся
+- если popup снова появился, это runtime evidence и его надо записывать как регрессию, а не “лечить” удалением профиля
+
+## Phase 11 Gate
+
+Fresh compact-visible proof on 2026-03-29 passed on all six original official workers:
+
+- `dad`
+- `wife`
+- `shared-1`
+- `shared-2`
+- `shared-3`
+- `shared-4`
+
+Path proved:
+
+`CompactCorner -> Temporary Chat -> GPT-5.4 Thinking -> relay -> smoke-ok`
+
+`shared-5` is now provisioned as the seventh host-worker slot, but it still needs manual login plus its first live proof before it should be treated as rollout-usable.
+
+All windows were closed again after proof finished.
+
+`Phase 11` is no longer blocked by runtime rescue work, but it still waits on the dedicated server browser-runtime migration. The local compact-visible baseline is now explicit, and the temporary local seven-worker snapshot exists only as a confidence aid while server access is busy.
+
+## Local Rollout Smoke
+
+If server-side desktop access is temporarily busy, use this local-only seven-worker snapshot on the operator PC:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\host-worker\test-local-rollout-smoke.ps1 `
+  -OutputJsonPath .\.planning\phases\10.6.1.2.1-local-machine-rollout-smoke-confidence\10.6.1.2.1-WORKER-MATRIX.json `
+  -OutputMarkdownPath .\.planning\phases\10.6.1.2.1-local-machine-rollout-smoke-confidence\10.6.1.2.1-WORKER-MATRIX.md
+```
+
+What this proves:
+
+- the current local PC can still run the official seven-worker compact-visible proof path
+- each worker result is recorded explicitly
+
+What this does not prove:
+
+- it does not replace the pending server-hosted runtime migration
+- it does not mean the operator PC can be switched off
+
+Latest local snapshot on 2026-03-30:
+
+- usable: `dad`, `wife`, `shared-1`, `shared-3`, `shared-5`
+- currently failing: `shared-2`, `shared-4`
+- repeated failure code on both: `worker_chat_bootstrap_timeout`
+
+Latest local snapshot on 2026-03-30:
+
+- usable: `dad`, `wife`, `shared-1`, `shared-3`, `shared-5`
+- currently failing: `shared-2`, `shared-4`
+- repeated failure code on both: `worker_chat_bootstrap_timeout`
 
 ## Notes
 
-- The host-native workers use these ports:
-  - `dad`: CDP `9222`, agent `4021`
-  - `wife`: CDP `9223`, agent `4022`
-  - `shared-1`: CDP `9224`, agent `4023`
-- Browsers launch through the local mixed proxy at `127.0.0.1:7897`.
-- sing-box automatically tests the three configured outbounds and routes through the healthy one.
-- Docker restart actions do not apply to host-native workers.
-- Alternate desktop runtime metadata is written under `infra/data/host-worker-state/<workerId>.json`.
-- Fresh session bootstrap now expects `Temporary Chat` plus the latest configured reasoning model before the composer unlocks. The current default env is `WORKER_PREFERRED_REASONING_MODEL_LABELS=["GPT-5.4 Thinking","GPT-5.4"]`.
-- Current ChatGPT UI drift may surface `Temporary Chat` as a direct control or as a model menu entry. Selector maintenance for both relay and bootstrap is centralized in the worker selector-map files instead of being scattered across runner logic.
+- runtime truth для compact-visible должен показывать `runtimeClass=host_visible_compact`
+- proxy для host-native workers идёт через локальный mixed proxy на `127.0.0.1:7897`
+- Docker restart actions не применяются к host-native workers
+- окна должны открываться только по делу и не оставаться висеть после proof/recovery

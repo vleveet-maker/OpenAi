@@ -20,7 +20,9 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - Decimal phases (`9.1`, `10.1`) remain available for urgent insertions
 
 - [x] **Phase 9: Internal host-pool orchestration** - completed 2026-03-28, moved proxied host-native pool lifecycle control into the internal admin surface with clearer failure reporting
-- [ ] **Phase 10: ChatGPT UI drift hardening** - active; selector hardening landed, but live hidden-runtime validation now shows all three workers falling into Cloudflare challenge instead of stable ChatGPT bootstrap
+- [x] **Phase 10: ChatGPT UI drift hardening** - completed 2026-03-29 through follow-up evidence; selector hardening plus fresh compact-visible proof now confirm current ChatGPT relay on `dad`, `wife`, and `shared-1`
+- [x] **Phase 10.6: Remote server deployment, autostart, and external relay API** - (INSERTED) completed 2026-03-29; the Linux remote relay now runs under systemd on `77.66.186.75`, and live relay proof succeeded through a reverse-tunneled compact-visible worker
+- [x] **Phase 10.6.1: Remote relay server verification and public API readiness** - (INSERTED) completed 2026-03-29 through follow-up evidence; server truth, worker truth, and the deliberate public API edge are now all explicit
 - [x] **Phase 10.1: Hidden runtime after manual login** - (INSERTED) completed 2026-03-28; explicit visible-auth and hidden-runtime paths now exist, plus a canonical hidden-runtime validation probe
 - [x] **Phase 10.2: Hidden runtime reliability review and alternative browser runtime decision** - (INSERTED) completed 2026-03-28; control-plane truth is explicit, hidden-runtime evidence is recorded, and Phase 11 is now blocked by an explicit runtime decision
 - [x] **Phase 10.3: Alternative non-visible native browser runtime design** - (INSERTED) completed 2026-03-28; alternate desktop runtime foundation and control-plane integration landed, but no worker passed the bounded live proof
@@ -28,7 +30,17 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [ ] **Phase 10.5: Alternate desktop navigation rescue and auth renewal** - (INSERTED) executed 2026-03-29; `wife` produced the first proof-backed `phase11Ready=true` path in alternate desktop, while `dad` auth renewal and `shared-1` assignment-timeout cleanup remain explicit debt
 - [ ] **Phase 10.5.1: Repeatable alternate desktop stability gate** - (INSERTED) executed 2026-03-29; validation is now worker-pinned and repeatability truth is explicit, but `wife` failed the same navigation bootstrap step twice in a row and no worker reached `stable (2/2)`
 - [ ] **Phase 10.5.1.1: Alternate desktop repeatability rescue** - (INSERTED) executed 2026-03-29; fresh proof confirmed that visible auth still works on `wife`, but durable and fresh-profile alternate-desktop paths both still fall back to `bootstrap_navigation_failed@navigation`, so Phase 11 remains blocked
-- [ ] **Phase 11: Rollout smoke confidence** - blocked after the negative 10.5.1.1 rescue decision; rollout smoke should resume only after a new follow-up stabilizes or replaces the alternate-desktop hand-off/runtime and produces at least one `stable (2/2)` worker
+- [x] **Phase 10.5.1.1.1: Compact visible runtime rollout and crash-restore popup hardening** - (INSERTED) completed 2026-03-29; compact visible is now the official rollout fallback and fresh proof passed on all six official workers
+- [x] **Phase 10.6.1.2: Dedicated Windows browser block deployment** - (INSERTED) completed 2026-03-30; the seven-worker compact-visible runtime is now packaged as a separate Windows block with Windows Server startup assets, stable Linux relay handoff, and a fresh `7/7 usable` direct matrix on the current machine
+- [x] **Phase 10.6.1.2.1: Local-machine rollout smoke confidence** - (INSERTED) completed 2026-03-30; local seven-worker compact-visible smoke now has a repeatable command and explicit worker matrix, and follow-up evidence now brings the current operator-PC snapshot to `7/7` usable
+- [x] **Phase 10.6.1.2.1.1: Shared-2 and shared-4 bootstrap timeout analysis and mitigation** - (INSERTED) completed 2026-03-30; repeated timeout evidence is now explained by a memory dialog plus an aria-label-only Temporary Chat entry, and both workers now pass live compact-visible proof
+- [x] **Phase 10.6.1.2.2: Deployed Windows Server account-preserving stabilization and API cutover** - (INSERTED) completed 2026-03-30 with `hold_preserve_accounts`; the live 9-account Windows Server block is now freeze-audited, canary/subset safe-start proof exists, and shadow API tooling is proven, but Windows-side public API promotion is still on hold
+- [ ] **Phase 10.6.1.2.2.1: Windows Server public API activation and edge reconciliation** - (INSERTED) executed 2026-03-30 with `hold_preserve_accounts`; preserve-first edge scripts and outside proof now exist, but the deployed Windows host still needs one direct `Caddy` execution pass before the public API edge can be promoted safely
+- [x] **Phase 10.6.1.2.2.1.1: Direct Windows Caddy edge cutover and canary proof** - (INSERTED) completed 2026-03-31 with `safe_but_hold`; direct Windows-host backup/audit, shadow canary, and promoted HTTP proof passed preserve-first on `shared-6`, but HTTPS/TLS and one fully independent outside chat proof still remain
+- [x] **Phase 10.6.1.2.2.1.1.1: Windows HTTPS and independent outside chat proof finalization** - (INSERTED) completed 2026-03-31 with `hold_preserve_accounts`; the final follow-up proved that the preserved Windows edge itself still works locally, but the real public IP `77.66.186.75` currently terminates on Ubuntu `nginx` instead of Windows `Caddy`, so the blocker is now exact public-edge ownership
+- [x] **Phase 10.6.1.2.2.1.1.1.1: Public edge ownership and split-ingress reconciliation** - (INSERTED) completed 2026-03-31 with `hold_preserve_accounts`; the preserved Windows edge is still healthy on LAN, but the real public IP `77.66.186.75` is currently owned by Ubuntu `nginx`, so the blocker is now exact public-owner conflict outside the browser/runtime layer
+- [x] **Phase 10.6.1.2.2.1.1.1.1.1: Ubuntu public owner reassignment and Windows edge unification** - (INSERTED) completed 2026-03-31 with `safe_to_promote`; Ubuntu now deliberately owns public `77.66.186.75`, the conflicting raw-IP `ascii-art` path is removed, and the canary `shared-6` path succeeds through the unified public owner
+- [ ] **Phase 11: Rollout smoke confidence** - in progress; the repeatable smoke wrapper and latest-smoke operator surface are in place, and the remaining step is one live rollout-smoke run plus final verdict from the deployed Windows browser-block host
 
 ## Phase Details
 
@@ -51,7 +63,229 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
   1. Relay succeeds on all three household workers against the current ChatGPT UI, including `dad`.
   2. Fresh-chat bootstrap still reaches `Temporary Chat` plus the preferred reasoning model on a logged-in worker.
   3. Selector updates for relay and bootstrap live in centralized, maintainable code paths instead of fragmented browser-specific patches.
-**Current status:** Selector centralization is complete, but live validation still has one open ChatGPT UI tail: on the alternate-desktop runtime, `dad` currently needs reauth and `wife` reached `temporary_confirmation_not_found` during `Temporary Chat` bootstrap.
+**Current status:** Completed on 2026-03-29 through follow-up evidence. Selector centralization is complete, fresh compact-visible proof now confirms current ChatGPT relay on `dad`, `wife`, and `shared-1`, and fresh-chat bootstrap on the current localized UI succeeds on the official six-worker compact-visible pool.
+
+### Phase 10.6: Remote server deployment, autostart, and external relay API (INSERTED)
+
+**Goal:** Extract the proven relay/session/bootstrap module to the dedicated remote server, put it under autostart, and expose an authenticated remote API so the rest of the product can use it remotely without pretending the unproven browser runtime has already been replaced.
+**Requirements**: REMOTE-01, REMOTE-02, REMOTE-03, REMOTE-04
+**Depends on:** Phase 10.5.1.1.1
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-29. Wave 1 and Wave 2 landed locally, then Wave 3 deployed the service to `77.66.186.75`, verified `systemd` autostart, and proved fresh plus continuing remote relay through a reverse-tunneled `wife` worker. Raw public `:4010` ingress is still not the trusted consumer path, but the topology verdict is now explicit and evidence-backed.
+
+**Success Criteria** (what must be TRUE):
+  1. The proven relay module can run as a standalone remote service with clear env contract and deployment assets for the target host.
+  2. The remote service exposes a documented authenticated HTTP API for health, ask, and end-dialog flows, and it can be started automatically after reboot.
+  3. The phase ends with a written topology verdict that says exactly how the remote service reaches the runtime layer, or exactly why that topology is still blocked.
+
+Plans:
+- [x] `10.6-01-PLAN.md` - standalone remote-relay mode, target-host audit assets, and deploy/autostart contract
+- [x] `10.6-02-PLAN.md` - authenticated remote relay API and standalone service wiring
+- [x] `10.6-03-PLAN.md` - SSH deployment, live remote smoke, and final topology verdict
+
+### Phase 10.6.1: Remote relay server verification and public API readiness (INSERTED)
+
+**Goal:** Turn the working remote relay into a verifiable and intentionally consumable service by checking the server shape, checking every official worker over the real remote topology, and putting one deliberate external ingress/API boundary in front of it.
+**Requirements**: EXTAPI-01, EXTAPI-02, EXTAPI-03, EXTAPI-04
+**Depends on:** Phase 10.6
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-29 through follow-up evidence from `Phase 10.6.1.1`. The relay server is repeatably verifiable, the six official workers were re-audited through the real remote topology, and the deliberate nginx public boundary is now also reachable from outside clients through the MikroTik NAT path.
+
+**Success Criteria** (what must be TRUE):
+  1. The operator can rerun a deliberate server verification path and see truthful status for process health, autostart, ingress truth, and current topology.
+  2. Every official worker session (`dad`, `wife`, `shared-1`, `shared-2`, `shared-3`, `shared-4`) is checked against the real remote relay path and classified clearly.
+  3. The service has one deliberate external ingress/API path for other clients, plus written auth and usage docs that do not expose internal admin or hidden runtime details.
+
+Plans:
+- [x] `10.6.1-01-PLAN.md` - server verification path, service truth, and operator audit artifacts
+- [x] `10.6.1-02-PLAN.md` - full worker/session audit through the remote topology
+- [x] `10.6.1-03-PLAN.md` - deliberate external ingress, public API contract, and operator/client docs
+
+### Phase 10.6.1.1: MikroTik public ingress and NAT hardening (INSERTED)
+
+**Goal:** Move the remote relay from "healthy on the box" to "reachable from outside" by auditing the MikroTik boundary in front of `192.168.88.2`, defining one deliberate NAT path to the server `nginx` edge, and proving whether the public IP now reaches that edge.
+**Requirements**: MTIK-01, MTIK-02, MTIK-03, MTIK-04
+**Depends on:** Phase 10.6.1
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-29. Router/server truth is explicit, the deliberate `owmcgp-public-relay-http` NAT rule now forwards WAN `tcp/80` to `192.168.88.2:80`, RouterOS management services are restricted to `192.168.88.0/24`, and outside-client proof now reaches the deliberate relay edge on `http://77.66.186.75`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project can prove which MikroTik services, routes, and firewall/NAT rules currently govern public ingress to `192.168.88.2`.
+  2. One deliberate public path forwards the relay edge to the server `nginx` boundary instead of leaving the public IP behavior ambiguous.
+  3. Outside-client proof shows that `77.66.186.75` now reaches our intended edge, or the phase ends with one precise router/upstream blocker classification.
+
+Plans:
+- [x] `10.6.1.1-01-PLAN.md` - router/server audit path and explicit MikroTik truth
+- [x] `10.6.1.1-02-PLAN.md` - deliberate NAT path plus management-surface hardening
+- [x] `10.6.1.1-03-PLAN.md` - outside-client proof and final ingress verdict
+
+### Phase 10.6.1.2: Dedicated Windows browser block deployment (INSERTED)
+
+**Goal:** Package the real seven-worker browser runtime as a separate Windows browser block that can be deployed on a Windows Server, keep Linux as the deliberate relay/API edge, and remove the remaining "this exact operator PC" assumption from the runtime path.
+**Depends on:** Phase 10.6.1.1
+**Requirements:** WINBLK-01, WINBLK-02, WINBLK-03, WINBLK-04
+**Plans:** 3 plans
+**Success Criteria** (what must be TRUE):
+  1. The seven-worker browser runtime can be deployed onto a dedicated Windows Server block instead of the operator laptop, while Linux keeps the public relay/API role.
+  2. Deployment assets exist for Windows logon autostart, reverse SSH tunnels, and operator manual login/reauth without writing secrets into the repo.
+  3. The phase ends with a truthful seven-worker matrix for the Windows block and an explicit readiness verdict instead of assuming all seven profiles are equally stable.
+**Current status:** Completed on 2026-03-30. The Linux browser-runtime path remains reverted, the seven-worker runtime is now packaged as a separate Windows browser block with startup and reverse-tunnel assets for Windows Server, and the latest direct matrix on the current machine is `7/7 usable`. This phase prepares honest Windows Server handoff; it does not falsely claim that the cutover has already happened.
+
+Plans:
+- [x] `10.6.1.2-01-PLAN.md` - Windows browser block runtime contract, deployment assets, and logon-autostart shape
+- [x] `10.6.1.2-02-PLAN.md` - reverse-tunnel/API integration, Windows Server handoff docs, and control-plane truth
+- [x] `10.6.1.2-03-PLAN.md` - direct seven-worker matrix, flakiness classification, and readiness verdict
+
+### Phase 10.6.1.2.1: Local-machine rollout smoke confidence (INSERTED)
+
+**Goal:** Capture one honest local-machine rollout-confidence snapshot on top of the current seven-worker `compact visible` baseline, so the operator can tell whether this PC is still usable for real chat traffic while the dedicated Windows browser block deployment is paused.
+**Requirements**: LSMOKE-01, LSMOKE-02, LSMOKE-03
+**Depends on:** Phase 10.5.1.1.1
+**Plans:** 3 plans
+**Current status:** Completed on 2026-03-30. This local-only confidence follow-up reran worker-by-worker smoke on the full seven-worker set, recorded one explicit matrix artifact, and documented how to rerun the same proof again. Follow-up phase `10.6.1.2.1.1` then restored the last two failing workers, so the local compact-visible pool became `7/7` usable at that moment. It does **not** replace the dedicated Windows browser block dependency for Phase 11.
+
+**Success Criteria** (what must be TRUE):
+  1. The operator has one repeatable local command that runs worker-by-worker `compact visible -> Temporary Chat -> GPT-5.4 Thinking -> relay` proof across all seven local workers.
+  2. The latest local smoke result is recorded as a worker matrix with explicit `usable` / `unusable` truth instead of relying on memory or one-off terminal output.
+  3. Internal operator docs explain how to rerun the local smoke path while the dedicated Windows browser block deployment remains paused or busy.
+
+Plans:
+- [x] `10.6.1.2.1-01-PLAN.md` - local smoke wrapper, seven-worker inventory, and operator rerun contract
+- [x] `10.6.1.2.1-02-PLAN.md` - live seven-worker local compact-visible smoke matrix and artifact capture
+- [x] `10.6.1.2.1-03-PLAN.md` - local confidence verdict, operator docs, and explicit note that server migration still remains separate
+
+### Phase 10.6.1.2.1.1: Shared-2 and shared-4 bootstrap timeout analysis and mitigation (INSERTED)
+
+**Goal:** Isolate why `shared-2` and `shared-4` time out during local `Temporary Chat` bootstrap, land a bounded mitigation if possible, and leave truthful tests and evidence even if one or both profiles still need manual recovery.
+**Requirements**: BTMIT-01, BTMIT-02, BTMIT-03
+**Depends on:** Phase 10.6.1.2.1
+**Plans:** 3 plans
+**Current status:** Completed on 2026-03-30. Wave 1 proved that both workers were landing on a blocking memory dialog instead of a dead profile. Wave 2 added a bounded bootstrap mitigation for dismissing that dialog and recognizing an aria-label-only `Включить временный чат` entry. Wave 3 reran both workers successfully, updated the local matrix to `7/7`, and closed this branch as mitigated rather than leaving it as vague flakiness.
+
+**Success Criteria** (what must be TRUE):
+  1. The project has one explicit explanation for the repeated `shared-2` and `shared-4` timeout branch, based on browser-surface evidence instead of guesswork.
+  2. A bounded mitigation either restores one or both workers or records the exact remaining blocker branch in code and docs.
+  3. Tests and verification artifacts cover the identified timeout/branch behavior so the same tail is not rediscovered from scratch.
+
+Plans:
+- [x] `10.6.1.2.1.1-01-PLAN.md` - capture browser-surface evidence and classify the repeated timeout branch
+- [x] `10.6.1.2.1.1-02-PLAN.md` - implement bounded mitigation and add targeted bootstrap tests
+- [x] `10.6.1.2.1.1-03-PLAN.md` - rerun shared-2/shared-4 proof, update matrix, and record final verdict
+
+### Phase 10.6.1.2.2: Deployed Windows Server account-preserving stabilization and API cutover (INSERTED)
+
+**Goal:** Safely evolve the already-deployed Windows Server browser block that now holds nine logged-in ChatGPT accounts, without treating it like a disposable host. The phase must establish a freeze point, reconcile deployed code against repo truth, stage any uplift through canary validation, and prepare a deliberate public API cutover path without risking mass account loss.
+**Depends on:** Phase 10.6.1.2
+**Requirements:** WSAFE-01, WSAFE-02, WSAFE-03, WSAFE-04
+**Plans:** 3 plans
+**Success Criteria** (what must be TRUE):
+  1. The deployed Windows Server block is audited and version-mapped truthfully, and the repo has an explicit non-destructive operating contract for the nine live accounts.
+  2. Any uplift from repo code to the deployed server is staged through freeze, backup, single-worker canary, and small-subset validation before the full nine-worker pool is touched.
+  3. Public API enablement on that server has an explicit shadow/cutover/rollback path, and the phase ends with a truthful nine-worker matrix plus a preserve-vs-proceed verdict.
+**Current status:** Completed on 2026-03-30 with a preserve-first hold verdict. The deployed Windows Server block now has a freeze-point audit, explicit backup/rollback contract, canary `shared-6` proof, subset `shared-5/shared-7` proof, and a locally proven shadow API path. The phase intentionally stops short of public promotion because the deployed host still shows `:4010 closed` and `80/443` currently resolve into a `Caddy` redirect path instead of a verified Windows-side relay edge.
+
+Plans:
+- [x] `10.6.1.2.2-01-PLAN.md` - deployed-server freeze point, version reconciliation, and non-destructive backup contract
+- [x] `10.6.1.2.2-02-PLAN.md` - canary-safe runtime/API uplift path and explicit rollback controls
+- [x] `10.6.1.2.2-03-PLAN.md` - staged nine-worker validation matrix, API cutover verdict, and operator handoff
+
+### Phase 10.6.1.2.2.1: Windows Server public API activation and edge reconciliation (INSERTED)
+
+**Goal:** Activate the deployed Windows Server public API edge safely by reconciling the current `Caddy`/`:4010` mismatch, proving a shadow path first, and only then deciding whether the public edge can be promoted without risking the 9 live accounts.
+**Requirements**: WEDGE-01, WEDGE-02, WEDGE-03, WEDGE-04
+**Depends on:** Phase 10.6.1.2.2
+**Plans:** 3 plans
+
+**Current status:** Executed on 2026-03-30 with verdict `hold_preserve_accounts`. The repo now contains preserve-first backup/audit/activate/rollback scripts and the public outside proof is explicit, but the deployed Windows Server still needs one direct host-level `Caddy` execution pass before a shadow canary and promoted-edge proof can happen safely.
+
+**Success Criteria** (what must be TRUE):
+  1. The deployed Windows Server edge has one explicit and backed-up truth source that says what owns `80/443`, what owns `4010`, and how to roll back safely.
+  2. A shadow Windows-side API path can be proven locally and through the chosen edge path on one allowlisted canary worker before any broader public promotion is attempted.
+  3. The phase ends with outside-client proof for `healthz`, `v1/models`, and one canary `v1/chat/completions` request, or with one precise preserve-first blocker verdict.
+
+Plans:
+- [x] `10.6.1.2.2.1-01-PLAN.md` - deployed Windows edge audit, backup, and preserve-first contract
+- [x] `10.6.1.2.2.1-02-PLAN.md` - shadow edge activation, rollbackable Caddy reconciliation, and canary-safe scripts
+- [x] `10.6.1.2.2.1-03-PLAN.md` - external proof, cutover verdict, and operator handoff
+
+### Phase 10.6.1.2.2.1.1: Direct Windows Caddy edge cutover and canary proof (INSERTED)
+
+**Goal:** Execute the already-prepared preserve-first Windows edge scripts directly on the deployed Windows Server, prove a shadow canary on `shared-6`, and then either prove or roll back the promoted `Caddy` path with outside-client evidence.
+**Requirements**: WCUT-01, WCUT-02, WCUT-03, WCUT-04
+**Depends on:** Phase 10.6.1.2.2.1
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-31 with verdict `safe_but_hold`. The direct Windows-host preserve-first pass is now done: backup/audit happened, shadow canary on `shared-6` passed, promoted HTTP proof passed, and the 9 live accounts were preserved. The remaining blocker is now narrow: Windows HTTPS/TLS still fails and one fully independent outside-NAT `POST /v1/chat/completions` proof is still missing.
+
+**Success Criteria** (what must be TRUE):
+  1. The deployed Windows Server has one direct host-level audit and backup pass that records the real `Caddy` service/config truth and exact rollback point before edge changes.
+  2. A shadow `Caddy -> 127.0.0.1:4011` path is proven on allowlisted canary `shared-6` without broad-starting or relogging the remaining 9-account pool.
+  3. The promoted `Caddy -> 127.0.0.1:4010` path is either proven end-to-end from outside clients or rolled back cleanly with one precise preserve-first blocker verdict.
+
+Plans:
+- [x] `10.6.1.2.2.1.1-01-PLAN.md` - direct Windows host audit, exact Caddy ownership, and preserve-first rollback point
+- [x] `10.6.1.2.2.1.1-02-PLAN.md` - shadow canary execution and promoted cutover helper path on the deployed Windows host
+- [x] `10.6.1.2.2.1.1-03-PLAN.md` - external proof, promoted-edge verdict, and Phase 11 unblock/hold decision
+
+### Phase 10.6.1.2.2.1.1.1: Windows HTTPS and independent outside chat proof finalization (INSERTED)
+
+**Goal:** Finish the public-edge story preserve-first by reconciling the Windows HTTPS/public-contract path and proving one truly independent outside-client chat call without endangering the already-preserved 9-account pool.
+**Requirements**: WTLS-01, WTLS-02, WTLS-03, WTLS-04
+**Depends on:** Phase 10.6.1.2.2.1.1
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-31 with verdict `hold_preserve_accounts`. The phase removed the final ambiguity, but not in the way we wanted: the preserved Windows edge still works locally, while the real public IP `77.66.186.75` currently lands on Ubuntu `nginx` and returns `404`. That means the remaining blocker is no longer TLS alone and no longer the browser accounts. It is now exact public-edge ownership and split-ingress reconciliation.
+
+**Success Criteria** (what must be TRUE):
+  1. The project knows the exact final public contract for the Windows edge, including whether HTTPS is truly supported now, intentionally deferred, or blocked by one exact deployed-host constraint.
+  2. The already-working public HTTP edge is not destabilized while reconciling the final HTTPS/public path, and the 9-account pool remains preserve-first with canary-only proof on `shared-6`.
+  3. One truly independent outside-client `POST /v1/chat/completions` either succeeds through the final public edge or reduces the remaining uncertainty to one exact blocker that explicitly controls whether Phase 11 can resume.
+
+Plans:
+- [x] `10.6.1.2.2.1.1.1-01-PLAN.md` - exact Windows-host TLS/public-contract truth, rollback point, and helper alignment
+- [x] `10.6.1.2.2.1.1.1-02-PLAN.md` - bounded HTTPS/public-edge reconciliation and canary-safe proof path
+- [x] `10.6.1.2.2.1.1.1-03-PLAN.md` - independent outside-client chat proof and final Phase 11 verdict
+
+### Phase 10.6.1.2.2.1.1.1.1: Public edge ownership and split-ingress reconciliation (INSERTED)
+
+**Goal:** Reconcile the exact owner of public `77.66.186.75` preserve-first, so the project stops guessing whether Ubuntu `nginx`, MikroTik ingress, or the preserved Windows `Caddy` host is responsible for the public API contract.
+**Requirements**: PEDGE-01, PEDGE-02, PEDGE-03, PEDGE-04
+**Depends on:** Phase 10.6.1.2.2.1.1.1
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-31 with verdict `hold_preserve_accounts`. The phase did exactly what it needed to do: it removed the last ownership ambiguity without touching the preserved 9-account browser block. Outside-client proof, Ubuntu-side config truth, and Windows-LAN `Caddy` truth now all agree that the real public IP is currently owned by Ubuntu `nginx`, while Windows `Caddy` remains only a LAN-side edge. The blocker is therefore now exact: `split_ingress_owner_conflict`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project has one explicit ownership map for public `77.66.186.75` across MikroTik/NAT, Ubuntu `nginx`, and the preserved Windows `Caddy` host.
+  2. One deliberate public owner path is either reconciled preserve-first or reduced to one exact upstream blocker without broad intervention on the 9 live accounts.
+  3. Canary `shared-6` proof confirms the final owner serves `healthz`, `v1/models`, and one worker-backed chat path, or the phase records one exact non-runtime blocker that still controls `Phase 11`.
+
+Plans:
+- [x] `10.6.1.2.2.1.1.1.1-01-PLAN.md` - ownership audit across public IP, Ubuntu responder, Windows edge, and current ingress chain
+- [x] `10.6.1.2.2.1.1.1.1-02-PLAN.md` - preserve-first deliberate-owner reconciliation and canary-safe public contract proof
+- [x] `10.6.1.2.2.1.1.1.1-03-PLAN.md` - independent outside verification, final verdict, and Phase 11 unblock/hold decision
+
+### Phase 10.6.1.2.2.1.1.1.1.1: Ubuntu public owner reassignment and Windows edge unification (INSERTED)
+
+**Goal:** Keep Ubuntu as the deliberate public owner of `77.66.186.75`, reassign the conflicting owner path preserve-first, and unify the Windows public API edge behind that owner without risking the preserved 9-account browser block.
+**Requirements**: UOWN-01, UOWN-02, UOWN-03, UOWN-04
+**Depends on:** Phase 10.6.1.2.2.1.1.1.1
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-31 with `safe_to_promote`. Ubuntu stayed the deliberate public owner, the conflicting raw-IP `ascii-art` path was removed, the Windows API edge is now unified behind Ubuntu over LAN HTTP with forced `Host: 77.66.186.75`, and outside canary proof on `shared-6` now passes on `healthz`, `v1/models`, and real chat.
+
+**Success Criteria** (what must be TRUE):
+  1. Ubuntu becomes the deliberate public owner of `77.66.186.75` for the API contract without breaking unrelated Ubuntu hostname-based sites.
+  2. The Windows API edge is unified behind that owner path without exposing raw `4040`, worker-agent ports, or raw public `:4010`.
+  3. Canary `shared-6` proves the unified public path on `healthz`, `v1/models`, and one worker-backed chat call, or the phase reduces failure to one exact blocker that explicitly controls `Phase 11`.
+
+Plans:
+- [x] `10.6.1.2.2.1.1.1.1.1-01-PLAN.md` - owner strategy, rollback-safe Ubuntu assets, and repo-backed unification path
+- [x] `10.6.1.2.2.1.1.1.1.1-02-PLAN.md` - preserve-first Ubuntu owner reassignment and canary `shared-6` proof
+- [x] `10.6.1.2.2.1.1.1.1.1-03-PLAN.md` - outside verification, final verdict, and Phase 11 unblock/hold decision
 
 ### Phase 10.4: Alternate desktop auth and bootstrap stabilization (INSERTED)
 
@@ -125,6 +359,25 @@ Plans:
 - [x] `10.5.1.1-02-PLAN.md` - dad auth-renewal control-plane path and operator truth
 - [x] `10.5.1.1-03-PLAN.md` - repeated rescue proof, docs, and final Phase 11 unblock decision
 
+### Phase 10.5.1.1.1: Compact visible runtime rollout and crash-restore popup hardening (INSERTED)
+
+**Goal:** Formalize compact visible runtime as the current rollout fallback, harden startup/stop against Edge crash-restore popups, and prove whether this path is stable enough to resume rollout-smoke work.
+**Requirements**: CVRT-01, CVRT-02, CVRT-03
+**Depends on:** Phase 10.5.1.1
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-29. Compact visible is now the formal rollout fallback, popup-safe lifecycle is explicit, and fresh worker-by-worker proof passed on the official six-worker pool.
+
+**Success Criteria** (what must be TRUE):
+  1. Compact visible runtime is a first-class operator/runtime path with small corner-window placement and truthful worker/runtime reporting instead of an ad-hoc emergency mode.
+  2. Browser start and stop flows suppress the `Restore pages` crash bubble without wiping durable login state or forcing manual cleanup after each run.
+  3. The phase ends with written proof that compact visible runtime provides a real rollout baseline for Phase 11.
+
+Plans:
+- [x] `10.5.1.1.1-01-PLAN.md` - compact-visible runtime and operator/control-plane formalization
+- [x] `10.5.1.1.1-02-PLAN.md` - official worker-pool rollout and crash-restore popup hardening
+- [x] `10.5.1.1.1-03-PLAN.md` - compact-visible proof, docs, and fresh Phase 11 decision
+
 ### Phase 10.3: Alternative non-visible native browser runtime design (INSERTED)
 
 **Goal:** Design and prove a replacement same-session non-visible native browser runtime that keeps routine ChatGPT windows off the operator's main desktop without falling back to the rejected headless or Docker/Xvfb paths.
@@ -188,23 +441,26 @@ Plans:
 ### Phase 11: Rollout smoke confidence
 
 **Goal:** Give the operator a repeatable confidence check before the household begins using the pool after changes or drift.
-**Depends on:** Phase 10.5.1.1
+**Depends on:** Phase 10.6.1.2.2.1.1.1
 **Requirements:** CONF-01, CONF-02
 **Success Criteria** (what must be TRUE):
   1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
   2. The latest smoke result is visible in operator surfaces or logs without digging through raw process output.
   3. The rollout confidence path is documented clearly enough that it can be rerun whenever ChatGPT UI drift is suspected.
-**Current status:** Blocked on Phase 10.5.1.1. The repeatability gate is now explicit, but no worker is stable yet; rollout smoke planning resumes only after the inserted rescue follow-up.
+**Current status:** In progress on 2026-03-31. Wave 1 added the repeatable `test-rollout-smoke.ps1` wrapper plus rerun docs, and Wave 2 added the file-backed latest-smoke route and internal admin surface. The remaining honest step is Wave 3 on the deployed Windows browser-block host: run the live rollout smoke, confirm `/internal/rollout-smoke/latest` or `/internal/admin` shows that same result, and then write the final ready-or-hold verdict.
 
 ## Progress
 
 **Execution Order:**
-Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10.5 -> 10.5.1 -> 10.5.1.1 -> 11
+Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10.5 -> 10.5.1 -> 10.5.1.1 -> 10.5.1.1.1 -> 10.6 -> 10.6.1 -> 10.6.1.1 -> 10.6.1.2 -> 10.6.1.2.2 -> 10.6.1.2.2.1 -> 10.6.1.2.2.1.1 -> 11
 
 | Phase | Requirements | Status | Completed |
 |-------|--------------|--------|-----------|
 | 9. Internal host-pool orchestration | ORCH-01, ORCH-02, ORCH-03 | Complete | 2026-03-28 |
-| 10. ChatGPT UI drift hardening | STAB-01, STAB-02, STAB-03 | In progress | - |
+| 10. ChatGPT UI drift hardening | STAB-01, STAB-02, STAB-03 | Complete | 2026-03-29 |
+| 10.6 Remote server deployment, autostart, and external relay API | REMOTE-01, REMOTE-02, REMOTE-03, REMOTE-04 | Complete | 2026-03-29 |
+| 10.6.1 Remote relay server verification and public API readiness | EXTAPI-01, EXTAPI-02, EXTAPI-03, EXTAPI-04 | Complete | 2026-03-29 |
+| 10.6.1.1 MikroTik public ingress and NAT hardening | MTIK-01, MTIK-02, MTIK-03, MTIK-04 | Complete | 2026-03-29 |
 | 10.1 Hidden runtime after manual login | HIDE-01, HIDE-02, HIDE-03 | Complete | 2026-03-28 |
 | 10.2 Hidden runtime reliability review and alternative browser runtime decision | RREV-01, RREV-02, RREV-03 | Complete | 2026-03-28 |
 | 10.3 Alternative non-visible native browser runtime design | NVRT-01, NVRT-02, NVRT-03 | Complete | 2026-03-28 |
@@ -212,15 +468,21 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 | 10.5 Alternate desktop navigation rescue and auth renewal | ADNR-01, ADNR-02, ADNR-03 | Partial | 2026-03-29 |
 | 10.5.1 Repeatable alternate desktop stability gate | RSG-01, RSG-02, RSG-03 | Partial | 2026-03-29 |
 | 10.5.1.1 Alternate desktop repeatability rescue | ADRR-01, ADNR-02, RSG-02 | Partial | 2026-03-29 |
-| 11. Rollout smoke confidence | CONF-01, CONF-02 | Blocked on 10.5.1.1 | - |
+| 10.5.1.1.1 Compact visible runtime rollout and crash-restore popup hardening | CVRT-01, CVRT-02, CVRT-03 | Complete | 2026-03-29 |
+| 10.6.1.2 Dedicated Windows browser block deployment | WINBLK-01, WINBLK-02, WINBLK-03, WINBLK-04 | Complete | 2026-03-30 |
+| 10.6.1.2.2 Deployed Windows Server account-preserving stabilization and API cutover | WSAFE-01, WSAFE-02, WSAFE-03, WSAFE-04 | Complete (hold verdict) | 2026-03-30 |
+| 10.6.1.2.2.1 Windows Server public API activation and edge reconciliation | WEDGE-01, WEDGE-02, WEDGE-03, WEDGE-04 | Partial | 2026-03-30 |
+| 10.6.1.2.2.1.1 Direct Windows Caddy edge cutover and canary proof | WCUT-01, WCUT-02, WCUT-03, WCUT-04 | Complete (`safe_but_hold`) | 2026-03-31 |
+| 10.6.1.2.2.1.1.1.1 Public edge ownership and split-ingress reconciliation | PEDGE-01, PEDGE-02, PEDGE-03, PEDGE-04 | Complete (`hold_preserve_accounts`) | 2026-03-31 |
+| 11. Rollout smoke confidence | 2/3 | In Progress|  |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: insert the follow-up after `Phase 10.5.1.1` before any `Phase 11` work
-- Carry-forward debt from `Phase 10.5.1.1`: `wife` visible auth works but alternate desktop still fails after hand-off; `shared-1` still shares the navigation bootstrap tail; `dad` still needs auth renewal
+- Current next action: run Phase 11 Wave 3 from the deployed Windows browser-block host and record the final rollout verdict
+  - Carry-forward debt from recent live checks: compact visible remains the official runtime fallback, the 9-account Windows block remains preserved, raw `4040`, worker-agent ports, and raw `:4010` stay private, public ownership is now deliberately unified through Ubuntu, and the remaining public edge debt is certificate trust hardening rather than split ingress
 
 ## Next Up
 
-- `$gsd-insert-phase 10.5.1.2 "Alternate desktop handoff stabilization or runtime replacement"`
-- then resume `Phase 11` only after at least one worker proves repeatable non-visible stability
+- `$gsd-plan-phase 11`
+- later, execute the rollout-smoke phase against the newly unified public owner path

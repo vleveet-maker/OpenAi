@@ -1,0 +1,37 @@
+server {
+  listen 80;
+  listen [::]:80;
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  server_name main.ascii-art.ru www.ascii-art.ru;
+
+  root /var/www/ascii-art;
+  index index.html;
+
+  ssl_certificate /etc/nginx/ssl/ascii-art/selfsigned.crt;
+  ssl_certificate_key /etc/nginx/ssl/ascii-art/selfsigned.key;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:ASCIISSL:10m;
+  ssl_prefer_server_ciphers off;
+
+  location = /api/videos {
+    default_type application/json;
+    alias /var/www/ascii-art/videos.json;
+    add_header Cache-Control no-store;
+  }
+
+  location = / {
+    add_header Cache-Control no-store;
+    try_files /index.html =404;
+  }
+
+  location ~* \.((html)|(css)|(js)|(json))$ {
+    add_header Cache-Control no-store;
+    try_files $uri =404;
+  }
+
+  location / {
+    try_files $uri $uri/ =404;
+  }
+}

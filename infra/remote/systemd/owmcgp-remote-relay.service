@@ -1,0 +1,19 @@
+[Unit]
+Description=One Hour With My ChatGPT remote relay
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mi50
+WorkingDirectory=/opt/owmcgp-remote-relay/services/control-api
+EnvironmentFile=/etc/owmcgp/remote-relay.env
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/local/bin/node dist/server.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

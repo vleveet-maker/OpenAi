@@ -230,9 +230,9 @@ function renderInternalAdminPage(): string {
         <h1>Operator Admin</h1>
         <p>
           Internal-only observability and browser access controls for the managed
-          ChatGPT worker pool. Start pool uses the alternate desktop non-visible
-          runtime, while visible auth is reserved for explicit manual login or
-          reauthentication.
+          ChatGPT worker pool. Start pool now uses compact visible fallback by
+          default, keeping small worker windows alive in the screen corner.
+          Alternate desktop remains available only as an explicit non-visible probe.
         </p>
         <div class="status-bar" id="status-bar">Loading latest operator snapshot...</div>
       </header>
@@ -248,10 +248,20 @@ function renderInternalAdminPage(): string {
               </div>
               <div class="worker-actions">
                 <button id="host-pool-start" data-pool-action="start">Start pool</button>
+                <button id="host-pool-start-alternate" class="secondary" data-pool-action="start-alternate">Start alternate desktop pool</button>
                 <button id="host-pool-stop" class="secondary" data-pool-action="stop">Stop pool</button>
               </div>
             </div>
             <div class="pool-meta" id="host-pool-meta"></div>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest rollout smoke</h2>
+          <div class="pool-panel">
+            <p class="empty" id="rollout-smoke-copy">Loading latest rollout smoke...</p>
+            <div class="counts" id="rollout-smoke-summary"></div>
+            <ul id="rollout-smoke-details"></ul>
           </div>
         </section>
 
@@ -308,7 +318,7 @@ function renderInternalAdminPage(): string {
 
       function describeHostPoolStatus(status) {
         if (status === "idle") {
-          return "Pool is stopped. Start pool uses the alternate desktop non-visible runtime when the household browsers are needed.";
+          return "Pool is stopped. Start pool now uses compact visible runtime by default, while alternate desktop is only an explicit probe path.";
         }
 
         if (status === "starting") {
@@ -316,7 +326,7 @@ function renderInternalAdminPage(): string {
         }
 
         if (status === "ready") {
-          return "Pool is ready. Proxy is listening and all configured host workers are reachable.";
+          return "Pool is ready. Proxy is listening and the configured workers are reachable on the compact visible baseline or another explicit runtime.";
         }
 
         if (status === "degraded") {
@@ -338,6 +348,26 @@ function renderInternalAdminPage(): string {
         return new Date(value).toLocaleString();
       }
 
+      function statusLabel(result, successLabel = "pass", failureLabel = "fail") {
+        if (!result) {
+          return "unknown";
+        }
+
+        return result.ok ? successLabel : failureLabel;
+      }
+
+      function statusDetail(result, successLabel = "ok") {
+        if (!result) {
+          return "unknown";
+        }
+
+        if (result.ok) {
+          return successLabel + " (" + (result.statusCode ?? "n/a") + ")";
+        }
+
+        return "failed (" + (result.errorKind || result.statusCode || "unknown") + ")";
+      }
+
       function escapeHtml(value) {
         return String(value)
           .replaceAll("&", "&amp;")
@@ -347,6 +377,10 @@ function renderInternalAdminPage(): string {
       }
 
       function runtimeModeLabel(worker) {
+        if (worker.runtimeClass === "host_visible_compact") {
+          return "Compact visible";
+        }
+
         if (worker.runtimeMode === "visible_auth") {
           return "Visible auth";
         }
@@ -485,7 +519,7 @@ function renderInternalAdminPage(): string {
                 <span>Worker state: \${escapeHtml(worker.runtimeStatus || worker.status.status)}</span>
                 \${runtimeFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
                 \${bootstrapFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
-                \${worker.runtimeType === "docker" ? \`<span>Browser access: \${escapeHtml(browserAccessLabel)}</span>\` : \`<span>Visible auth runs only when explicitly requested.</span>\`}
+                \${worker.runtimeType === "docker" ? \`<span>Browser access: \${escapeHtml(browserAccessLabel)}</span>\` : \`<span>Compact visible is the routine fallback; full visible auth runs only when explicitly requested.</span>\`}
                 <span>Last seen: \${escapeHtml(worker.lastSeenAt || "n/a")}</span>
                 <span>\${escapeHtml(bootstrapStatusCopy)}</span>
                 \${repeatabilityFacts.map((fact) => \`<span>\${escapeHtml(fact)}</span>\`).join("")}
@@ -501,11 +535,56 @@ function renderInternalAdminPage(): string {
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="warn" data-action="cancel-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Cancel access</button>\` : ""}
                 \${worker.runtimeType === "docker" && hasActiveBrowserAccess ? \`<button class="success" data-action="complete-access" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login/reauth</button>\` : ""}
                 \${worker.runtimeType === "host" ? \`<button class="success" data-action="manual-auth-complete-and-validate" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Complete login and validate</button>\` : ""}
+                \${worker.runtimeType === "host" ? \`<button class="secondary" data-action="manual-auth-complete-compact-visible" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Use compact visible runtime</button>\` : ""}
                 \${worker.runtimeType === "host" ? \`<button class="secondary" data-action="validate-runtime" data-worker-id="\${escapeHtml(worker.workerId)}" \${busyForWorker ? "disabled" : ""}>Validate non-visible runtime</button>\` : ""}
               </div>
             </article>
           \`;
         }).join("");
+      }
+
+      function renderRolloutSmoke(latest) {
+        const copy = document.getElementById("rollout-smoke-copy");
+        const summary = document.getElementById("rollout-smoke-summary");
+        const details = document.getElementById("rollout-smoke-details");
+
+        if (!latest) {
+          copy.textContent = "No rollout smoke captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const totalWorkers = latest.internal?.workers?.totalWorkers ?? 0;
+        const readyWorkers = latest.internal?.workers?.readyWorkers ?? 0;
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["Canary worker", String(latest.canaryWorkerId || "n/a")],
+          ["Pool status", String(latest.internal?.pool?.status || "unknown")],
+          ["Ready workers", totalWorkers > 0 ? readyWorkers + "/" + totalWorkers : String(readyWorkers)],
+          ["Public healthz", statusLabel(latest.publicCanary?.healthz)],
+          ["Public chat", statusLabel(latest.publicCanary?.chat)]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "Public base URL: " + (latest.publicBaseUrl || "n/a"),
+          "Public v1/models: " + statusDetail(latest.publicCanary?.models),
+          "Public v1/chat/completions: " + statusDetail(latest.publicCanary?.chat, latest.publicCanary?.chat?.assistantReplyText || "ok"),
+          "Recent operator failures: " + String(latest.internal?.observability?.recentFailureCount ?? 0)
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest rollout smoke loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
       }
 
       function renderHostPool(pool) {
@@ -521,6 +600,8 @@ function renderInternalAdminPage(): string {
         const meta = [
           ["Proxy listening", pool.proxyListening ? "yes" : "no"],
           ["Controller reachable", pool.controllerReachable ? "yes" : "no"],
+          ["Routine runtime", pool.routineRuntimeClass || pool.routineRuntimeMode || "unknown"],
+          ["Routine window mode", pool.routineBrowserWindowMode || "unknown"],
           ["Last action", pool.lastAction || "none"],
           ["Updated", formatWhen(pool.updatedAt)],
           ["Workers tracked", String(pool.workers.length)],
@@ -535,10 +616,13 @@ function renderInternalAdminPage(): string {
         \`).join("");
 
         const startButton = document.getElementById("host-pool-start");
+        const startAlternateButton = document.getElementById("host-pool-start-alternate");
         const stopButton = document.getElementById("host-pool-stop");
         const actionPending = pendingPoolAction !== null || pool.status === "starting" || pool.status === "stopping";
 
         startButton.disabled =
+          actionPending || pool.status === "ready" || pool.status === "degraded";
+        startAlternateButton.disabled =
           actionPending || pool.status === "ready" || pool.status === "degraded";
         stopButton.disabled =
           actionPending || pool.status === "idle";
@@ -569,14 +653,15 @@ function renderInternalAdminPage(): string {
       }
 
       async function loadSnapshot() {
-        const [poolResponse, summaryResponse, eventsResponse, workersResponse] = await Promise.all([
+        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse] = await Promise.all([
           fetch("/internal/host-pool"),
           fetch("/internal/observability/summary"),
           fetch("/internal/observability/events?limit=50"),
-          fetch("/internal/workers/")
+          fetch("/internal/workers/"),
+          fetch("/internal/rollout-smoke/latest")
         ]);
 
-        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok) {
+        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok) {
           throw new Error("Internal observability endpoints are unavailable");
         }
 
@@ -584,6 +669,7 @@ function renderInternalAdminPage(): string {
         const summary = await summaryResponse.json();
         const events = await eventsResponse.json();
         const workersPayload = await workersResponse.json();
+        const rolloutSmokePayload = await rolloutSmokeResponse.json();
         const workers = workersPayload.workers ?? [];
         const lifecycleEvents = events.filter((event) => lifecycleEventTypes.has(event.eventType));
         const browserAccessResults = await Promise.all(
@@ -596,6 +682,7 @@ function renderInternalAdminPage(): string {
         }
 
         renderHostPool(poolPayload.pool);
+        renderRolloutSmoke(rolloutSmokePayload.latest ?? null);
         renderWorkerSummary(summary, workers);
         renderEvents(
           "recent-failures",
@@ -631,10 +718,13 @@ function renderInternalAdminPage(): string {
         window.open(result.viewerPath, "_blank", "noopener");
       }
 
-      async function startPool() {
+      async function startPool(runtimeMode = "alternate_desktop", browserWindowMode = "Minimized") {
         await fetchJson("/internal/host-pool/start", {
           method: "POST",
-          body: JSON.stringify({})
+          body: JSON.stringify({
+            runtimeMode,
+            browserWindowMode
+          })
         });
       }
 
@@ -670,6 +760,13 @@ function renderInternalAdminPage(): string {
 
       async function completeManualAuthAndValidate(workerId) {
         await fetchJson("/internal/workers/" + workerId + "/manual-auth/complete-and-validate", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+      }
+
+      async function completeCompactVisible(workerId) {
+        await fetchJson("/internal/workers/" + workerId + "/manual-auth/complete-compact-visible", {
           method: "POST",
           body: JSON.stringify({})
         });
@@ -717,6 +814,8 @@ function renderInternalAdminPage(): string {
             await startDiagnosticProfile(workerId);
           } else if (action === "manual-auth-complete-and-validate") {
             await completeManualAuthAndValidate(workerId);
+          } else if (action === "manual-auth-complete-compact-visible") {
+            await completeCompactVisible(workerId);
           } else if (action === "validate-runtime") {
             await validateRuntime(workerId);
           } else if (action === "cancel-access") {
@@ -738,7 +837,9 @@ function renderInternalAdminPage(): string {
 
         try {
           if (action === "start") {
-            await startPool();
+            await startPool("visible_auth", "CompactCorner");
+          } else if (action === "start-alternate") {
+            await startPool("alternate_desktop", "Minimized");
           } else if (action === "stop") {
             await stopPool();
           }
@@ -758,6 +859,8 @@ function renderInternalAdminPage(): string {
         } catch (error) {
           document.getElementById("status-bar").textContent =
             "Operator snapshot unavailable";
+          document.getElementById("rollout-smoke-copy").textContent =
+            "Unable to load the latest rollout smoke.";
           document.getElementById("recent-failures").innerHTML =
             '<li class="error">' + escapeHtml(String(error instanceof Error ? error.message : error)) + "</li>";
           document.getElementById("recent-events").innerHTML =

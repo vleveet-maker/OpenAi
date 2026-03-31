@@ -104,6 +104,7 @@ function parseWorkerRuntimeClass(
   if (
     value === "host_hidden_runtime" ||
     value === "host_visible_auth" ||
+    value === "host_visible_compact" ||
     value === "host_alternate_desktop" ||
     value === "docker_headed_xvfb"
   ) {

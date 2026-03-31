@@ -63,7 +63,12 @@ export function createInternalWorkerActionsRouter(
   function buildHostTransitionUpdate(
     workerId: string,
     runtimeMode: "visible_auth" | "hidden_runtime" | "alternate_desktop",
-    reason: string
+    reason: string,
+    runtimeClassOverride?:
+      | "host_visible_auth"
+      | "host_visible_compact"
+      | "host_hidden_runtime"
+      | "host_alternate_desktop"
   ) {
     const now = new Date().toISOString();
 
@@ -73,14 +78,15 @@ export function createInternalWorkerActionsRouter(
       runtimeStatus: "starting",
       assignedSessionId: null,
       assignedUserLabel: null,
-      recoverySessionId: null,
-      runtimeMode,
-      runtimeClass:
-        runtimeMode === "visible_auth"
-          ? "host_visible_auth"
-          : runtimeMode === "alternate_desktop"
-            ? "host_alternate_desktop"
-            : "host_hidden_runtime",
+        recoverySessionId: null,
+        runtimeMode,
+        runtimeClass:
+          runtimeClassOverride ??
+          (runtimeMode === "visible_auth"
+            ? "host_visible_auth"
+            : runtimeMode === "alternate_desktop"
+              ? "host_alternate_desktop"
+              : "host_hidden_runtime"),
       headless: runtimeMode === "hidden_runtime",
       cdpAttached:
         runtimeMode === "visible_auth" || runtimeMode === "alternate_desktop",
@@ -376,11 +382,12 @@ export function createInternalWorkerActionsRouter(
       });
 
       await options.hostControllerClient.stopWorker(worker.workerId);
-      const result = await options.hostControllerClient.startWorker(
-        worker.workerId,
-        "visible_auth",
-        "durable"
-      );
+        const result = await options.hostControllerClient.startWorker(
+          worker.workerId,
+          "visible_auth",
+          "durable",
+          "Normal"
+        );
 
       buildHostTransitionUpdate(
         worker.workerId,
@@ -433,11 +440,12 @@ export function createInternalWorkerActionsRouter(
 
     try {
       await options.hostControllerClient.stopWorker(worker.workerId);
-      const result = await options.hostControllerClient.startWorker(
-        worker.workerId,
-        "visible_auth",
-        "diagnostic_fresh"
-      );
+        const result = await options.hostControllerClient.startWorker(
+          worker.workerId,
+          "visible_auth",
+          "diagnostic_fresh",
+          "Normal"
+        );
 
       buildHostTransitionUpdate(
         worker.workerId,
@@ -529,6 +537,86 @@ export function createInternalWorkerActionsRouter(
           error instanceof Error
             ? error.message
             : "The host worker could not return to the alternate desktop runtime."
+      });
+    }
+  });
+
+  router.post("/internal/workers/:id/manual-auth/complete-compact-visible", async (request, response) => {
+    const worker = options.workerRegistry.getWorker(request.params.id);
+
+    if (!worker) {
+      respondWorkerNotFound(request.params.id, response);
+      return;
+    }
+
+    if (worker.runtimeType !== "host") {
+      response.status(409).json({
+        error: "manual_auth_unsupported",
+        detail: `Worker ${worker.workerId} uses ${worker.runtimeType} runtime and does not support compact visible runtime promotion.`,
+        workerId: worker.workerId
+      });
+      return;
+    }
+
+    if (options.sessionService.hasActiveSessionForWorker(worker.workerId)) {
+      respondActiveSession(worker.workerId, response);
+      return;
+    }
+
+    try {
+      await options.hostControllerClient.stopWorker(worker.workerId);
+      const result = await options.hostControllerClient.startWorker(
+        worker.workerId,
+        "visible_auth",
+        resolveManualProfileStrategy(worker.workerId),
+        "CompactCorner"
+      );
+
+      const updatedWorker = options.workerRegistry.updateWorker(worker.workerId, {
+        status: "ready",
+        reason: "manual login completed; compact visible runtime active",
+        runtimeStatus: "ready",
+        assignedSessionId: null,
+        assignedUserLabel: null,
+        recoverySessionId: null,
+        runtimeMode: "visible_auth",
+        runtimeClass: "host_visible_compact",
+        headless: false,
+        cdpAttached: true,
+        browserContextReady: true,
+        runtimeCapability: "reachable_but_unusable",
+        lastValidationResult: "manual_auth_completed_compact_visible",
+        lastSeenAt: new Date().toISOString()
+      });
+
+      options.eventRecorder?.recordEvent({
+        eventType: "worker_reauth_completed",
+        severity: "info",
+        workerId: worker.workerId,
+        summary: `Worker ${worker.workerId} completed manual login and restarted in compact visible runtime`,
+        detailJson: JSON.stringify({
+          runtimeMode: "visible_auth",
+          runtimeClass: "host_visible_compact",
+          profileStrategy: resolveManualProfileStrategy(worker.workerId)
+        })
+      });
+      void options.healthMonitor.runHealthSweep();
+
+      response.status(202).json({
+        action: "manual_auth_completed_compact_visible_started",
+        runtimeMode: "visible_auth",
+        runtimeClass: "host_visible_compact",
+        validationPending: false,
+        hostController: result,
+        worker: updatedWorker
+      });
+    } catch (error: unknown) {
+      response.status(502).json({
+        error: "manual_auth_complete_failed",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "The host worker could not be restarted in compact visible runtime."
       });
     }
   });
