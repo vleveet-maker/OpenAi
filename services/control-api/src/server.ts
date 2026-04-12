@@ -35,6 +35,39 @@ import {
 import { createHealthRouter } from "./routes/internal-health.js";
 import { createInternalAdminPageRouter } from "./routes/internal-admin-page.js";
 import {
+  createInternalDisconnectedBaselineRemediationRouter
+} from "./routes/internal-disconnected-baseline-remediation.js";
+import {
+  createInternalDisconnectedRuntimeRemediationRouter
+} from "./routes/internal-disconnected-runtime-remediation.js";
+import {
+  createInternalPersistentDisconnectedRuntimeFollowupRouter
+} from "./routes/internal-persistent-disconnected-runtime-followup.js";
+import {
+  createInternalRuntimeParityBackportRemediationRouter
+} from "./routes/internal-runtime-parity-backport-remediation.js";
+import {
+  createInternalPostParityDisconnectedRuntimeRemediationRouter
+} from "./routes/internal-post-parity-disconnected-runtime-remediation.js";
+import {
+  createInternalPostPhase21DisconnectedRuntimeFollowupRouter
+} from "./routes/internal-post-phase21-disconnected-runtime-followup.js";
+import {
+  createInternalPostPhase22SmokeWrapperParityRemediationRouter
+} from "./routes/internal-post-phase22-smoke-wrapper-parity-remediation.js";
+import {
+  createInternalPostPhase23ExactSmokeWrapperCompatRemediationRouter
+} from "./routes/internal-post-phase23-exact-smoke-wrapper-compat-remediation.js";
+import {
+  createInternalPostPhase24ExternalApiReadinessRouter
+} from "./routes/internal-post-phase24-external-api-readiness.js";
+import {
+  createInternalPostRemediationDegradedSmokeRouter
+} from "./routes/internal-post-remediation-degraded-smoke.js";
+import {
+  createInternalPostStabilizationRuntimeInvestigationRouter
+} from "./routes/internal-post-stabilization-runtime-investigation.js";
+import {
   createInternalBrowserAccessRouter,
   createInternalBrowserAccessService,
   type InternalBrowserAccessService
@@ -47,7 +80,10 @@ import { createPublicRemoteRelayRouter } from "./routes/public-remote-relay.js";
 import {
   createInternalRecoveryRouter
 } from "./routes/internal-recovery.js";
+import { createInternalPostRecoveryRegressionRouter } from "./routes/internal-post-recovery-regression.js";
+import { createInternalReadinessRecoveryRouter } from "./routes/internal-readiness-recovery.js";
 import { createInternalRolloutSmokeRouter } from "./routes/internal-rollout-smoke.js";
+import { createInternalZeroReadyRootCauseRouter } from "./routes/internal-zero-ready-root-cause.js";
 import { createInternalWorkerActionsRouter } from "./routes/internal-worker-actions.js";
 import { createInternalWorkersRouter } from "./routes/internal-workers.js";
 import { createPublicSessionsRouter } from "./routes/public-sessions.js";
@@ -435,6 +471,48 @@ export function createControlApiApp(
       }),
       createInternalObservabilityRouter({
         observabilityService: runtime.observabilityService
+      }),
+      createInternalReadinessRecoveryRouter({
+        statePath: config.readinessRecoveryStatePath
+      }),
+      createInternalPostRecoveryRegressionRouter({
+        statePath: config.postRecoveryRegressionStatePath
+      }),
+      createInternalZeroReadyRootCauseRouter({
+        statePath: config.zeroReadyRootCauseStatePath
+      }),
+      createInternalDisconnectedBaselineRemediationRouter({
+        statePath: config.disconnectedBaselineRemediationStatePath
+      }),
+      createInternalDisconnectedRuntimeRemediationRouter({
+        statePath: config.disconnectedRuntimeRemediationStatePath
+      }),
+      createInternalPersistentDisconnectedRuntimeFollowupRouter({
+        statePath: config.persistentDisconnectedRuntimeFollowupStatePath
+      }),
+      createInternalRuntimeParityBackportRemediationRouter({
+        statePath: config.runtimeParityBackportRemediationStatePath
+      }),
+      createInternalPostParityDisconnectedRuntimeRemediationRouter({
+        statePath: config.postParityDisconnectedRuntimeRemediationStatePath
+      }),
+      createInternalPostPhase21DisconnectedRuntimeFollowupRouter({
+        statePath: config.postPhase21DisconnectedRuntimeFollowupStatePath
+      }),
+      createInternalPostPhase22SmokeWrapperParityRemediationRouter({
+        statePath: config.postPhase22SmokeWrapperParityRemediationStatePath
+      }),
+      createInternalPostPhase23ExactSmokeWrapperCompatRemediationRouter({
+        statePath: config.postPhase23ExactSmokeWrapperCompatRemediationStatePath
+      }),
+      createInternalPostPhase24ExternalApiReadinessRouter({
+        statePath: config.postPhase24ExternalApiReadinessStatePath
+      }),
+      createInternalPostRemediationDegradedSmokeRouter({
+        statePath: config.postRemediationDegradedSmokeStatePath
+      }),
+      createInternalPostStabilizationRuntimeInvestigationRouter({
+        statePath: config.postStabilizationRuntimeInvestigationStatePath
       }),
       createInternalRolloutSmokeRouter({
         statePath: config.rolloutSmokeStatePath

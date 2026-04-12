@@ -1,6 +1,8 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 
 import { Router } from "express";
+
+import { readLatestState } from "./read-latest-state.js";
 
 export interface InternalRolloutSmokeRouterOptions {
   statePath?: string;
@@ -22,7 +24,7 @@ export function createInternalRolloutSmokeRouter(
     }
 
     try {
-      const latest = JSON.parse(readFileSync(statePath, "utf8"));
+      const latest = readLatestState(statePath);
 
       response.json({
         latest

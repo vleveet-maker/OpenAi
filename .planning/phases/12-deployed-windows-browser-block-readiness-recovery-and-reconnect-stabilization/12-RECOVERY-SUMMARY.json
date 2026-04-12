@@ -1,0 +1,312 @@
+{
+  "generatedAt": "2026-03-31T00:00:00+03:00",
+  "generatedAtPrecision": "date_only_reconstructed_from_operator_report",
+  "artifactSource": "operator_report_synchronized_into_repo",
+  "artifactSourceNote": "The remote Phase 12 recovery ran on 2026-03-31 and the operator confirmed that 12-RECOVERY-SUMMARY.json reported recovered with 9/9 ready workers, all nine worker IDs ready and usable on /internal/workers, and the public canary still passing on shared-6. The exact remote generatedAt value was not included in the handoff, so this repo copy preserves date-level truth plus the reported outcome fields.",
+  "sessionBaseUrl": "http://127.0.0.1:8080",
+  "publicBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "canaryWorkerId": "shared-6",
+  "recoveryStatus": "recovered",
+  "summary": "Recovered 9/9 workers and the public canary on shared-6 still passes.",
+  "requestedWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "before": {
+    "artifactSource": "phase11_hold_snapshot",
+    "internal": {
+      "workers": {
+        "totalWorkers": 9,
+        "readyWorkers": 0,
+        "reauthRequiredWorkers": 0,
+        "reachableButUnusableWorkers": 0,
+        "disconnectedWorkers": 9
+      }
+    }
+  },
+  "after": {
+    "artifactSource": "operator_report_ready_snapshot",
+    "internal": {
+      "workers": {
+        "totalWorkers": 9,
+        "readyWorkers": 9,
+        "reauthRequiredWorkers": 0,
+        "reachableButUnusableWorkers": 0,
+        "disconnectedWorkers": 0,
+        "readyWorkerIds": [
+          "dad",
+          "wife",
+          "shared-1",
+          "shared-2",
+          "shared-3",
+          "shared-4",
+          "shared-5",
+          "shared-6",
+          "shared-7"
+        ],
+        "workers": [
+          {
+            "workerId": "dad",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          },
+          {
+            "workerId": "wife",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          },
+          {
+            "workerId": "shared-1",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          },
+          {
+            "workerId": "shared-2",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          },
+          {
+            "workerId": "shared-3",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          },
+          {
+            "workerId": "shared-4",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          },
+          {
+            "workerId": "shared-5",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          },
+          {
+            "workerId": "shared-6",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          },
+          {
+            "workerId": "shared-7",
+            "status": {
+              "status": "ready"
+            },
+            "runtimeCapability": "usable"
+          }
+        ]
+      }
+    }
+  },
+  "counts": {
+    "totalWorkers": 9,
+    "readyWorkers": 9,
+    "reauthRequiredWorkers": 0,
+    "reachableButUnusableWorkers": 0,
+    "disconnectedWorkers": 0,
+    "recoveredWorkers": 9,
+    "failedWorkers": 0
+  },
+  "inventory": {
+    "observedWorkerIds": [
+      "dad",
+      "wife",
+      "shared-1",
+      "shared-2",
+      "shared-3",
+      "shared-4",
+      "shared-5",
+      "shared-6",
+      "shared-7"
+    ],
+    "observedWorkerIdsBefore": [
+      "dad",
+      "wife",
+      "shared-1",
+      "shared-2",
+      "shared-3",
+      "shared-4",
+      "shared-5",
+      "shared-6",
+      "shared-7"
+    ],
+    "observedWorkerIdsAfter": [
+      "dad",
+      "wife",
+      "shared-1",
+      "shared-2",
+      "shared-3",
+      "shared-4",
+      "shared-5",
+      "shared-6",
+      "shared-7"
+    ],
+    "inventoryMismatch": false,
+    "missingRequestedWorkerIds": [],
+    "extraObservedWorkerIdsBefore": [],
+    "extraObservedWorkerIdsAfter": []
+  },
+  "recoveredWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "failedWorkerIds": [],
+  "blockerWorkerIds": [],
+  "blockerSummaries": [],
+  "publicCanaryGate": {
+    "healthz": {
+      "ok": true,
+      "statusCode": 200,
+      "errorKind": null,
+      "requestUrl": "http://77.66.186.75/healthz"
+    },
+    "models": {
+      "ok": true,
+      "statusCode": 200,
+      "errorKind": null,
+      "requestUrl": "http://77.66.186.75/v1/models"
+    },
+    "chat": {
+      "ok": true,
+      "statusCode": 200,
+      "errorKind": null,
+      "requestUrl": "http://77.66.186.75/v1/chat/completions",
+      "assistantReplyText": "probe-ok",
+      "workerId": "shared-6",
+      "model": null
+    }
+  },
+  "publicCanaryAfterRecovery": {
+    "healthz": {
+      "ok": true,
+      "statusCode": 200,
+      "errorKind": null,
+      "requestUrl": "http://77.66.186.75/healthz"
+    },
+    "models": {
+      "ok": true,
+      "statusCode": 200,
+      "errorKind": null,
+      "requestUrl": "http://77.66.186.75/v1/models"
+    },
+    "chat": {
+      "ok": true,
+      "statusCode": 200,
+      "errorKind": null,
+      "requestUrl": "http://77.66.186.75/v1/chat/completions",
+      "assistantReplyText": "probe-ok",
+      "workerId": "shared-6",
+      "model": null
+    }
+  },
+  "workerResults": [
+    {
+      "workerId": "dad",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    },
+    {
+      "workerId": "wife",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    },
+    {
+      "workerId": "shared-1",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    },
+    {
+      "workerId": "shared-2",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    },
+    {
+      "workerId": "shared-3",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    },
+    {
+      "workerId": "shared-4",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    },
+    {
+      "workerId": "shared-5",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    },
+    {
+      "workerId": "shared-6",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    },
+    {
+      "workerId": "shared-7",
+      "beforeClassification": "disconnected",
+      "afterClassification": "ready",
+      "relaySucceeded": true,
+      "recovered": true
+    }
+  ],
+  "preserveFirst": {
+    "profilesPreserved": true,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "massRestartPerformed": false,
+    "reloginPerformed": false,
+    "portsLoopbackOnly": true
+  },
+  "compatibilityNotes": {
+    "remoteFilesAdjusted": [
+      "infra/windows-block/recover-browser-block-readiness.ps1",
+      "infra/host-worker/test-host-worker-relay.ps1"
+    ],
+    "successfulCommand": "powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\recover-browser-block-readiness.ps1 -SessionBaseUrl http://127.0.0.1:8080 -PublicApiBaseUrl http://77.66.186.75 -InternalBaseUrl http://127.0.0.1:8081 -HostControllerBaseUrl http://127.0.0.1:4040 -CanaryWorkerId shared-6 -WorkerIds dad,wife,shared-1,shared-2,shared-3,shared-4,shared-5,shared-6,shared-7 -OutputJsonPath .\\.planning\\phases\\12-deployed-windows-browser-block-readiness-recovery-and-reconnect-stabilization\\12-RECOVERY-SUMMARY.json -OutputMarkdownPath .\\.planning\\phases\\12-deployed-windows-browser-block-readiness-recovery-and-reconnect-stabilization\\12-RECOVERY-SUMMARY.md"
+  }
+}

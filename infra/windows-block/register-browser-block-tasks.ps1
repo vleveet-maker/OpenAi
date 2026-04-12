@@ -10,6 +10,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$scriptCompatibilityVersion = "phase25-live-fix-backport-v1"
 
 function Resolve-RepoRoot {
   param([string]$Candidate)
@@ -30,7 +31,7 @@ $hostControllerAction = New-ScheduledTaskAction `
   -Execute $powershellExe `
   -Argument "-ExecutionPolicy Bypass -File `"$startBlockScript`" -RepoRoot `"$resolvedRepoRoot`""
 
-$tunnelArguments = "-ExecutionPolicy Bypass -File `"$startTunnelScript`" -RemoteHost `"$RemoteHost`" -RemotePort $RemotePort -RemoteUser `"$RemoteUser`" -IncludeHostController"
+$tunnelArguments = "-ExecutionPolicy Bypass -File `"$startTunnelScript`" -RemoteHost `"$RemoteHost`" -RemotePort $RemotePort -RemoteUser `"$RemoteUser`" -IncludeHostController -Foreground"
 
 if ($SshKeyPath -and $SshKeyPath.Trim().Length -gt 0) {
   $tunnelArguments += " -SshKeyPath `"$SshKeyPath`""
@@ -42,7 +43,12 @@ $tunnelAction = New-ScheduledTaskAction `
 
 $trigger = New-ScheduledTaskTrigger -AtLogOn
 $principal = New-ScheduledTaskPrincipal -UserId $RunAsUser -LogonType Interactive -RunLevel Highest
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+$settings = New-ScheduledTaskSettingsSet `
+  -AllowStartIfOnBatteries `
+  -DontStopIfGoingOnBatteries `
+  -StartWhenAvailable `
+  -RestartCount 999 `
+  -RestartInterval (New-TimeSpan -Minutes 1)
 
 Register-ScheduledTask `
   -TaskName "OWMCGP Browser Block - Host Controller" `
@@ -60,4 +66,4 @@ Register-ScheduledTask `
   -Settings $settings `
   -Force | Out-Null
 
-Write-Host "[windows-block] scheduled tasks registered for $RunAsUser"
+Write-Host "[windows-block] scheduled tasks registered for $RunAsUser ($scriptCompatibilityVersion)"

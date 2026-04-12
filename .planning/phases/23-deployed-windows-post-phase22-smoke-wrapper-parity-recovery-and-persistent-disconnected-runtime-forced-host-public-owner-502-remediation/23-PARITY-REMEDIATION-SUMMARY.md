@@ -1,0 +1,27 @@
+# 23 Parity Remediation Summary
+
+- Reconstructed from the operator report because the raw deployed-host artifact was not synced back into this checkout.
+- The deployed Windows browser-block host overlaid the Phase 23 archive, restarted `control-api` on `127.0.0.1:8081`, and ran the exact parity-remediation command.
+- The live remediation run wrote `23-PARITY-REMEDIATION-SUMMARY.json` and `23-PARITY-REMEDIATION-SUMMARY.md` on the deployed host.
+- Operator-surface confirmation is complete for the remediation artifact:
+  - `GET /internal/post-phase22-smoke-wrapper-parity-remediation/latest` returned the current latest result.
+  - `/internal/admin` showed `Latest post-phase22 smoke-wrapper parity remediation`.
+- The live remediation result before smoke stayed negative:
+  - verdict = `hold_rollout`
+  - `smokeWrapperParityStatus = archive_chain_ready`
+  - pre-remediation ready = `0/9`
+  - post-remediation ready = `0/9`
+  - dominant runtime blocker = `disconnected`
+  - first failing hop = `windows_edge_forced_host`
+  - `loopbackStatus = passed`
+  - forced-host and public-owner checks both failed
+- Preserve-first safety held during the remediation run:
+  - profiles were not deleted
+  - cookies and local storage were not cleared
+  - no blind full-pool restart happened
+  - no mass relogin happened
+  - `shared-6` was stopped again after cleanup
+  - port `4028` was no longer listening
+- Runtime parity is still not fully closed:
+  - the deployed host needed post-overlay compatibility restores in `probe-public-api.ps1`, `test-rollout-smoke.ps1`, and `remediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1`
+  - exact smoke rerun is still pending

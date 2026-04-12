@@ -1,0 +1,375 @@
+{
+  "generatedAt": "2026-03-31T21:47:17.3391297+03:00",
+  "scriptCompatibilityVersion": "phase14-zero-ready-root-cause-v1",
+  "reconstructedFromOperatorReport": true,
+  "sessionBaseUrl": "http://127.0.0.1:8080",
+  "publicBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "windowsEdgeBaseUrl": "http://127.0.0.1",
+  "publicHostHeader": "77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "requestedWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "verdict": "root_cause_confirmed",
+  "summary": "Reconstructed from the deployed-host operator report: the zero-ready baseline remained at 0/9 ready and 9/9 disconnected, loopback_api stayed green with 200/200/200, the first failing hop was windows_edge_forced_host, and the Ubuntu public owner returned 502 through nginx/1.18.0 (Ubuntu).",
+  "readyCount": 0,
+  "totalWorkers": 9,
+  "reauthRequiredCount": 0,
+  "reachableButUnusableCount": 0,
+  "disconnectedCount": 9,
+  "dominantBlockerClass": "disconnected",
+  "dominantBlockerClassCount": 9,
+  "dominantBlockerCode": "operator_report_disconnected",
+  "dominantBlockerCodeCount": 9,
+  "firstFailingHop": "windows_edge_forced_host",
+  "hopOrder": [
+    "loopback_api",
+    "windows_edge_forced_host",
+    "ubuntu_public_owner"
+  ],
+  "classificationCounts": {
+    "ready": 0,
+    "reauth_required": 0,
+    "reachable_but_unusable": 0,
+    "disconnected": 9
+  },
+  "blockerCodeCounts": {
+    "operator_report_disconnected": 9
+  },
+  "inventory": {
+    "observedWorkerIds": [
+      "dad",
+      "wife",
+      "shared-1",
+      "shared-2",
+      "shared-3",
+      "shared-4",
+      "shared-5",
+      "shared-6",
+      "shared-7"
+    ],
+    "missingRequestedWorkerIds": [],
+    "extraObservedWorkerIds": [],
+    "inventoryMismatch": false
+  },
+  "baselineSnapshot": {
+    "reconstructedFromOperatorReport": true,
+    "internal": {
+      "workers": {
+        "readyWorkers": 0,
+        "totalWorkers": 9
+      },
+      "observability": {
+        "recentFailureCount": null
+      }
+    },
+    "hostController": {
+      "workers": [
+        {
+          "workerId": "dad",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        },
+        {
+          "workerId": "wife",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        },
+        {
+          "workerId": "shared-1",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        },
+        {
+          "workerId": "shared-2",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        },
+        {
+          "workerId": "shared-3",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        },
+        {
+          "workerId": "shared-4",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        },
+        {
+          "workerId": "shared-5",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        },
+        {
+          "workerId": "shared-6",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        },
+        {
+          "workerId": "shared-7",
+          "agentListening": false,
+          "browserListening": false,
+          "runtimeStatus": "disconnected"
+        }
+      ]
+    }
+  },
+  "hopResults": {
+    "loopback_api": {
+      "hopName": "loopback_api",
+      "baseUrl": "http://127.0.0.1:4010",
+      "requestHostHeader": null,
+      "workerId": "shared-6",
+      "allChecksPassed": true,
+      "healthz": {
+        "success": true,
+        "statusCode": 200,
+        "requestUrl": "http://127.0.0.1:4010/healthz",
+        "requestHostHeader": null,
+        "hopName": "loopback_api",
+        "serverHeader": null,
+        "viaHeader": null
+      },
+      "models": {
+        "success": true,
+        "statusCode": 200,
+        "requestUrl": "http://127.0.0.1:4010/v1/models",
+        "requestHostHeader": null,
+        "hopName": "loopback_api",
+        "serverHeader": null,
+        "viaHeader": null
+      },
+      "chat": {
+        "success": true,
+        "statusCode": 200,
+        "requestUrl": "http://127.0.0.1:4010/v1/chat/completions",
+        "requestHostHeader": null,
+        "hopName": "loopback_api",
+        "assistantReplyText": "ok",
+        "serverHeader": null,
+        "viaHeader": null
+      }
+    },
+    "windows_edge_forced_host": {
+      "hopName": "windows_edge_forced_host",
+      "baseUrl": "http://127.0.0.1",
+      "requestHostHeader": "77.66.186.75",
+      "workerId": "shared-6",
+      "allChecksPassed": false,
+      "healthz": {
+        "success": false,
+        "statusCode": null,
+        "requestUrl": "http://127.0.0.1/healthz",
+        "requestHostHeader": "77.66.186.75",
+        "hopName": "windows_edge_forced_host",
+        "errorKind": "first_failing_hop_from_operator_report",
+        "error": "Operator report confirmed this was the first failing hop, but exact per-check status codes were not synced back into the local checkout.",
+        "serverHeader": null,
+        "viaHeader": null
+      },
+      "models": {
+        "success": false,
+        "statusCode": null,
+        "requestUrl": "http://127.0.0.1/v1/models",
+        "requestHostHeader": "77.66.186.75",
+        "hopName": "windows_edge_forced_host",
+        "errorKind": "first_failing_hop_from_operator_report",
+        "error": "Operator report confirmed this was the first failing hop, but exact per-check status codes were not synced back into the local checkout.",
+        "serverHeader": null,
+        "viaHeader": null
+      },
+      "chat": {
+        "success": false,
+        "statusCode": null,
+        "requestUrl": "http://127.0.0.1/v1/chat/completions",
+        "requestHostHeader": "77.66.186.75",
+        "hopName": "windows_edge_forced_host",
+        "errorKind": "first_failing_hop_from_operator_report",
+        "error": "Operator report confirmed this was the first failing hop, but exact per-check status codes were not synced back into the local checkout.",
+        "assistantReplyText": null,
+        "serverHeader": null,
+        "viaHeader": null
+      }
+    },
+    "ubuntu_public_owner": {
+      "hopName": "ubuntu_public_owner",
+      "baseUrl": "http://77.66.186.75",
+      "requestHostHeader": null,
+      "workerId": "shared-6",
+      "allChecksPassed": false,
+      "healthz": {
+        "success": false,
+        "statusCode": 502,
+        "requestUrl": "http://77.66.186.75/healthz",
+        "requestHostHeader": null,
+        "hopName": "ubuntu_public_owner",
+        "serverHeader": "nginx/1.18.0 (Ubuntu)",
+        "viaHeader": null
+      },
+      "models": {
+        "success": false,
+        "statusCode": 502,
+        "requestUrl": "http://77.66.186.75/v1/models",
+        "requestHostHeader": null,
+        "hopName": "ubuntu_public_owner",
+        "serverHeader": "nginx/1.18.0 (Ubuntu)",
+        "viaHeader": null
+      },
+      "chat": {
+        "success": false,
+        "statusCode": 502,
+        "requestUrl": "http://77.66.186.75/v1/chat/completions",
+        "requestHostHeader": null,
+        "hopName": "ubuntu_public_owner",
+        "assistantReplyText": null,
+        "serverHeader": "nginx/1.18.0 (Ubuntu)",
+        "viaHeader": null
+      }
+    }
+  },
+  "canaryLifecycle": {
+    "scriptCompatibilityVersion": "phase14-zero-ready-root-cause-v1",
+    "reconstructedFromOperatorReport": true,
+    "stoppedAfterProbe": true,
+    "postProbeState": {
+      "workerId": "shared-6",
+      "agentListening": false,
+      "browserListening": false,
+      "port4028Listening": false
+    }
+  },
+  "workerResults": [
+    {
+      "workerId": "dad",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    },
+    {
+      "workerId": "wife",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    },
+    {
+      "workerId": "shared-1",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    },
+    {
+      "workerId": "shared-2",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    },
+    {
+      "workerId": "shared-3",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    },
+    {
+      "workerId": "shared-4",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    },
+    {
+      "workerId": "shared-5",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    },
+    {
+      "workerId": "shared-6",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    },
+    {
+      "workerId": "shared-7",
+      "classification": "disconnected",
+      "blockerCode": "operator_report_disconnected",
+      "runtimeCapability": "compact_visible",
+      "runtimeStatus": "disconnected",
+      "hostController": {
+        "agentListening": false,
+        "browserListening": false
+      }
+    }
+  ],
+  "operatorSurfaceConfirmation": {
+    "confirmed": true,
+    "internalLatestStatusCode": 200,
+    "adminSectionVisible": true,
+    "latestVerdict": "root_cause_confirmed",
+    "latestReadyCount": 0,
+    "latestDisconnectedCount": 9,
+    "latestDominantBlockerClass": "disconnected",
+    "latestFirstFailingHop": "windows_edge_forced_host"
+  },
+  "notes": [
+    "This local summary is reconstructed from the operator report; raw deployed-host JSON and Markdown were not synced to this checkout.",
+    "The deployed host required a compat fix in investigate-zero-ready-root-cause.ps1 so probe-public-api.ps1 received named parameters correctly.",
+    "After the bounded probe, shared-6 was stopped again and port 4028 was no longer listening."
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "generatedAt": null,
+  "reconstructedFromOperatorReport": true,
+  "scriptCompatibilityVersion": "phase16-runtime-parity-sync-v1",
+  "publicApiBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "windowsEdgeBaseUrl": "http://127.0.0.1",
+  "publicHostHeader": "77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "workerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "preSmokeReadyCount": 1,
+  "preSmokeTotalWorkers": 9,
+  "finalSmokeReadyCount": 0,
+  "finalSmokeTotalWorkers": 9,
+  "finalPoolStatus": "degraded",
+  "publicCanaryPassed": false,
+  "verdict": "hold_rollout",
+  "summary": "Hold rollout: parity-synced stabilization on the deployed Windows host started at 1/9 ready, ended at 0/9 ready with a degraded pool, and the public canary on shared-6 again returned 502 through http://77.66.186.75.",
+  "archiveRedeployedBeforeRun": true,
+  "controlApiRestartedBeforeRun": true,
+  "routeConfirmed": true,
+  "adminSectionConfirmed": true,
+  "latestJsonBomFixRequiredOnServer": true,
+  "publicCanary": {
+    "healthz": {
+      "ok": false,
+      "statusCode": 502
+    },
+    "models": {
+      "ok": false,
+      "statusCode": 502
+    },
+    "chat": {
+      "ok": false,
+      "statusCode": 502
+    }
+  },
+  "cleanup": {
+    "shared6Stopped": true,
+    "port4028Listening": false,
+    "activeListeningWorkers": 0
+  },
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "massRelogin": false
+  }
+}

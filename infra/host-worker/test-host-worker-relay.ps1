@@ -18,6 +18,32 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$scriptCompatibilityVersion = "phase20-runtime-parity-backport-v1"
+
+function Get-ProbeClassification {
+  param(
+    [string]$FailureCode,
+    [object]$WorkerStatus
+  )
+
+  if ($FailureCode -eq "bootstrap_auth_required") {
+    return "reauth_required"
+  }
+
+  if (
+    $WorkerStatus -and
+    (
+      ($WorkerStatus.runtimeCapability -and $WorkerStatus.runtimeCapability -ne "unreachable") -or
+      ($WorkerStatus.runtimeStatus -and $WorkerStatus.runtimeStatus -ne "disconnected") -or
+      $WorkerStatus.browserContextReady -eq $true
+    )
+  ) {
+    return "reachable_but_unusable"
+  }
+
+  return "disconnected"
+}
+
 function Invoke-JsonRequest {
   param(
     [Parameter(Mandatory = $true)]
@@ -266,6 +292,7 @@ try {
       return $null
     }
   $probeResult = [pscustomobject]@{
+    scriptCompatibilityVersion = $scriptCompatibilityVersion
     workerId = $WorkerId
     runtimeMode =
       if ($finalWorkerStatus) {
@@ -315,6 +342,10 @@ try {
     sessionId = $sessionId
     outcome = "relay_complete"
     failureCode = $null
+    relaySucceeded = $true
+    classification = "ready"
+    errorKind = $null
+    keepWorkerRunningRequested = [bool]$KeepWorkerRunning
   }
 
   Write-Host "[compact-visible] Relay probe succeeded on $WorkerId with reply '$ExpectedReply'."
@@ -358,6 +389,7 @@ try {
   }
 
   $probeResult = [pscustomobject]@{
+    scriptCompatibilityVersion = $scriptCompatibilityVersion
     workerId = $WorkerId
     runtimeMode = $workerStatus.runtimeMode
     runtimeClass = $workerStatus.runtimeClass
@@ -415,6 +447,17 @@ try {
     outcome = $outcome
     failureCode = $failureCode
     detail = "$_"
+    relaySucceeded = $false
+    classification = Get-ProbeClassification -FailureCode $failureCode -WorkerStatus $workerStatus
+    errorKind =
+      if ($lastAssistant -and $lastAssistant.failureCode) {
+        $lastAssistant.failureCode
+      } elseif ($failureCode) {
+        $failureCode
+      } else {
+        "probe_failed"
+      }
+    keepWorkerRunningRequested = [bool]$KeepWorkerRunning
   }
 } finally {
   if ($sessionId) {

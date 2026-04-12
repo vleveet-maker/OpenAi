@@ -1,100 +1,57 @@
 # Windows Browser Block
 
-## Что Это
+## Current Live Truth
 
-`Windows browser block` это отдельный Windows-хост, на котором живут:
+`phase25-live-fix-backport-v1`
 
-- `host-controller`
-- семь browser worker-профилей:
-  - `dad`
-  - `wife`
-  - `shared-1`
-  - `shared-2`
-  - `shared-3`
-  - `shared-4`
-  - `shared-5`
-- локальный proxy runtime
-- reverse SSH tunnels до Linux relay/API сервера
+The Windows browser block is the browser-runtime side of the system. It is not the active public edge.
 
-Это не публичный API-узел. Публичный API остаётся на Linux-сервере. Windows block держит только браузеры и локальный control surface для них.
+Current topology:
 
-## Текущая Архитектура
+`internet -> MikroTik -> Ubuntu nginx -> 127.0.0.1:4010 -> reverse SSH tunnels -> Windows workers`
 
-Сейчас доказанный удалённый путь такой:
+That means:
 
-1. Linux-сервер держит `owmcgp-remote-relay`
-2. публичный вызов приходит в Linux `nginx`
-3. relay на Linux ходит к worker-ам через `127.0.0.1:14021..14027`
-4. эти порты поднимаются reverse SSH tunnels с Windows browser block
-5. сами браузеры и профили живут только на Windows
+- Windows keeps the browser workers and local control surface
+- Ubuntu owns public ingress
+- reverse SSH tunnels are rollout-critical for external chat
+- Windows `Caddy` is not the active public edge in the current live deployment
 
-## Почему Не Windows Services Для Самих Браузеров
+## Windows Responsibilities
 
-GUI-браузеры для ручного логина и reauth не должны жить в `Session 0`.
+The Windows host owns:
 
-Поэтому:
+- `host-controller` on `127.0.0.1:4040`
+- `control-api` internal/operator surface on `127.0.0.1:8081`
+- worker agents on local worker ports
+- durable browser profiles
+- reverse SSH tunnel origin back to Ubuntu
 
-- `host-controller` можно поднимать автоматически
-- reverse tunnels можно поднимать автоматически
-- сами browser worker-ы должны запускаться в интерактивной пользовательской сессии
-- для Windows Server нужен отдельный пользовательский desktop session, а не headless service-only запуск
+The Windows host should not expose `4040` or `8081` publicly.
 
-Именно поэтому рекомендуемый стартовый вариант для Windows Server:
+## Reverse Tunnels
 
-- autologon или постоянная интерактивная сессия под выделенным пользователем
-- `host-controller` стартует при логоне
-- reverse tunnels стартуют при логоне
-- browser worker-ы стартуют по требованию через `host-controller`
+Ubuntu expects these listeners to exist when the block is healthy:
 
-## Что Должно Быть На Windows Server
+- `127.0.0.1:14021..14027`
+- `127.0.0.1:14040`
 
-- Windows Server с Desktop Experience
-- отдельный пользователь под browser block
-- Node.js LTS
-- Chrome или Edge
-- OpenSSH client (`ssh.exe`)
-- доступ к репозиторию или развёрнутому пакету
-- durable profile storage
-
-Рекомендуемые локальные порты:
-
-- `4040` - `host-controller`
-- `4021..4027` - worker-agent порты
-- `9222..9228` - CDP порты
-- `7897` - локальный mixed proxy
-
-Рекомендуемые удалённые reverse ports на Linux relay:
-
-- `14021..14027` -> `4021..4027`
-- `14040` -> `4040` опционально для диагностики
-
-## Подготовленные Скрипты
-
-- [start-browser-block.ps1](d:/OpenAi/infra/windows-block/start-browser-block.ps1)
-- [start-reverse-tunnels.ps1](d:/OpenAi/infra/windows-block/start-reverse-tunnels.ps1)
-- [stop-reverse-tunnels.ps1](d:/OpenAi/infra/windows-block/stop-reverse-tunnels.ps1)
-- [register-browser-block-tasks.ps1](d:/OpenAi/infra/windows-block/register-browser-block-tasks.ps1)
-
-## Базовый Порядок Развёртывания
-
-1. Развернуть код на Windows Server.
-2. Под тем же интерактивным пользователем подготовить browser profiles.
-3. Запустить:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\start-browser-block.ps1
-```
-
-4. Запустить reverse tunnels:
+Foreground tunnel run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\infra\windows-block\start-reverse-tunnels.ps1 `
   -RemoteHost 77.66.186.75 `
   -RemotePort 2222 `
-  -RemoteUser mi50
+  -RemoteUser mi50 `
+  -IncludeHostController `
+  -Foreground
 ```
 
-5. При необходимости зарегистрировать оба автозапуска на logon:
+Foreground mode is important because it keeps `ssh.exe` under direct supervision and surfaces failures immediately.
+
+## Durable Task Registration
+
+Use the scheduled task for durable recovery:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\infra\windows-block\register-browser-block-tasks.ps1 `
@@ -103,94 +60,61 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\register-browser-
   -RemoteUser mi50
 ```
 
-## Проверка Семёрки
+Expected truth:
 
-Прямой worker-by-worker smoke без `control-api` и без Docker:
+- task name: `OWMCGP Browser Block - Reverse Tunnels`
+- action includes `-Foreground`
+- task uses `StartWhenAvailable`
+- task has restart policy so tunnel supervision survives drift or reboots
+
+## Preserve-First Rules
+
+- do not delete profiles
+- do not clear cookies or local storage
+- do not perform blind full-pool restarts
+- do not mass-relogin live accounts
+- use bounded canary and controlled recovery steps
+
+## Local Verification
+
+Check listeners on Windows:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\host-worker\test-windows-browser-block-matrix.ps1
+Get-NetTCPConnection -State Listen |
+  Where-Object LocalPort -in 4040,8081,80,443 |
+  Sort-Object LocalPort |
+  Format-Table -AutoSize
 ```
 
-Этот путь проверяет:
+Healthy current truth:
 
-- старт worker-а через `host-controller`
-- `Temporary Chat`
-- выбор `GPT-5.4 Thinking`
-- живой ответ
-- остановку окна после проверки
+- `127.0.0.1:4040` listens
+- `127.0.0.1:8081` listens
+- `80` and `443` are not owned by Windows `Caddy`
 
-## Текущая Живая Правда
+## Phase 25 External Readiness
 
-Последняя полная матрица на `2026-03-30`:
+Before claiming external readiness, write the durable artifact:
 
-- `shared-1`, `shared-2`, `shared-3`, `shared-4`, `shared-5` - прошли
-- `dad` - плавающий bootstrap хвост `temporary_confirmation_not_found`
-- `wife` - плавающий bootstrap хвост `model_option_not_found`
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-tunnels-and-external-api-readiness.ps1 `
+  -RemoteHost 77.66.186.75 `
+  -RemotePort 2222 `
+  -RemoteUser mi50
+```
 
-То есть блок уже реальный и рабочий, но не все 7 профилей пока одинаково стабильны.
+This records:
 
-## Связанный Документ
+- canonical public upstream truth
+- reverse-tunnel task truth
+- Ubuntu tunnel listener truth
+- ready worker count
+- verdict before final external smoke
 
-Публичный API и Linux relay описаны здесь:
+## Related Files
 
+- [start-browser-block.ps1](d:/OpenAi/infra/windows-block/start-browser-block.ps1)
+- [start-reverse-tunnels.ps1](d:/OpenAi/infra/windows-block/start-reverse-tunnels.ps1)
+- [register-browser-block-tasks.ps1](d:/OpenAi/infra/windows-block/register-browser-block-tasks.ps1)
+- [recover-reverse-tunnels-and-external-api-readiness.ps1](d:/OpenAi/infra/windows-block/recover-reverse-tunnels-and-external-api-readiness.ps1)
 - [remote-relay-server.md](d:/OpenAi/docs/remote-relay-server.md)
-
-## Phase 10.6.1.2 Addendum
-
-Fresh direct proof on `2026-03-30` reached `7/7 usable` on the current machine:
-
-- `dad`
-- `wife`
-- `shared-1`
-- `shared-2`
-- `shared-3`
-- `shared-4`
-- `shared-5`
-
-This proves the current Windows browser block shape and the handoff package honestly.
-
-It does **not** claim that cutover onto a dedicated Windows Server has already happened.
-
-## Preserve-First Deployed Server Addendum
-
-If a Windows Server already contains live logged-in ChatGPT accounts, do not treat it as a disposable redeploy target.
-
-Safe order:
-
-1. freeze and audit first
-2. backup metadata first
-3. cold profile backup only when workers are stopped
-4. canary worker first
-5. subset second
-6. full-pool validation last
-
-New preserve-first tools:
-
-- [backup-browser-block-state.ps1](d:/OpenAi/infra/windows-block/backup-browser-block-state.ps1)
-- [restore-browser-block-state.ps1](d:/OpenAi/infra/windows-block/restore-browser-block-state.ps1)
-- [test-browser-block-canary.ps1](d:/OpenAi/infra/windows-block/test-browser-block-canary.ps1)
-- [test-browser-block-subset.ps1](d:/OpenAi/infra/windows-block/test-browser-block-subset.ps1)
-
-Freeze metadata:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\backup-browser-block-state.ps1
-```
-
-Cold profile backup after workers are stopped:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\backup-browser-block-state.ps1 -CopyProfiles
-```
-
-Single-worker canary:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\test-browser-block-canary.ps1 -WorkerId shared-6
-```
-
-Subset validation:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\test-browser-block-subset.ps1 -WorkerIds shared-5,shared-6,shared-7
-```

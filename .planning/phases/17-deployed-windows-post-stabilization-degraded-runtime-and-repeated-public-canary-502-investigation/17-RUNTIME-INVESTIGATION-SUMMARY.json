@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2026-04-01T07:16:00.000Z",
+  "scriptCompatibilityVersion": "phase17-post-stabilization-runtime-investigation-v1",
+  "canaryWorkerId": "shared-6",
+  "workerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "preInvestigationReadyCount": 0,
+  "postCanaryReadyCount": 1,
+  "finalReadyCount": 0,
+  "dominantRuntimeBlocker": "disconnected",
+  "firstFailingHop": "windows_edge_forced_host",
+  "verdict": "runtime_blocker_confirmed",
+  "summary": "Post-stabilization runtime blocker is disconnected and the first failing hop is windows_edge_forced_host.",
+  "publicPath": {
+    "baseUrl": "http://77.66.186.75",
+    "healthzStatusCode": 502,
+    "modelsStatusCode": 502,
+    "chatStatusCode": 502
+  },
+  "operatorSurface": {
+    "latestRouteMatchedArtifact": true,
+    "adminSectionPresent": true
+  },
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "blindFullPoolRestartPerformed": false,
+    "massReloginPerformed": false,
+    "canaryStoppedAfterRun": true,
+    "canaryPort4028ListeningAfterRun": false,
+    "loggedInAccountsDamaged": false
+  },
+  "localReconstructionNote": "Reconstructed in the local checkout from the deployed-host operator report because the raw Phase 17 artifacts were not synced back into this repository state."
+}

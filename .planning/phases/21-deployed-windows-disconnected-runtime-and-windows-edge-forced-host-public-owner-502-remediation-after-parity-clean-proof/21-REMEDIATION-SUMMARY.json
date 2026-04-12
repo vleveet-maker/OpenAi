@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-04-01T18:03:03+03:00",
+  "reconstructedFromOperatorReport": true,
+  "operatorReportDate": "2026-04-01",
+  "scriptCompatibilityVersion": "phase21-post-parity-remediation-v1",
+  "archiveOverlaidBeforeRun": true,
+  "controlApiRestartedOn1270018081": true,
+  "phaseDirectoryCorrectedAfterOverlay": true,
+  "technicalNotes": [
+    "Raw deployed-host remediation artifacts were not synced back into this checkout; this file reconstructs the live result from the operator report.",
+    "After the Phase 21 overlay, the path under .planning/phases initially landed as a file instead of a directory; the operator corrected it before rerunning the exact command."
+  ],
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "publicApiBaseUrl": "http://77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "preRemediationReadyCount": 0,
+  "preRemediationTotalWorkers": 9,
+  "postRemediationReadyCount": 0,
+  "postRemediationTotalWorkers": 9,
+  "dominantRuntimeBlocker": "disconnected",
+  "firstFailingHop": "windows_edge_forced_host",
+  "forcedHostStatus": "failed",
+  "publicOwnerStatus": "failed",
+  "verdict": "hold_rollout",
+  "operatorSurface": {
+    "latestRouteMatchedArtifact": true,
+    "adminSectionPresent": true
+  },
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "massRestart": false,
+    "massRelogin": false,
+    "canaryStoppedAfterRun": true,
+    "canaryPort4028ListeningAfterCleanup": false,
+    "requiredPortsLoopbackOnly": true
+  }
+}

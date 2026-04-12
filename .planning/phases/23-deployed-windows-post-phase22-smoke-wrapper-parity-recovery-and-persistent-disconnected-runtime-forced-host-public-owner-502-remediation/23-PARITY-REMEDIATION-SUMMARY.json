@@ -1,0 +1,72 @@
+{
+  "generatedAt": "2026-04-02T06:53:28+03:00",
+  "scriptCompatibilityVersion": "phase23-smoke-wrapper-parity-recovery-v1",
+  "reconstructedFromOperatorReport": true,
+  "sessionBaseUrl": "http://127.0.0.1:8080",
+  "publicApiBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "windowsEdgeBaseUrl": "http://127.0.0.1",
+  "publicHostHeader": "77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "requestedWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "runtimeReviveWaitSeconds": 15,
+  "forcedHostSettleSeconds": 10,
+  "publicOwnerSettleSeconds": 10,
+  "smokeWrapperParityStatus": "archive_chain_ready",
+  "postOverlayCompatFixesRequired": true,
+  "postOverlayCompatFiles": [
+    "infra/windows-block/probe-public-api.ps1",
+    "infra/windows-block/test-rollout-smoke.ps1",
+    "infra/windows-block/remediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1"
+  ],
+  "preRemediationReadyCount": 0,
+  "preRemediationTotalWorkers": 9,
+  "postRemediationReadyCount": 0,
+  "postRemediationTotalWorkers": 9,
+  "dominantRuntimeBlocker": "disconnected",
+  "firstFailingHop": "windows_edge_forced_host",
+  "loopbackStatus": {
+    "passed": true,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null
+  },
+  "forcedHostStatus": {
+    "passed": false,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null
+  },
+  "publicOwnerStatus": {
+    "passed": false,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null
+  },
+  "verdict": "hold_rollout",
+  "summary": "Hold rollout: the live Phase 23 parity remediation still stayed at 0/9 ready, loopback remained green, but windows_edge_forced_host stayed the first failing hop, the downstream public-owner path stayed red, and the archive overlay still required post-overlay compatibility restores on the deployed host.",
+  "operatorSurface": {
+    "internalLatestRouteMatched": true,
+    "adminSectionVisible": true
+  },
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "blindFullPoolRestartPerformed": false,
+    "massReloginPerformed": false,
+    "canaryStoppedAfterRun": true,
+    "canaryPort4028ListeningAfterCleanup": false
+  }
+}

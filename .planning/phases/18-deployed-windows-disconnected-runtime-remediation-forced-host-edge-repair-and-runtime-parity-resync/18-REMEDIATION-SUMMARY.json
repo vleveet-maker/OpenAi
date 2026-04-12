@@ -1,0 +1,114 @@
+{
+  "generatedAt": "2026-04-01T00:00:00+03:00",
+  "generatedAtPrecision": "date_only_reconstructed_from_operator_report",
+  "artifactSource": "operator_report_synchronized_into_repo",
+  "artifactSourceNote": "The remote Phase 18 remediation ran on 2026-04-01 and the operator confirmed that 18-REMEDIATION-SUMMARY.json and 18-REMEDIATION-SUMMARY.md were written on the deployed Windows host. The exact remote generatedAt value was not included in the handoff, so this repo copy preserves date-level truth plus the reported outcome fields.",
+  "scriptCompatibilityVersion": "phase18-runtime-remediation-v1",
+  "reconstructedFromOperatorReport": true,
+  "archiveRedeployedBeforeRun": true,
+  "controlApiRestartedIntoNewRuntime": true,
+  "sessionBaseUrl": "http://127.0.0.1:8080",
+  "publicApiBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "windowsEdgeBaseUrl": "http://127.0.0.1",
+  "publicHostHeader": "77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "requestedWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "verdict": "hold_rollout",
+  "summary": "Reconstructed from the deployed-host operator report: the live Phase 18 remediation stayed at 0/9 ready before and after remediation, the bounded canary shared-6 came up locally and passed the relay proof with smoke-ok, the first failing hop remained windows_edge_forced_host, and the public gate to http://77.66.186.75 still returned 502 so the remediation stopped under preserve-first rules.",
+  "preRemediationReadyCount": 0,
+  "preRemediationTotalWorkers": 9,
+  "postRemediationReadyCount": 0,
+  "postRemediationTotalWorkers": 9,
+  "dominantRuntimeBlocker": "disconnected",
+  "firstFailingHop": "windows_edge_forced_host",
+  "firstFailingHopInferredFromOperatorReport": true,
+  "loopbackStatus": {
+    "hopName": "loopback_api",
+    "passed": true,
+    "healthzStatusCode": 200,
+    "modelsStatusCode": 200,
+    "chatStatusCode": 200,
+    "chatReply": "probe-ok",
+    "workerId": "shared-6"
+  },
+  "forcedHostStatus": {
+    "hopName": "windows_edge_forced_host",
+    "passed": false,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null,
+    "chatReply": null,
+    "requestHostHeader": "77.66.186.75",
+    "serverHeader": null,
+    "errorKind": "transport_error",
+    "inferredFromOperatorReport": true
+  },
+  "publicOwnerStatus": {
+    "hopName": "ubuntu_public_owner",
+    "passed": false,
+    "healthzStatusCode": 502,
+    "modelsStatusCode": 502,
+    "chatStatusCode": 502,
+    "chatReply": null,
+    "requestHostHeader": null,
+    "serverHeader": null,
+    "errorKind": "http_error",
+    "inferredFromOperatorReport": true
+  },
+  "before": {
+    "artifactSource": "operator_report_baseline",
+    "internal": {
+      "workers": {
+        "totalWorkers": 9,
+        "readyWorkers": 0,
+        "disconnectedWorkers": 9
+      }
+    }
+  },
+  "after": {
+    "artifactSource": "operator_report_final_snapshot",
+    "internal": {
+      "workers": {
+        "totalWorkers": 9,
+        "readyWorkers": 0,
+        "disconnectedWorkers": 9
+      }
+    }
+  },
+  "operatorSurface": {
+    "latestRouteConfirmed": true,
+    "adminSectionConfirmed": true
+  },
+  "postRunState": {
+    "canaryWorkerId": "shared-6",
+    "shared6Stopped": true,
+    "port4028Listening": false
+  },
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "blindFullPoolRestartPerformed": false,
+    "massReloginPerformed": false
+  },
+  "runtimeDriftNotes": [
+    "The deployed host still required compatibility restores after the overlay before the live Phase 18 remediation would complete cleanly.",
+    "The operator reported compat work in probe-public-api.ps1.",
+    "The operator reported compat work in recover-browser-block-readiness.ps1.",
+    "The operator reported compat work in remediate-disconnected-runtime-and-forced-host-edge.ps1."
+  ],
+  "nextRequiredStepAtTimeOfArtifact": "rerun_phase11_smoke",
+  "phase18CloseoutStatus": "completed_with_hold_rollout_see_18_verification"
+}

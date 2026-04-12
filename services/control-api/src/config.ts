@@ -25,6 +25,20 @@ export interface ControlApiConfig {
   host: string;
   port: number;
   rolloutSmokeStatePath?: string;
+  readinessRecoveryStatePath?: string;
+  postRecoveryRegressionStatePath?: string;
+  zeroReadyRootCauseStatePath?: string;
+  disconnectedBaselineRemediationStatePath?: string;
+  disconnectedRuntimeRemediationStatePath?: string;
+  persistentDisconnectedRuntimeFollowupStatePath?: string;
+  runtimeParityBackportRemediationStatePath?: string;
+  postParityDisconnectedRuntimeRemediationStatePath?: string;
+  postPhase21DisconnectedRuntimeFollowupStatePath?: string;
+  postPhase22SmokeWrapperParityRemediationStatePath?: string;
+  postPhase23ExactSmokeWrapperCompatRemediationStatePath?: string;
+  postPhase24ExternalApiReadinessStatePath?: string;
+  postRemediationDegradedSmokeStatePath?: string;
+  postStabilizationRuntimeInvestigationStatePath?: string;
   remoteRelayDefaultWorkerId?: string;
   internalAdminToken?: string;
   remoteRelayApiToken?: string;
@@ -62,6 +76,104 @@ const DEFAULT_ROLLOUT_SMOKE_STATE_PATH = resolve(
   "infra",
   "data",
   "rollout-smoke",
+  "latest.json"
+);
+const DEFAULT_READINESS_RECOVERY_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "readiness-recovery",
+  "latest.json"
+);
+const DEFAULT_POST_RECOVERY_REGRESSION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-recovery-regression",
+  "latest.json"
+);
+const DEFAULT_ZERO_READY_ROOT_CAUSE_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "zero-ready-root-cause",
+  "latest.json"
+);
+const DEFAULT_DISCONNECTED_BASELINE_REMEDIATION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "disconnected-baseline-remediation",
+  "latest.json"
+);
+const DEFAULT_DISCONNECTED_RUNTIME_REMEDIATION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "disconnected-runtime-remediation",
+  "latest.json"
+);
+const DEFAULT_PERSISTENT_DISCONNECTED_RUNTIME_FOLLOWUP_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "persistent-disconnected-runtime-followup",
+  "latest.json"
+);
+const DEFAULT_RUNTIME_PARITY_BACKPORT_REMEDIATION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "runtime-parity-backport-remediation",
+  "latest.json"
+);
+const DEFAULT_POST_PARITY_DISCONNECTED_RUNTIME_REMEDIATION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-parity-disconnected-runtime-remediation",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE21_DISCONNECTED_RUNTIME_FOLLOWUP_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase21-disconnected-runtime-followup",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE22_SMOKE_WRAPPER_PARITY_REMEDIATION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase22-smoke-wrapper-parity-remediation",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE23_EXACT_SMOKE_WRAPPER_COMPAT_REMEDIATION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase23-exact-smoke-wrapper-compat-remediation",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE24_EXTERNAL_API_READINESS_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase24-external-api-readiness",
+  "latest.json"
+);
+const DEFAULT_POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-remediation-degraded-smoke",
+  "latest.json"
+);
+const DEFAULT_POST_STABILIZATION_RUNTIME_INVESTIGATION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-stabilization-runtime-investigation",
   "latest.json"
 );
 const DEFAULT_DOCKER_SOCKET_PATH = "/var/run/docker.sock";
@@ -152,6 +264,48 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ControlApiConf
     port: parseInteger(env.CONTROL_API_PORT, 4010),
     rolloutSmokeStatePath:
       env.ROLLOUT_SMOKE_STATE_PATH ?? DEFAULT_ROLLOUT_SMOKE_STATE_PATH,
+    readinessRecoveryStatePath:
+      env.READINESS_RECOVERY_STATE_PATH ??
+      DEFAULT_READINESS_RECOVERY_STATE_PATH,
+    postRecoveryRegressionStatePath:
+      env.POST_RECOVERY_REGRESSION_STATE_PATH ??
+      DEFAULT_POST_RECOVERY_REGRESSION_STATE_PATH,
+    zeroReadyRootCauseStatePath:
+      env.ZERO_READY_ROOT_CAUSE_STATE_PATH ??
+      DEFAULT_ZERO_READY_ROOT_CAUSE_STATE_PATH,
+    disconnectedBaselineRemediationStatePath:
+      env.DISCONNECTED_BASELINE_REMEDIATION_STATE_PATH ??
+      DEFAULT_DISCONNECTED_BASELINE_REMEDIATION_STATE_PATH,
+    disconnectedRuntimeRemediationStatePath:
+      env.DISCONNECTED_RUNTIME_REMEDIATION_STATE_PATH ??
+      DEFAULT_DISCONNECTED_RUNTIME_REMEDIATION_STATE_PATH,
+    persistentDisconnectedRuntimeFollowupStatePath:
+      env.PERSISTENT_DISCONNECTED_RUNTIME_FOLLOWUP_STATE_PATH ??
+      DEFAULT_PERSISTENT_DISCONNECTED_RUNTIME_FOLLOWUP_STATE_PATH,
+    runtimeParityBackportRemediationStatePath:
+      env.RUNTIME_PARITY_BACKPORT_REMEDIATION_STATE_PATH ??
+      DEFAULT_RUNTIME_PARITY_BACKPORT_REMEDIATION_STATE_PATH,
+    postParityDisconnectedRuntimeRemediationStatePath:
+      env.POST_PARITY_DISCONNECTED_RUNTIME_REMEDIATION_STATE_PATH ??
+      DEFAULT_POST_PARITY_DISCONNECTED_RUNTIME_REMEDIATION_STATE_PATH,
+    postPhase21DisconnectedRuntimeFollowupStatePath:
+      env.POST_PHASE21_DISCONNECTED_RUNTIME_FOLLOWUP_STATE_PATH ??
+      DEFAULT_POST_PHASE21_DISCONNECTED_RUNTIME_FOLLOWUP_STATE_PATH,
+    postPhase22SmokeWrapperParityRemediationStatePath:
+      env.POST_PHASE22_SMOKE_WRAPPER_PARITY_REMEDIATION_STATE_PATH ??
+      DEFAULT_POST_PHASE22_SMOKE_WRAPPER_PARITY_REMEDIATION_STATE_PATH,
+    postPhase23ExactSmokeWrapperCompatRemediationStatePath:
+      env.POST_PHASE23_EXACT_SMOKE_WRAPPER_COMPAT_REMEDIATION_STATE_PATH ??
+      DEFAULT_POST_PHASE23_EXACT_SMOKE_WRAPPER_COMPAT_REMEDIATION_STATE_PATH,
+    postPhase24ExternalApiReadinessStatePath:
+      env.POST_PHASE24_EXTERNAL_API_READINESS_STATE_PATH ??
+      DEFAULT_POST_PHASE24_EXTERNAL_API_READINESS_STATE_PATH,
+    postRemediationDegradedSmokeStatePath:
+      env.POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH ??
+      DEFAULT_POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH,
+    postStabilizationRuntimeInvestigationStatePath:
+      env.POST_STABILIZATION_RUNTIME_INVESTIGATION_STATE_PATH ??
+      DEFAULT_POST_STABILIZATION_RUNTIME_INVESTIGATION_STATE_PATH,
     remoteRelayDefaultWorkerId: env.REMOTE_RELAY_DEFAULT_WORKER_ID?.trim() || undefined,
     internalAdminToken: env.INTERNAL_ADMIN_TOKEN,
     remoteRelayApiToken: env.REMOTE_RELAY_API_TOKEN,

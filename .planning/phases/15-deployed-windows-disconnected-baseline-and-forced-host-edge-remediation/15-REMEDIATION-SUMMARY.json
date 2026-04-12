@@ -1,0 +1,109 @@
+{
+  "generatedAt": "2026-04-01T00:00:00+03:00",
+  "generatedAtPrecision": "date_only_reconstructed_from_operator_report",
+  "artifactSource": "operator_report_synchronized_into_repo",
+  "artifactSourceNote": "The remote Phase 15 remediation ran on 2026-04-01 and the operator confirmed that 15-REMEDIATION-SUMMARY.json and 15-REMEDIATION-SUMMARY.md were written on the deployed Windows host. The exact remote generatedAt value was not included in the handoff, so this repo copy preserves date-level truth plus the reported outcome fields.",
+  "scriptCompatibilityVersion": "phase15-disconnected-baseline-remediation-v1",
+  "reconstructedFromOperatorReport": true,
+  "sessionBaseUrl": "http://127.0.0.1:8080",
+  "publicApiBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "windowsEdgeBaseUrl": "http://127.0.0.1",
+  "publicHostHeader": "77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "requestedWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "verdict": "hold_rollout",
+  "summary": "Reconstructed from the deployed-host operator report: the final remediation snapshot remained at 0/9 ready, only shared-6 temporarily came up and passed loopback_api with 200/200/200 plus reply probe-ok, windows_edge_forced_host remained red with transport_error, and ubuntu_public_owner remained red with 502 on healthz, v1/models, and v1/chat/completions through nginx/1.18.0 (Ubuntu).",
+  "recoveredReadyCount": 1,
+  "recoveredReadyCountInferred": true,
+  "recoveredReadyCountInference": "Derived from the operator report that only shared-6 temporarily came up during remediation before the final stopped snapshot returned to 0/9 ready.",
+  "finalReadyCount": 0,
+  "totalWorkers": 9,
+  "dominantRemainingBlockerClass": "disconnected",
+  "hopOrder": [
+    "loopback_api",
+    "windows_edge_forced_host",
+    "ubuntu_public_owner"
+  ],
+  "loopbackCanaryResult": {
+    "hopName": "loopback_api",
+    "passed": true,
+    "healthzStatusCode": 200,
+    "modelsStatusCode": 200,
+    "chatStatusCode": 200,
+    "chatReply": "probe-ok",
+    "workerId": "shared-6"
+  },
+  "forcedHostHopStatus": {
+    "hopName": "windows_edge_forced_host",
+    "passed": false,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null,
+    "chatReply": null,
+    "requestHostHeader": "77.66.186.75",
+    "serverHeader": null,
+    "errorKind": "transport_error"
+  },
+  "publicOwnerHopStatus": {
+    "hopName": "ubuntu_public_owner",
+    "passed": false,
+    "healthzStatusCode": 502,
+    "modelsStatusCode": 502,
+    "chatStatusCode": 502,
+    "chatReply": null,
+    "requestHostHeader": null,
+    "serverHeader": "nginx/1.18.0 (Ubuntu)",
+    "errorKind": "http_error"
+  },
+  "before": {
+    "artifactSource": "phase14_root_cause_baseline",
+    "internal": {
+      "workers": {
+        "totalWorkers": 9,
+        "readyWorkers": 0,
+        "disconnectedWorkers": 9
+      }
+    }
+  },
+  "after": {
+    "artifactSource": "operator_report_final_snapshot",
+    "internal": {
+      "workers": {
+        "totalWorkers": 9,
+        "readyWorkers": 0,
+        "disconnectedWorkers": 9
+      }
+    }
+  },
+  "postRunState": {
+    "canaryWorkerId": "shared-6",
+    "shared6Stopped": true,
+    "port4028Listening": false,
+    "activeListeningWorkers": 0
+  },
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "blindFullPoolRestartPerformed": false,
+    "massReloginPerformed": false
+  },
+  "runtimeDriftNotes": [
+    "The deployed host required runtime-specific compatibility fixes before the live remediation would run cleanly.",
+    "The operator reported compat work in remediate-disconnected-baseline-and-forced-host-edge.ps1.",
+    "The operator reported compat work in recover-browser-block-readiness.ps1.",
+    "The operator reported compat work in probe-public-api.ps1."
+  ]
+}

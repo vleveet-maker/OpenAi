@@ -147,8 +147,106 @@
 
 ### Rollout Confidence
 
-- [ ] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
-- [ ] **CONF-02**: The latest rollout smoke result is visible in internal operator surfaces or logs before the household starts using the pool again
+- [x] **CONF-01**: Operator can run a repeatable rollout smoke flow that checks worker readiness, fresh-chat bootstrap, and at least one live relay
+- [x] **CONF-02**: The latest rollout smoke result is visible in internal operator surfaces or logs before the household starts using the pool again
+
+### Deployed Windows Readiness Recovery And Reconnect Stabilization
+
+- [x] **WREC-01**: The deployed Windows browser-block can capture one preserve-first readiness-recovery snapshot that records host-controller truth, internal worker truth, and exact worker blocker classes instead of another opaque `disconnected` count
+- [x] **WREC-02**: Operator has one bounded reconnect flow that can recover named preserved workers in compact-visible runtime, keep successful workers running, stop failed workers again, and avoid profile deletion, cookie clearing, blind full-pool restart, or mass relogin as the default path
+- [x] **WREC-03**: The latest readiness-recovery result is visible through an internal operator surface or durable file-backed artifact before rollout-smoke reruns
+- [x] **WREC-04**: After readiness recovery, the project reruns the proven rollout smoke and records one explicit verdict that says whether household rollout can resume or remains held by exact blocker workers
+
+### Deployed Windows Post-Recovery Smoke Regression Investigation And Stabilization
+
+- [x] **WREG-01**: The project can capture one durable stage-by-stage post-recovery regression artifact that records host-controller truth, internal worker truth, and per-worker deltas across recovery, canary start/stop, and smoke settle instead of only the final `0/9 ready`, `9/9 disconnected` snapshot
+- [x] **WREG-02**: The repo copy of the relay, recovery, and smoke scripts is brought back into explicit parity with the deployed-host execution path through one recorded compatibility version so Phase 13 evidence is not based on hidden script drift
+- [x] **WREG-03**: The latest post-recovery smoke regression or stabilization result is visible through an internal operator surface or durable file-backed artifact before any new rollout claim
+- [x] **WREG-04**: The phase ends with one explicit verdict that says whether a bounded stabilization mode keeps the preserved nine-account pool healthy through smoke or whether rollout remains held by the exact first regression stage and blocker evidence
+
+### Deployed Windows Zero-Ready Post-Recovery Baseline And Public-Canary 502 Root-Cause Investigation
+
+- [x] **WROOT-01**: The project can capture one durable zero-ready baseline artifact that records host-controller truth, internal worker truth, and exact per-worker blocker classes instead of only saying `0/9 ready`
+- [x] **WROOT-02**: The project can capture one hop-aware canary artifact that names the first failing hop across Windows loopback API, Windows edge with forced public `Host`, and the Ubuntu public owner instead of only returning an opaque public `502`
+- [x] **WROOT-03**: The latest zero-ready root-cause result is visible through an internal operator surface or durable file-backed artifact before any new rollout claim
+- [x] **WROOT-04**: The phase ends with one explicit verdict that names the dominant worker blocker class plus the first failing public-canary hop, or honestly keeps rollout on hold if the evidence is still inconclusive
+
+### Deployed Windows Disconnected Baseline And Forced-Host Edge Remediation
+
+- [x] **WREM-01**: The project can run one preserve-first remediation flow that records before/after worker truth for the live disconnected baseline and either restores named workers or records exact remaining blocker classes without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WREM-02**: The remediation artifact records the post-repair truth for `windows_edge_forced_host` and `ubuntu_public_owner` separately, so the edge branch no longer collapses back into one vague public `502`
+- [x] **WREM-03**: The latest disconnected-baseline remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins
+- [x] **WREM-04**: After remediation, the project reruns the proven rollout smoke and records one explicit verdict that says whether the host is `remediated_through_smoke` or still `hold_rollout`
+
+### Deployed Windows Runtime Parity Sync And Post-Remediation Degraded Smoke Stabilization
+
+- [x] **WPAR-01**: The repo copy of the runtime-critical `control-api` and PowerShell files is brought back into explicit parity with the deployed-host execution path through one recorded compatibility version, so new archives no longer depend on manual server-only hotfixes
+- [x] **WPAR-02**: The project can capture one durable post-remediation degraded-smoke stabilization artifact that records pre-smoke readiness, final smoke readiness, final pool status, and public-canary truth instead of only another terminal `1/9 ready` note
+- [x] **WPAR-03**: The latest post-remediation degraded-smoke stabilization result is visible through an internal operator surface or durable file-backed artifact before any new rollout claim
+- [x] **WPAR-04**: The phase ends with one explicit verdict that says whether parity-synced bounded stabilization produced `stabilized_through_smoke` or whether rollout remains `hold_rollout`
+
+### Deployed Windows Post-Stabilization Degraded Runtime And Repeated Public-Canary 502 Investigation
+
+- [x] **WRTI-01**: The project can capture one durable post-stabilization runtime-investigation artifact that correlates ready-count changes with host-controller truth, internal worker truth, and local listener/process evidence instead of only another degraded snapshot
+- [x] **WRTI-02**: The project can record the repeated public-canary `502` branch hop-by-hop together with canary runtime facts, so the next remediation phase can target the real failing layer instead of treating `502` as one opaque symptom
+- [x] **WRTI-03**: The latest post-stabilization runtime investigation result is visible through an internal operator surface or durable file-backed artifact before any new remediation claim
+- [x] **WRTI-04**: The phase ends with one explicit verdict that names the dominant runtime blocker and first failing hop as `runtime_blocker_confirmed`, or honestly keeps `hold_rollout` if the evidence is still inconclusive
+
+### Deployed Windows Disconnected Runtime Remediation, Forced-Host Edge Repair, And Runtime Parity Resync
+
+- [x] **WREP-01**: The repo copy of the runtime-critical PowerShell and `control-api` files is brought back into explicit parity with the deployed-host execution path through one recorded compatibility version, so the next remediation archive no longer depends on manual server-only compatibility fixes
+- [x] **WREP-02**: The project can run one preserve-first disconnected-runtime remediation flow that records before/after ready counts plus separate truth for `windows_edge_forced_host` and `ubuntu_public_owner` without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WREP-03**: The latest disconnected-runtime remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins
+- [x] **WREP-04**: After the parity-synced remediation run, the project reruns the proven rollout smoke and records one explicit verdict that says whether the host is `remediated_through_smoke` or still `hold_rollout`
+
+### Deployed Windows Persistent Disconnected Runtime And Forced-Host Public-502 Remediation Follow-Up
+
+- [x] **WFUP-01**: The project can run one canonical preserve-first follow-up harness on top of the Phase 18 parity-clean wrapper chain that records persistent disconnected-runtime truth plus forced-host/public-owner truth under one explicit compatibility version instead of another ad-hoc live command
+- [x] **WFUP-02**: The project can capture one durable follow-up artifact that records before/after ready counts plus separate truth for `windows_edge_forced_host` and `ubuntu_public_owner` without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WFUP-03**: The latest persistent disconnected-runtime follow-up result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins
+- [x] **WFUP-04**: After the follow-up run, the project reruns the proven rollout smoke and records one explicit verdict that says whether the host is `stabilized_through_smoke` or still `hold_rollout`
+
+### Deployed Windows Runtime Parity Backport And Persistent Disconnected-Runtime Public-502 Remediation
+
+- [x] **WPARB-01**: The repo copy of the runtime-critical PowerShell and relay helper files is brought back into explicit parity with the deployed-host execution path under one recorded compatibility version, so the next archive no longer depends on manual server-only fixes
+- [x] **WPARB-02**: The project can run one preserve-first parity-clean remediation flow that records before/after ready counts plus separate truth for `windows_edge_forced_host` and `ubuntu_public_owner` without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WPARB-03**: The latest runtime parity backport remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins
+- [x] **WPARB-04**: After the parity-clean remediation run, the project reruns the proven rollout smoke and records one explicit verdict that says whether the host is `remediated_through_smoke` or still `hold_rollout`
+
+### Deployed Windows Disconnected Runtime And Forced-Host/Public-Owner Remediation After Parity-Clean Proof
+
+- [x] **WPCP-01**: The project can run one preserve-first remediation flow after Phase 20 that records before/after truth for the still-disconnected `0/9 ready` baseline without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WPCP-02**: The remediation artifact records separate post-remediation truth for `windows_edge_forced_host` and the public-owner `502` branch, so the first failing hop and any downstream owner failure remain explicit instead of collapsing into one vague public `502`
+- [x] **WPCP-03**: The latest Phase 21 remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins
+- [x] **WPCP-04**: After the Phase 21 remediation run, the project reruns the proven rollout smoke and records one explicit verdict that says whether the host is `remediated_through_smoke` or still `hold_rollout`
+
+### Deployed Windows Post-Phase21 Disconnected Runtime And Forced-Host/Public-Owner 502 Remediation Follow-Up
+
+- [x] **WPFU-01**: The project can run one preserve-first follow-up flow after Phase 21 that records before/after truth for the still-disconnected `0/9 ready` baseline without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WPFU-02**: The follow-up artifact records loopback, `windows_edge_forced_host`, and the public-owner `502` branch separately, so the first failing hop and any downstream owner failure remain explicit instead of collapsing into one vague public `502`
+- [x] **WPFU-03**: The latest Phase 22 follow-up result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins
+- [x] **WPFU-04**: After the Phase 22 follow-up run, the project reruns the proven rollout smoke and records one explicit verdict that says whether the host is `stabilized_through_smoke` or still `hold_rollout`
+
+### Deployed Windows Post-Phase22 Smoke-Wrapper Parity Recovery And Persistent Disconnected-Runtime Forced-Host/Public-Owner 502 Remediation
+
+- [x] **WSPR-01**: The repo and archive copy of the smoke-critical PowerShell chain can stay in explicit parity, including `test-rollout-smoke.ps1`, so the next archive does not roll the smoke wrapper backward before the rerun starts
+- [x] **WSPR-02**: The project can run one preserve-first post-Phase-22 remediation flow that records before/after truth for the still-disconnected baseline plus loopback, `windows_edge_forced_host`, and public-owner status without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WSPR-03**: The latest Phase 23 parity-remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins
+- [x] **WSPR-04**: After the parity-clean Phase 23 remediation run, the project reruns the proven rollout smoke on the archive-overlaid smoke wrapper and records one explicit verdict that says whether parity recovered through smoke or still `hold_rollout`
+
+### Deployed Windows Post-Phase23 Exact Smoke-Wrapper Compat Backport And Persistent Disconnected-Runtime Forced-Host/Public-Owner 502 Remediation
+
+- [x] **WSCB-01**: The repo and archive copy of the exact smoke-critical PowerShell chain can carry the deployed-host-compatible behavior forward, including `probe-public-api.ps1`, `test-rollout-smoke.ps1`, and `remediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1`, so the next overlay no longer depends on a live-only smoke-wrapper edit before smoke starts
+- [x] **WSCB-02**: The project can run one preserve-first post-Phase-23 remediation flow that records before/after truth for the still-disconnected baseline plus loopback, `windows_edge_forced_host`, and public-owner status without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WSCB-03**: The latest Phase 24 exact smoke-wrapper compat remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins
+- [x] **WSCB-04**: After the exact compat-backported Phase 24 remediation run, the project reruns the proven rollout smoke on the archive-overlaid smoke wrapper and records one explicit verdict that says whether compat was backported through smoke or still `hold_rollout`
+
+### Deployed Windows Post-Phase24 Live-Fix Smoke-Wrapper Backport And Persistent Disconnected-Runtime Forced-Host/Public-Owner 503 Remediation
+
+- [ ] **WLFB-01**: The repo and archive copy of the deployment-critical chain reflects the exact live tunnel, task, and topology fixes, including `start-reverse-tunnels.ps1`, `register-browser-block-tasks.ps1`, package/docs assets, and the canonical Ubuntu `nginx -> 127.0.0.1:4010` upstream truth, so the next overlay no longer depends on server-only tunnel or topology edits
+- [ ] **WLFB-02**: The project can run one preserve-first Phase 25 external-readiness flow that records reverse-tunnel task health, Ubuntu tunnel-listener truth, ready-worker truth, and canonical public-upstream truth without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [ ] **WLFB-03**: The latest Phase 25 external-readiness result is visible through an internal operator surface or durable file-backed artifact before the authenticated external smoke claim
+- [ ] **WLFB-04**: After the live-fix-backed Phase 25 readiness run, the project reruns authenticated external smoke for `/healthz`, `/v1/models`, and `/v1/chat/completions` and records one explicit verdict `externally_ready` or `hold_rollout`
 
 ## Future Requirements
 
@@ -247,14 +345,70 @@
 | UOWN-02 | Phase 10.6.1.2.2.1.1.1.1.1 | Complete |
 | UOWN-03 | Phase 10.6.1.2.2.1.1.1.1.1 | Complete |
 | UOWN-04 | Phase 10.6.1.2.2.1.1.1.1.1 | Complete |
-| CONF-01 | Phase 11 | Pending |
-| CONF-02 | Phase 11 | Pending |
+| CONF-01 | Phase 11 | Complete |
+| CONF-02 | Phase 11 | Complete |
+| WREC-01 | Phase 12 | Complete |
+| WREC-02 | Phase 12 | Complete |
+| WREC-03 | Phase 12 | Complete |
+| WREC-04 | Phase 12 | Complete |
+| WREG-01 | Phase 13 | Complete |
+| WREG-02 | Phase 13 | Complete |
+| WREG-03 | Phase 13 | Complete |
+| WREG-04 | Phase 13 | Complete |
+| WROOT-01 | Phase 14 | Complete |
+| WROOT-02 | Phase 14 | Complete |
+| WROOT-03 | Phase 14 | Complete |
+| WROOT-04 | Phase 14 | Complete |
+| WREM-01 | Phase 15 | Complete |
+| WREM-02 | Phase 15 | Complete |
+| WREM-03 | Phase 15 | Complete |
+| WREM-04 | Phase 15 | Complete |
+| WPAR-01 | Phase 16 | Complete |
+| WPAR-02 | Phase 16 | Complete |
+| WPAR-03 | Phase 16 | Complete |
+| WPAR-04 | Phase 16 | Complete |
+| WRTI-01 | Phase 17 | Complete |
+| WRTI-02 | Phase 17 | Complete |
+| WRTI-03 | Phase 17 | Complete |
+| WRTI-04 | Phase 17 | Complete |
+| WREP-01 | Phase 18 | Complete |
+| WREP-02 | Phase 18 | Complete |
+| WREP-03 | Phase 18 | Complete |
+| WREP-04 | Phase 18 | Complete |
+| WFUP-01 | Phase 19 | Complete |
+| WFUP-02 | Phase 19 | Complete |
+| WFUP-03 | Phase 19 | Complete |
+| WFUP-04 | Phase 19 | Complete |
+| WPARB-01 | Phase 20 | Complete |
+| WPARB-02 | Phase 20 | Complete |
+| WPARB-03 | Phase 20 | Complete |
+| WPARB-04 | Phase 20 | Complete |
+| WPCP-01 | Phase 21 | Complete |
+| WPCP-02 | Phase 21 | Complete |
+| WPCP-03 | Phase 21 | Complete |
+| WPCP-04 | Phase 21 | Complete |
+| WPFU-01 | Phase 22 | Complete |
+| WPFU-02 | Phase 22 | Complete |
+| WPFU-03 | Phase 22 | Complete |
+| WPFU-04 | Phase 22 | Complete |
+| WSPR-01 | Phase 23 | Complete |
+| WSPR-02 | Phase 23 | Complete |
+| WSPR-03 | Phase 23 | Complete |
+| WSPR-04 | Phase 23 | Complete |
+| WSCB-01 | Phase 24 | Complete |
+| WSCB-02 | Phase 24 | Complete |
+| WSCB-03 | Phase 24 | Complete |
+| WSCB-04 | Phase 24 | Complete |
+| WLFB-01 | Phase 25 | Pending |
+| WLFB-02 | Phase 25 | Pending |
+| WLFB-03 | Phase 25 | Pending |
+| WLFB-04 | Phase 25 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 68 total
-- Mapped to phases: 68
+- v1.2 requirements: 108 total
+- Mapped to phases: 108
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-31 after planning the Ubuntu public-owner unification follow-up*
+*Last updated: 2026-04-12 after replanning Phase 25 around reverse-tunnel recovery and the canonical Ubuntu upstream*

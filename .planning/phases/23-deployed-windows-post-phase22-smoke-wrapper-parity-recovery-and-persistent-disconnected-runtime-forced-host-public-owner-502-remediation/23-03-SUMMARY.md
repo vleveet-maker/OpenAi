@@ -1,0 +1,8 @@
+# 23 Plan 03 Summary
+
+- The deployed Windows browser-block host overlaid the Phase 23 archive, restarted `control-api` on `127.0.0.1:8081`, ran the exact parity-remediation harness, and confirmed both `GET /internal/post-phase22-smoke-wrapper-parity-remediation/latest` plus `/internal/admin`.
+- The live parity-remediation verdict stayed negative before smoke: `hold_rollout`, `smokeWrapperParityStatus=archive_chain_ready`, pre-remediation `0/9 ready`, post-remediation `0/9 ready`, dominant blocker `disconnected`, first failing hop `windows_edge_forced_host`, `loopbackStatus=passed`, and both forced-host plus public-owner checks failed.
+- The exact Phase 11 smoke rerun also happened and refreshed `11-SMOKE-SUMMARY.json` plus `11-SMOKE-SUMMARY.md`.
+- The final smoke verdict remained `hold_rollout`: final stage `after_settle`, pool status `degraded`, ready workers `1/9`, and the public canary on `shared-6` returned `502` on `healthz`, `v1/models`, and `v1/chat/completions`.
+- Preserve-first safety held end-to-end: profiles and sessions were not reset, cookies and local storage were not cleared, `shared-6` was stopped again after cleanup, port `4028` was not left listening, and the browser was closed after the run.
+- Technical note: despite `smokeWrapperParityStatus=archive_chain_ready` in the pre-smoke remediation artifact, the deployed host still needed post-overlay compatibility restores in `probe-public-api.ps1`, `test-rollout-smoke.ps1`, and `remediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1`, so the successful smoke rerun used the current phase-23-compatible server-working copy rather than a pure archive-unchanged wrapper chain.

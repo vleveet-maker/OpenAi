@@ -1,0 +1,9 @@
+# 24-03 Summary
+
+- The deployed Windows browser-block host overlaid `phase24-server-sync-20260402-083036.zip`, restarted `control-api` on `127.0.0.1:8081`, and ran the exact Phase 24 compat-remediation command.
+- The live remediation run wrote `24-COMPAT-REMEDIATION-SUMMARY.json` and `24-COMPAT-REMEDIATION-SUMMARY.md`, and both `GET /internal/post-phase23-exact-smoke-wrapper-compat-remediation/latest` plus `/internal/admin` matched the live artifact.
+- The live remediation verdict stayed negative before smoke: `hold_rollout`, `smokeWrapperCompatStatus=archive_chain_ready`, `preRemediationReadyCount=0/9`, `postRemediationReadyCount=0/9`, `dominantRuntimeBlocker=disconnected`, `firstFailingHop=windows_edge_forced_host`, `loopbackStatus=passed`, `forcedHostStatus=failed`, `publicOwnerStatus=failed`.
+- The exact smoke rerun then completed on the current server-working Phase 24-compatible `test-rollout-smoke.ps1`, not on a freshly overlaid untouched wrapper copy.
+- Final smoke truth stayed negative: `scriptCompatibilityVersion=phase24-exact-smoke-wrapper-compat-backport-v1`, `verdict=hold_rollout`, `finalStage=after_settle`, pool `degraded`, `readyWorkers=1/9`, and public canary `shared-6` returned `503/503/503`.
+- Preserve-first safety held through both runs: the nine profiles and live accounts were not reset, cookies and local storage were not cleared, `shared-6` was stopped again after cleanup, the browser was closed, and port `4028` was not left listening.
+- The deployed host still needed post-overlay compatibility restores in `probe-public-api.ps1`, `recover-browser-block-readiness.ps1`, `test-rollout-smoke.ps1`, `remediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1`, `remediate-post-phase23-exact-smoke-wrapper-compat-and-persistent-disconnected-runtime.ps1`, and `test-host-worker-relay.ps1`, so exact compat backport did not survive through smoke unchanged.

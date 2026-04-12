@@ -5,10 +5,12 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$RemoteUser,
   [string]$SshKeyPath = "",
-  [switch]$IncludeHostController
+  [switch]$IncludeHostController,
+  [switch]$Foreground
 )
 
 $ErrorActionPreference = "Stop"
+$scriptCompatibilityVersion = "phase25-live-fix-backport-v1"
 
 function Resolve-SshExecutable {
   $candidate = Get-Command "ssh.exe" -ErrorAction SilentlyContinue
@@ -65,9 +67,20 @@ foreach ($forward in $forwards) {
 
 $arguments.Add("$RemoteUser@$RemoteHost")
 
+if ($Foreground) {
+  Write-Host "[windows-block] reverse tunnels running in foreground ($scriptCompatibilityVersion)"
+  & $sshExe @arguments
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "reverse tunnel foreground process exited with code $LASTEXITCODE"
+  }
+
+  return
+}
+
 Start-Process `
   -FilePath $sshExe `
   -ArgumentList $arguments `
   -WindowStyle Hidden | Out-Null
 
-Write-Host "[windows-block] reverse tunnel start requested"
+Write-Host "[windows-block] reverse tunnel start requested ($scriptCompatibilityVersion)"

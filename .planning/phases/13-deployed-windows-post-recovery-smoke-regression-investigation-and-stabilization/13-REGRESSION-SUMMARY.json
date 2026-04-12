@@ -1,0 +1,89 @@
+{
+  "generatedAt": "2026-03-31T18:40:00+03:00",
+  "scriptCompatibilityVersion": "phase13-post-recovery-smoke-regression-v1",
+  "reconstructedFromOperatorReport": true,
+  "reconstructionScope": "summary_only",
+  "sourceReportDate": "2026-03-31",
+  "verdict": "hold_rollout",
+  "summary": "Reconstructed from the deployed-host operator report: after recovery the pool remained at 0/9 ready, during canary start only shared-6 became ready (1/9), and after settle the pool returned to 0/9 ready while the public canary finished red with 502 on healthz, v1/models, and v1/chat/completions.",
+  "canaryWorkerId": "shared-6",
+  "firstRegressionStage": null,
+  "recoveryNeverRestoredPool": true,
+  "recoveredReadyCount": 0,
+  "finalSmokeReadyCount": 0,
+  "stageOrder": [
+    "after_recovery",
+    "after_canary_start",
+    "after_settle"
+  ],
+  "stageCounts": {
+    "after_recovery": {
+      "readyWorkers": 0,
+      "totalWorkers": 9,
+      "notes": "reported by deployed-host operator"
+    },
+    "after_canary_start": {
+      "readyWorkers": 1,
+      "totalWorkers": 9,
+      "readyWorkerIds": [
+        "shared-6"
+      ],
+      "notes": "reported by deployed-host operator"
+    },
+    "after_settle": {
+      "readyWorkers": 0,
+      "totalWorkers": 9,
+      "notes": "reported by deployed-host operator"
+    }
+  },
+  "smoke": {
+    "verdict": "hold_rollout",
+    "publicCanary": {
+      "healthz": {
+        "ok": false,
+        "statusCode": 502
+      },
+      "models": {
+        "ok": false,
+        "statusCode": 502
+      },
+      "chat": {
+        "ok": false,
+        "statusCode": 502,
+        "workerId": "shared-6"
+      }
+    }
+  },
+  "cleanup": {
+    "agentListeningAllFalse": true,
+    "browserListeningAllFalse": true,
+    "workerPorts4021to4029Listening": false
+  },
+  "deployedHostCompatHotfixes": [
+    "investigate-post-recovery-smoke-regression.ps1 was adapted to the current runtime on the deployed host",
+    "test-rollout-smoke.ps1 was updated to the phase-13 version and additional compat fixes were applied on the deployed host"
+  ],
+  "repoRuntimeParityClosed": true,
+  "operatorSurfaceConfirmation": {
+    "confirmed": true,
+    "confirmedAt": "2026-03-31T19:12:48+03:00",
+    "internalLatestStatusCode": 200,
+    "adminSectionVisible": true,
+    "latestVerdict": "hold_rollout",
+    "latestRecoveredReadyCount": 0,
+    "latestFinalSmokeReadyCount": 0,
+    "latestCanaryStatusCodes": {
+      "healthz": 502,
+      "models": 502,
+      "chat": 502
+    }
+  },
+  "artifactPathsReportedOnHost": [
+    ".planning/phases/13-deployed-windows-post-recovery-smoke-regression-investigation-and-stabilization/13-REGRESSION-SUMMARY.json",
+    ".planning/phases/13-deployed-windows-post-recovery-smoke-regression-investigation-and-stabilization/13-REGRESSION-SUMMARY.md"
+  ],
+  "notes": [
+    "This local checkout does not contain the raw deployed-host JSON payload; this file reconstructs only the confirmed summary fields from the operator report.",
+    "Operator-surface parity was later confirmed after redeploying the synced archive and restarting control-api on the deployed host."
+  ]
+}

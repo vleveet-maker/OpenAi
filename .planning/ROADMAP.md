@@ -40,7 +40,21 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 10.6.1.2.2.1.1.1: Windows HTTPS and independent outside chat proof finalization** - (INSERTED) completed 2026-03-31 with `hold_preserve_accounts`; the final follow-up proved that the preserved Windows edge itself still works locally, but the real public IP `77.66.186.75` currently terminates on Ubuntu `nginx` instead of Windows `Caddy`, so the blocker is now exact public-edge ownership
 - [x] **Phase 10.6.1.2.2.1.1.1.1: Public edge ownership and split-ingress reconciliation** - (INSERTED) completed 2026-03-31 with `hold_preserve_accounts`; the preserved Windows edge is still healthy on LAN, but the real public IP `77.66.186.75` is currently owned by Ubuntu `nginx`, so the blocker is now exact public-owner conflict outside the browser/runtime layer
 - [x] **Phase 10.6.1.2.2.1.1.1.1.1: Ubuntu public owner reassignment and Windows edge unification** - (INSERTED) completed 2026-03-31 with `safe_to_promote`; Ubuntu now deliberately owns public `77.66.186.75`, the conflicting raw-IP `ascii-art` path is removed, and the canary `shared-6` path succeeds through the unified public owner
-- [ ] **Phase 11: Rollout smoke confidence** - in progress; the repeatable smoke wrapper and latest-smoke operator surface are in place, and the remaining step is one live rollout-smoke run plus final verdict from the deployed Windows browser-block host
+- [x] **Phase 11: Rollout smoke confidence** - completed 2026-03-31 with `hold_rollout`; the repeatable smoke flow and latest-smoke operator surface are now real, but household use remains held because the readiness snapshot stayed at `0/9 ready` and `9/9 disconnected`
+- [x] **Phase 12: Deployed Windows browser-block readiness recovery and reconnect stabilization** - completed 2026-03-31 with `hold_rollout`; the live preserve-first recovery restored the 9-account pool to `9/9 ready` and kept the public canary green, but the required post-recovery smoke rerun still regressed to `0/9 ready` and `9/9 disconnected`
+- [x] **Phase 13: Deployed Windows post-recovery smoke regression investigation and stabilization** - completed 2026-03-31 with `hold_rollout`; the live regression artifact, repo-to-runtime parity, and internal latest-regression surface are now proven, but rollout remains held because the post-recovery baseline stayed at `0/9 ready`, only `shared-6` briefly reached `1/9 ready`, and the final public canary returned `502` on all three public checks
+- [x] **Phase 14: Deployed Windows zero-ready post-recovery baseline and public-canary 502 root-cause investigation** - completed 2026-03-31 with `root_cause_confirmed`; the zero-ready baseline is now explicitly `0/9 ready`, `9/9 disconnected`, `loopback_api` stays green, the first failing hop is `windows_edge_forced_host`, and the Ubuntu public owner still returns `502`
+- [x] **Phase 15: Deployed Windows disconnected baseline and forced-host edge remediation** - completed 2026-04-01 with `hold_rollout`; the preserve-first remediation harness, latest-remediation operator surface, and post-remediation smoke rerun are now all real, but rollout remains held because forced-host still fails, public canary still returns `502`, and the final smoke settles at only `1/9 ready`
+- [x] **Phase 16: Deployed Windows runtime parity sync and post-remediation degraded smoke stabilization** - completed 2026-04-01 with `hold_rollout`; the parity-synced archive, canonical stabilization harness, latest-stabilization route, and internal admin surface are now all real, but rollout remains held because the deployed host only reached `1/9 ready` before smoke, regressed to `0/9 ready` by the final smoke snapshot, stayed `degraded`, and the public canary on `shared-6` again returned `502`
+- [x] **Phase 17: Deployed Windows post-stabilization degraded runtime and repeated public-canary 502 investigation** - completed 2026-04-01 with `runtime_blocker_confirmed`; the live deployed-host investigation artifact, internal latest route, and admin surface now all agree that the dominant runtime blocker is `disconnected` and the first failing hop is `windows_edge_forced_host`
+- [x] **Phase 18: Deployed Windows disconnected runtime remediation, forced-host edge repair, and runtime parity resync** - completed 2026-04-01 with `hold_rollout`; the parity-synced remediation artifact, operator surface, and required post-remediation smoke rerun are now all real, but rollout remains held because remediation stayed at `0/9 ready` and the final smoke still settled at only `1/9 ready` with public canary `502/502/502`
+- [x] **Phase 19: Deployed Windows persistent disconnected runtime and forced-host public-502 remediation follow-up** - completed 2026-04-01 with `hold_rollout`; the live follow-up artifact, operator surface, and required smoke rerun are now all real, but rollout remains held because the follow-up stayed at `0/9 ready`, the dominant blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, and the final smoke still settled at only `1/9 ready` with public canary `502/502/502`
+- [x] **Phase 20: Deployed Windows runtime parity backport and persistent disconnected-runtime public-502 remediation** - completed 2026-04-01 with `hold_rollout`; the parity-clean archive, latest-remediation operator surface, and exact smoke rerun are now all real, but rollout remains held because remediation stayed at `0/9 ready` and the final smoke still settled at only `1/9 ready` with public canary `502/502/502`
+- [x] **Phase 21: Deployed Windows disconnected runtime and windows_edge_forced_host public-owner 502 remediation after parity-clean proof** - completed 2026-04-01 with `hold_rollout`; the live post-parity remediation plus exact smoke rerun are now both real, but the runtime still stayed `0/9 -> 0/9 ready` before smoke and the rerun still ended at only `1/9 ready` with public canary `502/502/502`
+- [x] **Phase 22: Deployed Windows post-phase21 disconnected runtime and windows_edge_forced_host public-owner 502 remediation follow-up** - completed 2026-04-01 with `hold_rollout`; the live follow-up artifact plus operator surface are now proven, but the exact smoke rerun still settled at `after_settle` with only `1/9 ready`, a degraded pool, and public canary `502/502/502`
+- [x] **Phase 23: Deployed Windows post-phase22 smoke-wrapper parity recovery and persistent disconnected-runtime forced-host public-owner 502 remediation** - completed 2026-04-02 with `hold_rollout`; the live parity-remediation artifact, operator surface, and exact smoke rerun are now all real, but the deployed host still needed post-overlay compatibility restores and the smoke still settled at `1/9 ready` with public canary `502/502/502`
+- [x] **Phase 24: Deployed Windows post-phase23 exact smoke-wrapper compat backport and persistent disconnected-runtime forced-host public-owner 502 remediation** - completed 2026-04-02 with `hold_rollout`; the live compat-remediation artifact, operator surface, and exact smoke rerun are now all real, but the exact smoke still settled at `after_settle` with `1/9 ready`, a degraded pool, and public canary `503/503/503`
+- [ ] **Phase 25: Deployed Windows post-phase24 live-fix smoke-wrapper backport and persistent disconnected-runtime forced-host public-owner 503 remediation** - planned 2026-04-12 from live Ubuntu and Windows evidence; the canonical public path is now `Ubuntu nginx -> 127.0.0.1:4010`, reverse SSH tunnels are the critical external-chat dependency, and the next step is to backport that live truth before one authenticated external smoke verdict
 
 ## Phase Details
 
@@ -163,7 +177,7 @@ Plans:
 **Requirements**: BTMIT-01, BTMIT-02, BTMIT-03
 **Depends on:** Phase 10.6.1.2.1
 **Plans:** 3 plans
-**Current status:** Completed on 2026-03-30. Wave 1 proved that both workers were landing on a blocking memory dialog instead of a dead profile. Wave 2 added a bounded bootstrap mitigation for dismissing that dialog and recognizing an aria-label-only `Включить временный чат` entry. Wave 3 reran both workers successfully, updated the local matrix to `7/7`, and closed this branch as mitigated rather than leaving it as vague flakiness.
+**Current status:** Completed on 2026-03-30. Wave 1 proved that both workers were landing on a blocking memory dialog instead of a dead profile. Wave 2 added a bounded bootstrap mitigation for dismissing that dialog and recognizing an aria-label-only `???????? ????????? ???` entry. Wave 3 reran both workers successfully, updated the local matrix to `7/7`, and closed this branch as mitigated rather than leaving it as vague flakiness.
 
 **Success Criteria** (what must be TRUE):
   1. The project has one explicit explanation for the repeated `shared-2` and `shared-4` timeout branch, based on browser-surface evidence instead of guesswork.
@@ -447,12 +461,12 @@ Plans:
   1. Operator can run a repeatable smoke flow that covers readiness, fresh-chat bootstrap, and at least one live relay.
   2. The latest smoke result is visible in operator surfaces or logs without digging through raw process output.
   3. The rollout confidence path is documented clearly enough that it can be rerun whenever ChatGPT UI drift is suspected.
-**Current status:** In progress on 2026-03-31. Wave 1 added the repeatable `test-rollout-smoke.ps1` wrapper plus rerun docs, and Wave 2 added the file-backed latest-smoke route and internal admin surface. The remaining honest step is Wave 3 on the deployed Windows browser-block host: run the live rollout smoke, confirm `/internal/rollout-smoke/latest` or `/internal/admin` shows that same result, and then write the final ready-or-hold verdict.
+**Current status:** Completed on 2026-03-31 with verdict `hold_rollout`. Wave 1 added the repeatable `test-rollout-smoke.ps1` wrapper plus rerun docs, Wave 2 added the file-backed latest-smoke route and internal admin surface, and Wave 3 ran the real smoke on the deployed Windows browser-block host. The public canary on `shared-6` passed and the operator surface matched the same latest result, but household use remains held because the readiness snapshot stayed degraded at `0/9 ready` and `9/9 disconnected`.
 
 ## Progress
 
 **Execution Order:**
-Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10.5 -> 10.5.1 -> 10.5.1.1 -> 10.5.1.1.1 -> 10.6 -> 10.6.1 -> 10.6.1.1 -> 10.6.1.2 -> 10.6.1.2.2 -> 10.6.1.2.2.1 -> 10.6.1.2.2.1.1 -> 11
+Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10.5 -> 10.5.1 -> 10.5.1.1 -> 10.5.1.1.1 -> 10.6 -> 10.6.1 -> 10.6.1.1 -> 10.6.1.2 -> 10.6.1.2.2 -> 10.6.1.2.2.1 -> 10.6.1.2.2.1.1 -> 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17 -> 18
 
 | Phase | Requirements | Status | Completed |
 |-------|--------------|--------|-----------|
@@ -474,15 +488,323 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 | 10.6.1.2.2.1 Windows Server public API activation and edge reconciliation | WEDGE-01, WEDGE-02, WEDGE-03, WEDGE-04 | Partial | 2026-03-30 |
 | 10.6.1.2.2.1.1 Direct Windows Caddy edge cutover and canary proof | WCUT-01, WCUT-02, WCUT-03, WCUT-04 | Complete (`safe_but_hold`) | 2026-03-31 |
 | 10.6.1.2.2.1.1.1.1 Public edge ownership and split-ingress reconciliation | PEDGE-01, PEDGE-02, PEDGE-03, PEDGE-04 | Complete (`hold_preserve_accounts`) | 2026-03-31 |
-| 11. Rollout smoke confidence | 2/3 | In Progress|  |
+| 11. Rollout smoke confidence | CONF-01, CONF-02 | Complete (`hold_rollout`) | 2026-03-31 |
+| 12. Deployed Windows browser-block readiness recovery and reconnect stabilization | WREC-01, WREC-02, WREC-03, WREC-04 | Complete (`hold_rollout`) | 2026-03-31 |
+| 13. Deployed Windows post-recovery smoke regression investigation and stabilization | WREG-01, WREG-02, WREG-03, WREG-04 | Complete (`hold_rollout`) | 2026-03-31 |
+| 14. Deployed Windows zero-ready post-recovery baseline and public-canary 502 root-cause investigation | WROOT-01, WROOT-02, WROOT-03, WROOT-04 | Complete (`root_cause_confirmed`) | 2026-03-31 |
+| 15. Deployed Windows disconnected baseline and forced-host edge remediation | WREM-01, WREM-02, WREM-03, WREM-04 | Complete (`hold_rollout`) | 2026-04-01 |
+| 16. Deployed Windows runtime parity sync and post-remediation degraded smoke stabilization | WPAR-01, WPAR-02, WPAR-03, WPAR-04 | Complete (`hold_rollout`) | 2026-04-01 |
+| 17. Deployed Windows post-stabilization degraded runtime and repeated public-canary 502 investigation | WRTI-01, WRTI-02, WRTI-03, WRTI-04 | Complete (`runtime_blocker_confirmed`) | 2026-04-01 |
+| 18. Deployed Windows disconnected runtime remediation, forced-host edge repair, and runtime parity resync | WREP-01, WREP-02, WREP-03, WREP-04 | Complete (`hold_rollout`) | 2026-04-01 |
+| 19. Deployed Windows persistent disconnected runtime and forced-host public-502 remediation follow-up | WFUP-01, WFUP-02, WFUP-03, WFUP-04 | Complete (`hold_rollout`) | 2026-04-01 |
+| 20. Deployed Windows runtime parity backport and persistent disconnected-runtime public-502 remediation | WPARB-01, WPARB-02, WPARB-03, WPARB-04 | Complete (`hold_rollout`) | 2026-04-01 |
+| 21. Deployed Windows disconnected runtime and windows_edge_forced_host public-owner 502 remediation after parity-clean proof | WPCP-01, WPCP-02, WPCP-03, WPCP-04 | Complete (`hold_rollout`) | 2026-04-01 |
+| 22. Deployed Windows post-phase21 disconnected runtime and windows_edge_forced_host public-owner 502 remediation follow-up | WPFU-01, WPFU-02, WPFU-03, WPFU-04 | Complete (`hold_rollout`) | 2026-04-01 |
+| 23. Deployed Windows post-phase22 smoke-wrapper parity recovery and persistent disconnected-runtime forced-host public-owner 502 remediation | WSPR-01, WSPR-02, WSPR-03, WSPR-04 | Complete (`hold_rollout`) | 2026-04-02 |
+| 24. Deployed Windows post-phase23 exact smoke-wrapper compat backport and persistent disconnected-runtime forced-host public-owner 502 remediation | WSCB-01, WSCB-02, WSCB-03, WSCB-04 | Complete (`hold_rollout`) | 2026-04-02 |
+| 25. Deployed Windows post-phase24 live-fix smoke-wrapper backport and persistent disconnected-runtime forced-host public-owner 503 remediation | WLFB-01, WLFB-02, WLFB-03, WLFB-04 | In Progress (`2/3`, live `25-03` pending) | 2026-04-12 |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: run Phase 11 Wave 3 from the deployed Windows browser-block host and record the final rollout verdict
-  - Carry-forward debt from recent live checks: compact visible remains the official runtime fallback, the 9-account Windows block remains preserved, raw `4040`, worker-agent ports, and raw `:4010` stay private, public ownership is now deliberately unified through Ubuntu, and the remaining public edge debt is certificate trust hardening rather than split ingress
+- Current next action: run live `25-03` for Phase 25 on the deployed Ubuntu and Windows hosts
+  - New live truth from 2026-04-12: the public API on `77.66.186.75` is already externally reachable through Ubuntu `nginx`, `healthz` returns `200`, `v1/models` returns `401` without a bearer token and `200` with a bearer token, and external chat now succeeds again after reverse SSH tunnels were restored
+  - The real active topology is now `internet -> MikroTik -> Ubuntu nginx -> 127.0.0.1:4010`; the repo copy that still assumes `Ubuntu -> 192.168.88.250:80` is stale
+  - The Windows host `192.168.88.250` no longer has an active `Caddy` edge in the live path: `80/443` do not listen there, `Get-Service *caddy*` returns no service, and `Get-Process caddy` returns no process
+  - The actual live blocker that broke external chat was a dead reverse SSH tunnel from the Windows browser block to Ubuntu, not a broken public `nginx` path and not a broken MikroTik public ingress rule
+  - After the tunnel recovery, Ubuntu again exposed `127.0.0.1:14021..14027` and `127.0.0.1:14040`, `readyz` returned `7/7 ready`, and the external chat smoke returned `200` with `ping-ok` on worker `shared-2`
+  - Carry-forward debt from the completed smoke, recovery, remediation, and stabilization work: compact visible remains the official runtime fallback, the 9-account Windows block remains preserved, raw `4040`, worker-agent ports, and raw `:4010` stay private, public ownership is deliberately unified through Ubuntu, and the remaining rollout blocker is now the runtime itself rather than missing tooling or operator visibility
+  - Phase 16 is now fully complete: the deployed host ran the parity-synced stabilization command, `GET /internal/post-remediation-degraded-smoke/latest` returned latest, `/internal/admin` showed the same stabilization surface, and the repo now also carries BOM-tolerant latest-state parsing after the live route surfaced one BOM issue in `latest.json`
+  - Phase 17 is now fully complete: the deployed host ran the bounded runtime investigation, `GET /internal/post-stabilization-runtime-investigation/latest` returned latest, `/internal/admin` showed the same runtime-investigation surface, and the final verdict is `runtime_blocker_confirmed`
+  - Phase 18 is now fully complete: the deployed host ran the live remediation harness, confirmed `GET /internal/disconnected-runtime-remediation/latest` plus `/internal/admin`, reran the exact Phase 11 smoke, and ended with final verdict `hold_rollout`
+  - The final Phase 18 truth is explicit: remediation stayed `0/9 ready`, the final smoke settled at `after_settle` with pool `degraded` and only `1/9 ready`, and the public canary on `shared-6` still returned `502/502/502`
+  - The repo now backports string-or-object `Worker.status` normalization into the runtime-critical Windows wrappers so the next archive no longer depends on the old `status.detail`-only assumption
+  - Phase 19 is now fully complete: the deployed host overlaid the archive, restarted `control-api`, ran the live follow-up harness, confirmed `GET /internal/persistent-disconnected-runtime-followup/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke with final verdict `hold_rollout`
+  - The final Phase 19 truth is explicit: the follow-up stayed `0/9 -> 0/9 ready`, the dominant blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, the public owner still returned `502`, and the rerun smoke still ended at `after_settle` with only `1/9 ready`
+  - The deployed host still needed compatibility restores in `probe-public-api.ps1`, `recover-browser-block-readiness.ps1`, `remediate-disconnected-runtime-and-forced-host-edge.ps1`, `remediate-persistent-disconnected-runtime-and-public-502.ps1`, `test-rollout-smoke.ps1`, and `test-host-worker-relay.ps1`; those raw runtime fixes are not yet synced back into this checkout verbatim
+  - Phase 20 is now fully complete: the deployed host overlaid the parity-clean archive, restarted `control-api`, ran the live remediation harness, confirmed `GET /internal/runtime-parity-backport-remediation/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke with final verdict `hold_rollout`
+  - The final Phase 20 truth is explicit: remediation stayed `0/9 -> 0/9 ready`, the dominant blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, both forced-host plus public-owner checks stayed red, and the rerun smoke still ended at `after_settle` with only `1/9 ready` and public canary `502/502/502`
+  - Unlike the earlier follow-up phases, the live Phase 20 run did not report any new post-overlay server-only compatibility restore after the archive overlay, so repo/runtime parity is now proven for this wrapper chain even though rollout remains held
+  - Phase 21 is now fully complete: the deployed host overlaid the archive, restarted `control-api`, ran the exact post-parity remediation harness, confirmed both `GET /internal/post-parity-disconnected-runtime-remediation/latest` and `/internal/admin`, and reran the exact Phase 11 smoke
+  - The final Phase 21 truth is explicit: remediation stayed `0/9 -> 0/9 ready`, the dominant blocker stayed `disconnected`, the first failing hop stayed `windows_edge_forced_host`, both forced-host plus public-owner checks stayed red, and the rerun smoke still ended at `after_settle` with only `1/9 ready` plus public canary `502/502/502`
+  - The smoke rerun required restoring `test-rollout-smoke.ps1` to a probe-compatible call scheme because the checkpoint archive only contained Phase 21 checkpoint artifacts; the repo now backports a guard so the smoke wrapper no longer crashes when the probe payload omits `chatCompletions`
+- Phase 22 is now fully complete: the deployed host overlaid the archive, restarted `control-api`, ran the exact post-Phase-21 follow-up harness, confirmed `GET /internal/post-phase21-disconnected-runtime-followup/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke with final verdict `hold_rollout`
+- The final Phase 22 truth is explicit: the follow-up stayed `0/9 -> 0/9 ready`, the dominant blocker stayed `disconnected`, the first failing hop stayed `windows_edge_forced_host`, `loopbackStatus` stayed green while forced-host plus public-owner stayed red, and the rerun smoke still ended at `after_settle` with only `1/9 ready` plus public canary `502/502/502`
+- The successful smoke rerun used the current server-working `test-rollout-smoke.ps1` because the checkpoint archive `phase22-live-followup-checkpoint-sync-20260401-224716.zip` carried a stale smoke-wrapper copy; that raw smoke-wrapper diff is not synced back verbatim into this checkout
+- Phase 23 is now fully complete: the deployed host overlaid the archive, restarted `control-api`, ran the exact parity-remediation harness, confirmed `GET /internal/post-phase22-smoke-wrapper-parity-remediation/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke with final verdict `hold_rollout`
+- Phase 24 local Waves 1-2 are now complete: the repo backports the exact smoke-wrapper compat marker into the smoke-critical chain, ships the canonical Phase 24 remediation harness, serves `GET /internal/post-phase23-exact-smoke-wrapper-compat-remediation/latest`, and renders the same latest artifact in `/internal/admin`
+- Local Phase 24 verification is green before the live handoff: PowerShell parser checks passed, `npm.cmd --prefix services/control-api test` passed with `28` files and `122` tests, and `npm.cmd --prefix services/control-api run build` passed
+- Phase 24 live remediation is now also complete on `192.168.88.250`: the archive was overlaid, `control-api` restarted, the exact remediation command wrote `24-COMPAT-REMEDIATION-SUMMARY.json/.md`, and both `GET /internal/post-phase23-exact-smoke-wrapper-compat-remediation/latest` plus `/internal/admin` matched the live artifact
+- The live Phase 24 remediation still needed post-overlay compatibility restores in `probe-public-api.ps1`, `recover-browser-block-readiness.ps1`, `test-rollout-smoke.ps1`, `remediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1`, `remediate-post-phase23-exact-smoke-wrapper-compat-and-persistent-disconnected-runtime.ps1`, and `test-host-worker-relay.ps1`, so the exact smoke rerun must use the current server-working copy and Phase 24 is not ready for closeout yet
+- Phase 24 is now fully complete: the deployed host reran the exact smoke on the current Phase 24-compatible server-working `test-rollout-smoke.ps1`, and the final truth stayed negative at `after_settle`, pool `degraded`, `1/9 ready`, and public canary `503/503/503`
+- Phase 24 closed with a truthful negative compat verdict: the remediation artifact stayed `archive_chain_ready`, but the smoke rerun still depended on post-overlay live fixes, so exact compat backport is still unresolved and rollout remains held
 
 ## Next Up
 
-- `$gsd-plan-phase 11`
-- later, execute the rollout-smoke phase against the newly unified public owner path
+- keep rollout preserve-first and avoid widening beyond the bounded canary path while reverse tunnels remain a runtime-critical dependency for external chat
+- execute Phase 25 next, because the remaining work is now narrow: backport the exact live reverse-tunnel and topology fixes, then rerun authenticated external smoke on the current canonical public path
+- treat the recovered external API as fixed input: public `77.66.186.75` already works through Ubuntu `nginx -> 127.0.0.1:4010`, so do not reopen the retired Windows `Caddy` edge branch unless fresh evidence forces it
+- use the completed Phase 24 truth plus the new tunnel recovery evidence as the baseline and target durable external readiness rather than another broad public-edge investigation
+- keep the repo and deployment assets aligned with the real live path so the next overlay does not silently roll the tunnel fix or the Ubuntu-local upstream backward
+
+### Phase 12: Deployed Windows browser-block readiness recovery and reconnect stabilization
+
+**Goal:** Explain and recover the degraded `0/9 ready`, `9/9 disconnected` snapshot on the preserve-first Windows browser-block host, then rerun the proven rollout smoke to decide whether household rollout can resume.
+**Depends on:** Phase 11
+**Requirements**: WREC-01, WREC-02, WREC-03, WREC-04
+**Success Criteria** (what must be TRUE):
+  1. Operator can capture one preserve-first recovery snapshot that names exact worker blocker classes instead of another opaque disconnected count.
+  2. Bounded reconnect work can keep recovered workers running without profile deletion, cookie clearing, blind full-pool restart, or mass relogin as the default path.
+  3. The latest readiness-recovery result is visible in an operator surface or durable file-backed artifact before rollout-smoke reruns.
+  4. The phase ends with a rerun of the proven Phase 11 smoke and one explicit verdict about whether rollout can resume or remains held by named workers.
+**Current status:** Completed on 2026-03-31 with verdict `hold_rollout`. Wave 1 added the preserve-first recovery wrapper and artifact contract, Wave 2 added the file-backed latest-recovery route plus internal admin visibility, and Wave 3 ran the live recovery plus the required post-recovery smoke rerun on the deployed Windows host. The recovery artifact proved `recovered` with `9/9 ready`, but the rerun smoke still regressed the snapshot to `0/9 ready` and `9/9 disconnected`, so household rollout remains held.
+**Plans:** 3 plans
+
+Plans:
+- [x] `12-01-PLAN.md` - preserve-first readiness-recovery wrapper plus docs and artifact contract
+- [x] `12-02-PLAN.md` - file-backed latest-recovery route and internal admin visibility
+- [x] `12-03-PLAN.md` - live deployed-host recovery, smoke rerun, and final rollout verdict
+
+### Phase 13: Deployed Windows post-recovery smoke regression investigation and stabilization
+
+**Goal:** Explain why the recovered `9/9 ready` Windows pool still regresses during the post-recovery smoke path, bring the repo and deployed-host script behavior back into parity, and prove whether one bounded stabilization mode keeps the preserve-first pool healthy through smoke.
+**Requirements**: WREG-01, WREG-02, WREG-03, WREG-04
+**Depends on:** Phase 12
+**Success Criteria** (what must be TRUE):
+  1. Operator can capture one durable stage-by-stage artifact that shows how the pool moves from recovery into smoke, including the exact first regression stage instead of only the final `0/9 ready`, `9/9 disconnected` snapshot.
+  2. The repo copy of the relay, recovery, and smoke scripts is explicit enough to match the deployed-host execution path, so Phase 13 evidence is not based on hidden script drift.
+  3. The latest post-recovery regression/stabilization result is visible in an operator surface or durable file-backed artifact before any new rollout claim.
+  4. The phase ends with one explicit verdict that says whether a bounded stabilization mode keeps the preserved nine-account pool healthy through smoke or whether rollout remains held by exact stage evidence.
+**Current status:** Completed on 2026-03-31 with verdict `hold_rollout`. The deployed host wrote the Phase 13 regression artifacts and proved that this run never restored a healthy post-recovery baseline (`after_recovery = 0/9 ready`, `after_canary_start = 1/9 ready` on `shared-6` only, `after_settle = 0/9 ready`, public canary `502/502/502`). The final Phase 13 wrapper copies were synced back into the repo, the archive was redeployed to the host, `GET /internal/post-recovery-regression/latest` now returns `200`, and `/internal/admin` renders the same latest result, so the remaining blocker is runtime stability rather than hidden script drift or missing operator visibility.
+**Plans:** 3 plans
+
+Plans:
+- [x] `13-01-PLAN.md` - stage-by-stage regression harness, compatibility contract, and repo-to-host sync docs
+- [x] `13-02-PLAN.md` - file-backed latest regression route and internal admin visibility
+- [x] `13-03-PLAN.md` - live deployed-host regression run, operator-surface confirmation, and final stabilization verdict
+
+### Phase 14: Deployed Windows zero-ready post-recovery baseline and public-canary 502 root-cause investigation
+
+**Goal:** Explain why the preserved deployed Windows pool can already be `0/9 ready` after the post-recovery path and identify the first failing hop in the later public-canary `502` branch, so the next rollout decision is grounded in exact root-cause evidence instead of another vague degraded snapshot.
+**Requirements**: WROOT-01, WROOT-02, WROOT-03, WROOT-04
+**Depends on:** Phase 13
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-03-31 with verdict `root_cause_confirmed`. Wave 3 ran on the deployed Windows browser-block host and made the remaining rollout blocker exact: the baseline stayed at `0/9 ready`, `9/9 disconnected`, `loopback_api` remained green with `200/200/200`, the first failing hop was `windows_edge_forced_host`, and the Ubuntu public owner `http://77.66.186.75` still returned `502` on `healthz`, `v1/models`, and `v1/chat/completions` with `Server: nginx/1.18.0 (Ubuntu)`. `GET /internal/zero-ready-root-cause/latest` and `/internal/admin` showed the same latest artifact, the canary `shared-6` was stopped again after the bounded probe, and the repo copy of `investigate-zero-ready-root-cause.ps1` now includes the named-parameter compat fix required by the deployed host.
+
+**Success Criteria** (what must be TRUE):
+  1. Operator can capture one durable zero-ready baseline artifact that names exact worker blocker classes instead of only saying `0/9 ready`.
+  2. The public canary path records the first failing hop explicitly across Windows loopback API, Windows edge with forced public `Host`, and the Ubuntu public owner.
+  3. The latest zero-ready root-cause result is visible in an internal operator surface or durable file-backed artifact before any new rollout claim.
+  4. The phase ends with one explicit verdict that names the dominant blocker class plus the first failing hop, or honestly keeps rollout on hold if the evidence is still inconclusive.
+
+Plans:
+- [x] `14-01-PLAN.md` - zero-ready root-cause harness, hop-aware probe evidence, and repo-to-host sync contract
+- [x] `14-02-PLAN.md` - file-backed latest root-cause route and internal admin visibility
+- [x] `14-03-PLAN.md` - live deployed-host root-cause run, operator-surface confirmation, and final verdict
+
+### Phase 15: Deployed Windows disconnected baseline and forced-host edge remediation
+
+**Goal:** Restore the preserve-first nine-account Windows browser-block from the current disconnected zero-ready baseline, repair or explicitly reclassify the `windows_edge_forced_host` branch, and prove the result against a fresh rollout-smoke rerun instead of stopping at root-cause diagnosis.
+**Requirements**: WREM-01, WREM-02, WREM-03, WREM-04
+**Depends on:** Phase 14
+**Plans:** 3 plans
+**Current status:** Completed on 2026-04-01 with verdict `hold_rollout`. The live remediation run and operator-surface confirmation are both now proven on the deployed host, and the exact post-remediation Phase 11 smoke rerun also happened. The remediation artifact still held at `0/9 ready`, only `shared-6` temporarily recovered and passed `loopback_api`, `windows_edge_forced_host` remained `transport_error`, `ubuntu_public_owner` remained `502`, and the final smoke still settled at only `1/9 ready` with a degraded pool and public canary `502/502/502`.
+
+**Success Criteria** (what must be TRUE):
+  1. One preserve-first remediation flow can move the live host from the current `0/9 ready`, `9/9 disconnected` baseline into an explicit recovered-or-still-blocked snapshot without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  2. The remediation artifact records the exact post-repair truth for both `windows_edge_forced_host` and the Ubuntu public owner instead of collapsing them back into one vague public `502`.
+  3. The latest remediation result is visible through an internal operator surface before the smoke rerun begins.
+  4. The phase ends with a rerun of the proven Phase 11 smoke and one explicit verdict `remediated_through_smoke` or `hold_rollout`.
+
+Plans:
+- [x] `15-01-PLAN.md` - preserve-first disconnected-baseline remediation harness, durable artifact contract, and repo-to-host sync docs
+- [x] `15-02-PLAN.md` - file-backed latest-remediation route and internal admin visibility
+- [x] `15-03-PLAN.md` - live deployed-host remediation run, smoke rerun, and final rollout verdict
+
+### Phase 16: Deployed Windows runtime parity sync and post-remediation degraded smoke stabilization
+
+**Goal:** Sync the deployed Windows host hotfixes back into the repo, restore repo-vs-runtime parity across `control-api` and the smoke/remediation wrappers, and prove whether one bounded post-remediation stabilization run can survive the degraded smoke contract.
+**Requirements**: WPAR-01, WPAR-02, WPAR-03, WPAR-04
+**Depends on:** Phase 15
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-01 with verdict `hold_rollout`. Wave 1 synced the runtime-critical PowerShell behavior back into the repo, stamped the explicit compatibility marker `phase16-runtime-parity-sync-v1`, added the canonical post-remediation degraded-smoke stabilization harness, and updated the exact sync docs. Wave 2 exposed the latest stabilization result in `control-api` and `/internal/admin`, added coverage for the new operator surface, and regenerated the runtime files that the deployed host actually runs from `dist`. Wave 3 overlaid the parity-synced archive onto the deployed host, restarted `control-api`, ran the bounded stabilization command, and confirmed `GET /internal/post-remediation-degraded-smoke/latest` plus `/internal/admin`. The final live truth still held rollout: pre-smoke ready was only `1/9`, final smoke ready fell to `0/9`, the pool remained `degraded`, and the public canary on `shared-6` again returned `502`. The live route also surfaced a BOM issue in `latest.json`, and the repo now backports BOM-tolerant latest-state parsing for future archives.
+
+**Success Criteria** (what must be TRUE):
+  1. The repo copy of the runtime-critical `control-api` and PowerShell files matches the deployed-host execution path closely enough that a new archive no longer depends on manual server-only hotfixes.
+  2. The project can capture one durable post-remediation degraded-smoke stabilization artifact that records pre-smoke readiness, final smoke readiness, pool status, and public-canary truth instead of only another terminal `1/9 ready` note.
+  3. The latest post-remediation degraded-smoke stabilization result is visible through an internal operator surface or durable file-backed artifact before any new rollout claim.
+  4. The phase ends with one explicit verdict that says whether parity-synced bounded stabilization produced `stabilized_through_smoke` or whether rollout still remains `hold_rollout`.
+
+Plans:
+- [x] `16-01-PLAN.md` - runtime parity sync for the live PowerShell path, canonical stabilization harness, and repo-to-host sync docs
+- [x] `16-02-PLAN.md` - file-backed latest stabilization route, admin visibility, and runtime build parity
+- [x] `16-03-PLAN.md` - live parity-synced redeploy, bounded stabilization run, operator-surface confirmation, and final verdict
+
+### Phase 17: Deployed Windows post-stabilization degraded runtime and repeated public-canary 502 investigation
+
+**Goal:** Capture durable component-level runtime evidence for why the parity-synced deployed Windows host still collapses from `1/9 ready` to `0/9 ready` and why the repeated public canary on `shared-6` still ends in `502`, so the next remediation phase targets the real failing runtime layer instead of repeating smoke.
+**Requirements**: WRTI-01, WRTI-02, WRTI-03, WRTI-04
+**Depends on:** Phase 16
+**Plans:** 3 plans
+**Current status:** Completed on 2026-04-01 with verdict `runtime_blocker_confirmed`. Wave 1 added the canonical runtime-investigation harness plus the exact sync docs, Wave 2 exposed the latest runtime-investigation result in `control-api` and `/internal/admin`, and Wave 3 ran the live deployed-host investigation on `192.168.88.250`. The final truth is now explicit: baseline `0/9 ready`, temporary `1/9 ready` after canary `shared-6`, final `0/9 ready` after smoke and cleanup, dominant runtime blocker `disconnected`, first failing hop `windows_edge_forced_host`, and public `http://77.66.186.75` still returning `502` on `healthz`, `v1/models`, and `v1/chat/completions`.
+
+**Success Criteria** (what must be TRUE):
+  1. One durable artifact correlates post-stabilization ready-count transitions with host-controller truth, internal worker truth, and local listener/process evidence instead of only another degraded snapshot.
+  2. The repeated public-canary `502` branch records the first failing hop together with canary runtime facts strongly enough to target the next remediation phase.
+  3. The latest post-stabilization runtime investigation result is visible through an internal operator surface or durable file-backed artifact before any new remediation claim.
+  4. The phase ends with one explicit verdict `runtime_blocker_confirmed` or `hold_rollout`.
+
+Plans:
+- [x] `17-01-PLAN.md` - canonical runtime-investigation harness, listener/process evidence, and repo-to-host sync docs
+- [x] `17-02-PLAN.md` - file-backed latest runtime-investigation route and internal admin visibility
+- [x] `17-03-PLAN.md` - live deployed-host runtime investigation, operator-surface confirmation, and final verdict
+
+### Phase 18: Deployed Windows disconnected runtime remediation, forced-host edge repair, and runtime parity resync
+
+**Goal:** Repair the confirmed `disconnected` runtime baseline and `windows_edge_forced_host` branch through one preserve-first remediation path, while syncing the latest deployed-host compatibility restores back into the repo before the next smoke-backed rollout verdict.
+**Requirements**: WREP-01, WREP-02, WREP-03, WREP-04
+**Depends on:** Phase 17
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-01 with verdict `hold_rollout`. Wave 1 synced the runtime-critical wrapper chain back to the repo under `phase18-runtime-remediation-v1`, added the canonical disconnected-runtime remediation harness, and updated the exact sync docs. Wave 2 added the file-backed latest-remediation route plus the matching `/internal/admin` section, extended coverage, and rebuilt the `dist` runtime that the deployed host serves. Wave 3 overlaid the archive on the deployed host, restarted `control-api`, ran the live remediation harness, confirmed the latest route plus admin section, and reran the exact Phase 11 smoke. The remediation still held at `0/9 ready`, the dominant blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, and the smoke still ended at `after_settle` with pool `degraded`, only `1/9 ready`, and a public canary `502/502/502`. The repo now also backports the string-or-object `Worker.status` compatibility that the deployed host had to restore during the smoke rerun.
+
+**Success Criteria** (what must be TRUE):
+  1. The repo copy of the runtime-critical PowerShell and `control-api` files matches the deployed-host execution path closely enough that the next remediation archive no longer depends on manual server-only compatibility fixes.
+  2. One preserve-first remediation flow records before/after ready counts plus separate truth for `windows_edge_forced_host` and `ubuntu_public_owner` without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  3. The latest disconnected-runtime remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins.
+  4. The phase ends with a rerun of the proven Phase 11 smoke and one explicit verdict `remediated_through_smoke` or `hold_rollout`.
+
+Plans:
+- [x] `18-01-PLAN.md` - parity-resync for the runtime-critical wrapper chain, canonical remediation harness, and exact sync docs
+- [x] `18-02-PLAN.md` - file-backed latest disconnected-runtime remediation route, admin visibility, and runtime build parity
+- [x] `18-03-PLAN.md` - live parity-synced remediation run, smoke rerun, operator-surface confirmation, and final verdict
+
+### Phase 19: Deployed Windows persistent disconnected runtime and forced-host public-502 remediation follow-up
+
+**Goal:** Reuse the Phase 18 parity-clean wrapper chain for one narrower preserve-first follow-up that keeps the bounded canary alive through the runtime, forced-host, and public-owner checks, then reruns the exact smoke contract to decide whether the still-disconnected Windows host can finally stabilize.
+**Requirements**: WFUP-01, WFUP-02, WFUP-03, WFUP-04
+**Depends on:** Phase 18
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-01 with verdict `hold_rollout`. Wave 1 added the canonical persistent disconnected-runtime follow-up harness plus exact sync docs on top of the Phase 18 parity-clean chain. Wave 2 exposed the latest follow-up result in `control-api` and `/internal/admin`, added coverage, and rebuilt `dist`. Wave 3 overlaid the archive on the deployed Windows host, restarted `control-api`, ran the live follow-up harness, confirmed the latest route plus admin section, and reran the exact Phase 11 smoke. The final truth remained negative: the follow-up stayed `0/9 ready`, the dominant blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, the public owner still returned `502`, and the rerun smoke still ended at `after_settle` with only `1/9 ready` and public canary `502/502/502`. The deployed host also needed compatibility restores in `probe-public-api.ps1`, `recover-browser-block-readiness.ps1`, `remediate-disconnected-runtime-and-forced-host-edge.ps1`, `remediate-persistent-disconnected-runtime-and-public-502.ps1`, `test-rollout-smoke.ps1`, and `test-host-worker-relay.ps1`; those raw runtime fixes are not yet synced back into this checkout verbatim.
+
+**Success Criteria** (what must be TRUE):
+  1. One canonical preserve-first follow-up harness records the persistent disconnected-runtime branch and the forced-host/public-owner branch under one explicit compatibility version without reintroducing the old wrapper drift.
+  2. One durable follow-up artifact records before/after ready counts plus separate truth for `windows_edge_forced_host` and `ubuntu_public_owner` without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  3. The latest persistent disconnected-runtime follow-up result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins.
+  4. The phase ends with a rerun of the proven Phase 11 smoke and one explicit verdict `stabilized_through_smoke` or `hold_rollout`.
+
+Plans:
+- [x] `19-01-PLAN.md` - canonical persistent follow-up harness, durable artifact contract, and exact sync docs
+- [x] `19-02-PLAN.md` - file-backed latest follow-up route, admin visibility, and runtime build parity
+- [x] `19-03-PLAN.md` - live deployed-host follow-up run, smoke rerun, operator-surface confirmation, and final verdict
+
+### Phase 20: Deployed Windows runtime parity backport and persistent disconnected-runtime public-502 remediation
+
+**Goal:** Sync the exact deployed-host compatibility restores back into the repo, rerun one preserve-first remediation on that parity-clean chain, and decide whether the persistent disconnected-runtime plus public `502` branch can finally survive the proven smoke contract without server-only hotfixes.
+**Requirements**: WPARB-01, WPARB-02, WPARB-03, WPARB-04
+**Depends on:** Phase 19
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-01 with verdict `hold_rollout`. Wave 1 backported the six deployed-host compatibility restores into the repo under `phase20-runtime-parity-backport-v1`, added the canonical parity-clean remediation wrapper, and updated the exact sync docs. Wave 2 added the file-backed latest remediation route plus matching admin section to `control-api`, extended coverage, and rebuilt the `dist` runtime the deployed host actually starts. Wave 3 overlaid the parity-clean archive on `192.168.88.250`, restarted `control-api`, ran the exact remediation command, confirmed `GET /internal/runtime-parity-backport-remediation/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke. The final truth remained negative: remediation stayed `0/9 -> 0/9 ready`, the dominant blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, both forced-host plus public-owner checks stayed red, and the rerun smoke still ended at `after_settle` with only `1/9 ready` and public canary `502/502/502`. Unlike the earlier follow-up phases, the live Phase 20 run did not report any new post-overlay server-only compatibility restore after the archive overlay, so this phase closes the repo/runtime parity loop even though rollout remains held.
+
+**Success Criteria** (what must be TRUE):
+  1. The repo copy of the runtime-critical PowerShell and relay helper files includes the exact deployed-host compatibility restores from Phase 19 under one explicit compatibility marker, so the next archive does not depend on live server-only script edits.
+  2. One preserve-first parity-clean remediation flow records before/after ready counts plus separate truth for `windows_edge_forced_host` and `ubuntu_public_owner` without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  3. The latest Phase 20 remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins.
+  4. The phase ends with one live parity-clean remediation run plus one exact rerun of the proven Phase 11 smoke, and records exactly one final verdict `remediated_through_smoke` or `hold_rollout`.
+
+Plans:
+- [x] `20-01-PLAN.md` - backport the exact deployed-host compatibility restores, add the parity-clean remediation wrapper, and document the sync contract
+- [x] `20-02-PLAN.md` - expose the latest runtime parity backport remediation artifact in control-api and the internal admin surface
+- [x] `20-03-PLAN.md` - redeploy the parity-clean archive, run the live remediation plus smoke rerun, and record the final verdict
+
+### Phase 21: Deployed Windows disconnected runtime and windows_edge_forced_host public-owner 502 remediation after parity-clean proof
+
+**Goal:** Stabilize the deployed Windows browser-block after the parity-clean proof from Phase 20 by targeting the still-disconnected runtime baseline plus the `windows_edge_forced_host` / public-owner `502` branch through one preserve-first remediation path that must still survive a fresh smoke rerun.
+**Requirements**: WPCP-01, WPCP-02, WPCP-03, WPCP-04
+**Depends on:** Phase 20
+**Plans:** 3 plans
+**Success Criteria** (what must be TRUE):
+  1. One preserve-first remediation flow can move or honestly reclassify the current `0/9 ready` disconnected baseline and record exact before/after truth without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  2. The same phase artifact records separate post-remediation truth for `windows_edge_forced_host` and the public-owner `502` branch, so the first failing hop and any downstream public-owner failure stay explicit instead of collapsing back into one vague public `502`.
+  3. The latest Phase 21 remediation result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins.
+  4. The phase ends with one rerun of the proven Phase 11 smoke and one explicit verdict `remediated_through_smoke` or `hold_rollout`.
+**Current status:** Completed on 2026-04-01 with verdict `hold_rollout`. Wave 1 added the canonical post-parity remediation harness and exact sync docs. Wave 2 added the file-backed latest route plus the matching `/internal/admin` section, extended coverage, and rebuilt the runtime the deployed host serves. Wave 3 overlaid the archive on the deployed host, restarted `control-api`, ran the exact remediation harness, confirmed `GET /internal/post-parity-disconnected-runtime-remediation/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke. The remediation still held at `0/9 -> 0/9 ready`, the dominant blocker stayed `disconnected`, the first failing hop stayed `windows_edge_forced_host`, and the rerun smoke still ended at `after_settle` with pool `degraded`, only `1/9 ready`, and a public canary `502/502/502`. The smoke rerun required restoring `test-rollout-smoke.ps1` to a probe-compatible call scheme because the checkpoint archive only contained Phase 21 checkpoint artifacts; the repo now backports a guard so the smoke wrapper no longer crashes when `chatCompletions` is absent.
+
+Plans:
+- [x] `21-01-PLAN.md` - canonical post-parity remediation harness, durable artifact contract, and exact sync docs
+- [x] `21-02-PLAN.md` - file-backed latest post-parity remediation route, internal admin visibility, and runtime build parity
+- [x] `21-03-PLAN.md` - live deployed-host remediation run, smoke rerun, operator-surface confirmation, and final verdict
+
+### Phase 22: Deployed Windows post-phase21 disconnected runtime and windows_edge_forced_host public-owner 502 remediation follow-up
+
+**Goal:** Run one more preserve-first remediation follow-up after the now-complete Phase 21 proof, keep the disconnected runtime plus `windows_edge_forced_host` / public-owner `502` branch explicit, and decide again whether the host can finally survive the proven smoke contract.
+**Requirements**: WPFU-01, WPFU-02, WPFU-03, WPFU-04
+**Depends on:** Phase 21
+**Plans:** 3 plans
+**Current status:** Completed on 2026-04-01 with verdict `hold_rollout`. Wave 1 added the canonical post-Phase-21 follow-up harness and exact sync docs on top of the completed Phase 21 chain. Wave 2 exposed the latest follow-up result in `control-api` and `/internal/admin`, added route/admin coverage, and rebuilt `dist`. Wave 3 overlaid the archive on `192.168.88.250`, restarted `control-api`, ran the exact live follow-up harness, confirmed `GET /internal/post-phase21-disconnected-runtime-followup/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke. The follow-up still stayed at `0/9 -> 0/9 ready`, the dominant blocker stayed `disconnected`, the first failing hop stayed `windows_edge_forced_host`, `loopbackStatus` stayed green while forced-host plus public-owner stayed red, and the smoke still ended at `after_settle` with pool `degraded`, only `1/9 ready`, and public canary `502/502/502`. Technical note: the successful smoke rerun used the current server-working `test-rollout-smoke.ps1` because the checkpoint archive `phase22-live-followup-checkpoint-sync-20260401-224716.zip` carried a stale smoke-wrapper copy.
+
+**Success Criteria** (what must be TRUE):
+  1. One preserve-first follow-up flow can move or honestly reclassify the current `0/9 ready` disconnected baseline and record exact before/after truth without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  2. The same phase artifact records loopback, forced-host, and public-owner truth separately, so the first failing hop and any downstream owner failure stay explicit instead of collapsing back into one vague public `502`.
+  3. The latest Phase 22 follow-up result is visible through an internal operator surface or durable file-backed artifact before the smoke rerun begins.
+  4. The phase ends with one rerun of the proven Phase 11 smoke and one explicit verdict `stabilized_through_smoke` or `hold_rollout`.
+
+Plans:
+- [x] `22-01-PLAN.md` - canonical post-Phase-21 follow-up harness, durable artifact contract, and exact sync docs
+- [x] `22-02-PLAN.md` - file-backed latest post-Phase-21 follow-up route, internal admin visibility, and runtime build parity
+- [x] `22-03-PLAN.md` - live deployed-host follow-up run, smoke rerun, operator-surface confirmation, and final verdict
+
+### Phase 23: Deployed Windows post-phase22 smoke-wrapper parity recovery and persistent disconnected-runtime forced-host public-owner 502 remediation
+
+**Goal:** Recover the smoke-wrapper parity gap exposed by the stale Phase 22 checkpoint archive, keep the persistent disconnected runtime plus `windows_edge_forced_host` / public-owner `502` branch explicit, and prove whether a parity-clean rerun can finally survive the exact smoke contract.
+**Requirements**: WSPR-01, WSPR-02, WSPR-03, WSPR-04
+**Depends on:** Phase 22
+**Plans:** 3 plans
+**Current status:** Completed on 2026-04-02 with verdict `hold_rollout`. Wave 1 restored the smoke-wrapper parity contract, added the canonical post-Phase-22 remediation harness, and updated the exact sync docs. Wave 2 exposed the latest parity-remediation result in `control-api` and `/internal/admin`, added route/admin coverage, and rebuilt `dist`. Wave 3 overlaid the archive on `192.168.88.250`, restarted `control-api`, ran the exact remediation command, confirmed both `GET /internal/post-phase22-smoke-wrapper-parity-remediation/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke. The final truth remained negative: remediation stayed `0/9 -> 0/9 ready`, the dominant blocker stayed `disconnected`, the first failing hop stayed `windows_edge_forced_host`, loopback stayed green while forced-host plus public-owner stayed red, and the exact smoke still ended at `after_settle` with pool `degraded`, only `1/9 ready`, and public canary `502/502/502`. Technical note: the smoke rerun succeeded only on the current phase-23-compatible server-working copy because the deployed host still needed post-overlay compatibility restores in `probe-public-api.ps1`, `test-rollout-smoke.ps1`, and `remediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1`.
+
+**Success Criteria** (what must be TRUE):
+  1. The repo and archive smoke-critical chain stay in explicit parity so the next archive no longer rolls `test-rollout-smoke.ps1` backward.
+  2. One preserve-first Phase 23 remediation artifact records before/after ready counts plus loopback, forced-host, and public-owner truth without destructive reset behavior.
+  3. The latest parity-remediation result is visible through the internal operator surface before the smoke rerun begins.
+  4. The exact smoke rerun on the archive-overlaid wrapper ends with one explicit verdict `parity_recovered_through_smoke` or `hold_rollout`.
+
+Plans:
+- [x] `23-01-PLAN.md` - smoke-wrapper parity recovery, canonical post-Phase-22 remediation harness, and exact sync docs
+- [x] `23-02-PLAN.md` - file-backed latest post-Phase-22 parity-remediation route, internal admin visibility, and runtime build parity
+- [x] `23-03-PLAN.md` - live parity-clean remediation run, archive-overlaid smoke rerun, operator-surface confirmation, and final verdict
+
+### Phase 24: Deployed Windows post-phase23 exact smoke-wrapper compat backport and persistent disconnected-runtime forced-host public-owner 502 remediation
+
+**Goal:** Backport the exact deployed-host smoke-wrapper compatibility behavior into the repo and archive, keep the persistent disconnected runtime plus `windows_edge_forced_host` / public-owner `502` branch explicit, and prove whether the archive-overlaid scripts can finally survive the exact smoke contract without another live-only fix.
+**Requirements**: WSCB-01, WSCB-02, WSCB-03, WSCB-04
+**Depends on:** Phase 23
+**Plans:** 3 plans
+**Current status:** Completed on 2026-04-02 with verdict `hold_rollout`. Wave 1 backported the exact smoke-wrapper compat marker and canonical remediation harness, Wave 2 exposed the latest exact-compat result in `control-api` and `/internal/admin`, and Wave 3 overlaid the archive, ran the live remediation command, confirmed the operator surface, and reran the exact smoke. The final truth stayed negative: remediation remained `0/9 -> 0/9 ready`, the runtime blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, the smoke still ended at `after_settle` with only `1/9 ready`, and the public canary on `shared-6` now returned `503/503/503`. Technical note: the exact smoke rerun still required the current server-working post-overlay fixes, so exact compat backport is not yet resolved.
+
+Plans:
+- [x] `24-01-PLAN.md` - exact smoke-wrapper compat backport, canonical Phase 24 remediation harness, and exact sync docs
+- [x] `24-02-PLAN.md` - file-backed latest exact compat remediation route, internal admin visibility, and runtime build parity
+- [x] `24-03-PLAN.md` - live deployed-host compat-clean remediation run, exact smoke rerun, operator-surface confirmation, and final verdict
+
+### Phase 25: Deployed Windows post-phase24 live-fix smoke-wrapper backport and persistent disconnected-runtime forced-host public-owner 503 remediation
+
+**Goal:** Backport the exact deployed-host reverse-tunnel and live smoke fixes into the repo and archive, align the repo with the real canonical public path `Ubuntu nginx -> 127.0.0.1:4010`, and prove that authenticated external API use survives repeatable smoke without ad-hoc server-only fixes.
+**Requirements**: WLFB-01, WLFB-02, WLFB-03, WLFB-04
+**Depends on:** Phase 24
+**Plans:** 3 plans
+  **Current status:** Local Waves 1 and 2 are complete. The repo now backports the live reverse-tunnel supervision fixes, the docs/archive now treat `Ubuntu nginx -> 127.0.0.1:4010` as the canonical public path, and `control-api` now serves `GET /internal/post-phase24-external-api-readiness/latest` plus the matching `/internal/admin` section. Live `25-03` is still pending on the deployed Ubuntu and Windows hosts.
+
+**Success Criteria** (what must be TRUE):
+  1. The repo and archive copy of the runtime-critical chain carries the exact deployed-host live fixes forward so the next overlay no longer depends on post-overlay manual tunnel or smoke-script restores.
+  2. One preserve-first Phase 25 readiness artifact records reverse-tunnel health, ready-worker truth, and canonical upstream truth without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  3. The latest Phase 25 external-readiness result is visible through an internal operator surface or durable file-backed artifact before the final smoke claim.
+  4. The phase ends with authenticated external smoke for `/healthz`, `/v1/models`, and `/v1/chat/completions` and one explicit verdict `externally_ready` or `hold_rollout`.
+
+Plans:
+  - [x] `25-01-PLAN.md` - reverse-tunnel live-fix backport, canonical upstream sync, and exact deployment docs
+  - [x] `25-02-PLAN.md` - file-backed latest external-readiness route, internal admin visibility, and runtime build parity
+  - [ ] `25-03-PLAN.md` - live deployed-host tunnel verification, authenticated external smoke, operator-surface confirmation, and final verdict

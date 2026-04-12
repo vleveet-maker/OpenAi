@@ -1,0 +1,152 @@
+{
+  "generatedAt": "2026-04-01T00:00:00+03:00",
+  "generatedAtPrecision": "date_only_reconstructed_from_operator_report",
+  "artifactSource": "operator_report_synchronized_into_repo",
+  "artifactSourceNote": "This repo copy reconstructs the Phase 20 parity-clean remediation run from the deployed-host operator report after the live archive overlay, control-api restart, and operator-surface confirmation. The exact remote generatedAt value and raw payload were not synced back into this checkout.",
+  "reconstructedFromOperatorReport": true,
+  "scriptCompatibilityVersion": "phase20-runtime-parity-backport-v1",
+  "upstreamScriptCompatibilityVersion": "phase19-persistent-followup-v1",
+  "sessionBaseUrl": "http://127.0.0.1:8080",
+  "publicApiBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "windowsEdgeBaseUrl": "http://127.0.0.1",
+  "publicHostHeader": "77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "requestedWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "runtimeReviveWaitSeconds": 15,
+  "forcedHostSettleSeconds": 10,
+  "publicOwnerSettleSeconds": 10,
+  "stageOrder": [
+    "before_parity_remediation",
+    "after_runtime_parity_assertion",
+    "after_targeted_runtime_revive",
+    "after_loopback_confirmation",
+    "after_forced_host_recheck",
+    "after_public_owner_recheck",
+    "after_canary_stop"
+  ],
+  "stageSnapshots": {
+    "before_parity_remediation": {
+      "readyWorkers": 0,
+      "totalWorkers": 9,
+      "status": "degraded"
+    },
+    "after_runtime_parity_assertion": {
+      "readyWorkers": 0,
+      "totalWorkers": 9,
+      "status": "degraded"
+    },
+    "after_targeted_runtime_revive": {
+      "readyWorkers": 0,
+      "totalWorkers": 9,
+      "status": "degraded"
+    },
+    "after_loopback_confirmation": {
+      "readyWorkers": 1,
+      "totalWorkers": 9,
+      "status": "degraded",
+      "note": "The bounded canary relay probe on shared-6 passed locally as smoke-ok before the forced-host/public-owner gates failed."
+    },
+    "after_forced_host_recheck": {
+      "readyWorkers": 0,
+      "totalWorkers": 9,
+      "status": "degraded"
+    },
+    "after_public_owner_recheck": {
+      "readyWorkers": 0,
+      "totalWorkers": 9,
+      "status": "degraded"
+    },
+    "after_canary_stop": {
+      "readyWorkers": 0,
+      "totalWorkers": 9,
+      "status": "degraded"
+    }
+  },
+  "parityBackportFiles": [
+    "infra/windows-block/probe-public-api.ps1",
+    "infra/windows-block/recover-browser-block-readiness.ps1",
+    "infra/windows-block/remediate-disconnected-runtime-and-forced-host-edge.ps1",
+    "infra/windows-block/remediate-persistent-disconnected-runtime-and-public-502.ps1",
+    "infra/windows-block/test-rollout-smoke.ps1",
+    "infra/host-worker/test-host-worker-relay.ps1"
+  ],
+  "preRemediationReadyCount": 0,
+  "preRemediationTotalWorkers": 9,
+  "postRemediationReadyCount": 0,
+  "postRemediationTotalWorkers": 9,
+  "dominantRuntimeBlocker": "disconnected",
+  "firstFailingHop": "windows_edge_forced_host",
+  "forcedHostStatus": {
+    "passed": false,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null,
+    "errorKind": "transport_error_or_failed_gate",
+    "note": "The operator report confirmed the forced-host gate did not pass and remained the first failing hop, but the exact raw status payload was not synced back into this checkout."
+  },
+  "publicOwnerStatus": {
+    "passed": false,
+    "healthzStatusCode": 502,
+    "modelsStatusCode": 502,
+    "chatStatusCode": 502,
+    "errorKind": "http_error",
+    "note": "The operator report confirmed the public-owner gate did not pass during the parity-clean remediation path and the later smoke rerun again observed 502 on all three public checks."
+  },
+  "verdict": "hold_rollout",
+  "summary": "Hold rollout: even after the parity-clean backport overlay, the remediation path stayed at 0/9 -> 0/9 ready, the dominant blocker remained disconnected, the first failing hop remained windows_edge_forced_host, and the public-owner gate still did not pass.",
+  "upstreamVerdict": "hold_rollout",
+  "operatorSurfaceConfirmation": {
+    "routeConfirmed": true,
+    "adminSectionVisible": true,
+    "routePath": "/internal/runtime-parity-backport-remediation/latest",
+    "adminSectionTitle": "Latest runtime parity backport remediation"
+  },
+  "canaryStopResult": {
+    "stopped": true,
+    "agentListening": false,
+    "browserListening": false,
+    "canaryPort": 4028,
+    "canaryPortListening": false
+  },
+  "workerResults": [
+    {
+      "workerId": "shared-6",
+      "beforeClassification": "disconnected",
+      "afterClassification": "disconnected",
+      "recovered": false,
+      "blockerCode": "public_gate_failed",
+      "note": "The canary briefly passed the loopback relay probe as smoke-ok, but the forced-host and public-owner gates stayed red and the worker was stopped again."
+    }
+  ],
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "blindFullPoolRestartPerformed": false,
+    "massReloginPerformed": false
+  },
+  "networkExposure": {
+    "requiredLoopbackListeners": [
+      "127.0.0.1:4040",
+      "127.0.0.1:8081"
+    ],
+    "nonLoopbackListenersObserved": []
+  },
+  "parityCleanRunEvidence": {
+    "archiveOverlaid": true,
+    "controlApiRestarted": true,
+    "noAdditionalPostOverlayCompatFixReported": true
+  }
+}

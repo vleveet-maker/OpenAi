@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-04-01T22:22:00+03:00",
+  "scriptCompatibilityVersion": "phase22-post-phase21-followup-v1",
+  "reconstructedFromOperatorReport": true,
+  "sessionBaseUrl": "http://127.0.0.1:8080",
+  "publicApiBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "windowsEdgeBaseUrl": "http://127.0.0.1",
+  "publicHostHeader": "77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "requestedWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "runtimeReviveWaitSeconds": 15,
+  "forcedHostSettleSeconds": 10,
+  "publicOwnerSettleSeconds": 10,
+  "preRemediationReadyCount": 0,
+  "preRemediationTotalWorkers": 9,
+  "postRemediationReadyCount": 0,
+  "postRemediationTotalWorkers": 9,
+  "dominantRuntimeBlocker": "disconnected",
+  "firstFailingHop": "windows_edge_forced_host",
+  "loopbackStatus": {
+    "passed": true,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null
+  },
+  "forcedHostStatus": {
+    "passed": false,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null
+  },
+  "publicOwnerStatus": {
+    "passed": false,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null
+  },
+  "verdict": "hold_rollout",
+  "summary": "Hold rollout: the live Phase 22 follow-up still stayed at 0/9 ready, loopback remained green, but windows_edge_forced_host stayed the first failing hop and the downstream public-owner path stayed red.",
+  "operatorSurface": {
+    "internalLatestRouteMatched": true,
+    "adminSectionVisible": true
+  },
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "blindFullPoolRestartPerformed": false,
+    "massReloginPerformed": false,
+    "canaryStoppedAfterRun": true,
+    "canaryPort4028ListeningAfterCleanup": false
+  }
+}

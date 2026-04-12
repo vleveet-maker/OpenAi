@@ -127,6 +127,7 @@ $filesToCopy = @(
   "infra\\windows-block\\start-reverse-tunnels.ps1",
   "infra\\windows-block\\stop-reverse-tunnels.ps1",
   "infra\\windows-block\\register-browser-block-tasks.ps1",
+  "infra\\windows-block\\recover-reverse-tunnels-and-external-api-readiness.ps1",
   "infra\\windows-block\\build-windows-browser-block-package.ps1",
   "infra\\host-worker\\start-host-controller.ps1",
   "infra\\host-worker\\start-host-worker-agent.ps1",
@@ -238,41 +239,31 @@ $proxyLine =
 
 Write-Utf8File -Path $startHerePath -Lines @(
   "OWMCGP Windows Browser Block",
+  "phase25-live-fix-backport-v1",
   "",
   "1. Unpack this archive on the target Windows Server.",
   "2. Install prerequisites: Node.js LTS, Chrome or Edge, OpenSSH client.",
   "3. Run:",
   "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\bootstrap-browser-block.ps1",
-  "4. Create the public API settings file:",
-  "   Copy .\\infra\\windows-block\\public-api.settings.example.json to",
-  "   .\\infra\\data\\control-api\\remote-relay.local.json and set a strong apiToken.",
-  "5. Before public cutover on a live server, capture preserve-first edge backup and audit:",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\backup-public-edge-state.ps1",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\collect-public-edge-audit.ps1",
-  "6. Start host-controller:",
+  "4. Start host-controller:",
   "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\start-browser-block.ps1",
-  "7. Start the shadow local public API on loopback:",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\start-public-api.ps1 -ListenHost 127.0.0.1 -ListenPort 4011 -AllowedWorkerIds shared-6",
-  "8. Reconcile the Windows edge to the shadow path:",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\activate-public-edge.ps1 -Mode shadow -Apply",
-  "9. Start reverse tunnels only if you still use the Linux relay path:",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\start-reverse-tunnels.ps1 -RemoteHost 77.66.186.75 -RemotePort 2222 -RemoteUser mi50 -IncludeHostController",
-  "10. Optional autostart on interactive logon:",
+  "5. Reverse SSH tunnels are now rollout-critical for external chat.",
+  "   Start them once in the current session with foreground supervision:",
+  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\start-reverse-tunnels.ps1 -RemoteHost 77.66.186.75 -RemotePort 2222 -RemoteUser mi50 -IncludeHostController -Foreground",
+  "6. Optional autostart on interactive logon with restart policy:",
   "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\register-browser-block-tasks.ps1 -RemoteHost 77.66.186.75 -RemotePort 2222 -RemoteUser mi50",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\register-public-api-task.ps1",
-  "11. Verify the seven-worker block:",
+  "7. Verify the browser block locally:",
   "   powershell -ExecutionPolicy Bypass -File .\\infra\\host-worker\\test-windows-browser-block-matrix.ps1",
-  "12. Verify the shadow public API:",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\probe-public-api.ps1 -BaseUrl http://127.0.0.1:4011 -IncludeChatProbe -WorkerId shared-6 -EnsureWorkerStarted -StopWorkerWhenDone",
-  "13. Only after that promote to loopback 4010 and switch the edge:",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\start-public-api.ps1 -ListenHost 127.0.0.1 -ListenPort 4010",
-  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\activate-public-edge.ps1 -Mode promoted -Apply",
+  "8. Capture preserve-first external readiness before claiming external API health:",
+  "   powershell -ExecutionPolicy Bypass -File .\\infra\\windows-block\\recover-reverse-tunnels-and-external-api-readiness.ps1 -RemoteHost 77.66.186.75 -RemotePort 2222 -RemoteUser mi50",
+  "9. Live truth: the canonical public path is now Ubuntu nginx -> 127.0.0.1:4010.",
+  "   Windows Caddy is not the active public edge in this deployment shape.",
   "",
   $proxyLine,
   "",
-  "Important: this package prepares the Windows block and its seven worker slots.",
+  "Important: this package prepares the Windows block and its seven worker slots plus the reverse-tunnel recovery path.",
   "Manual login for the seven ChatGPT accounts still happens on the target Windows Server.",
-  "This package also contains the Windows-side public API mode and preserve-first edge scripts."
+  "External API readiness now depends on reverse tunnel health and the Ubuntu relay owner."
 )
 
 $manifestPath = Join-Path $stageRoot "PACKAGE-MANIFEST.json"
@@ -286,11 +277,13 @@ $manifest = [pscustomobject][ordered]@{
   relayHost = "77.66.186.75"
   relaySshPort = 2222
   relayUser = "mi50"
+  compatibilityVersion = "phase25-live-fix-backport-v1"
   notes = @(
-    "The package supports both Linux-edge relay mode and Windows-side public API mode.",
+    "Canonical public path: Ubuntu nginx -> 127.0.0.1:4010.",
+    "Reverse SSH tunnels are rollout-critical for external chat readiness.",
     "This package does not claim that logged-in browser sessions transfer between Windows machines.",
     "Use interactive logon on the target Windows Server for browser workers.",
-    "The package also includes a Windows-side public API mode."
+    "Windows Caddy is not the active public edge in the current live deployment."
   )
 }
 

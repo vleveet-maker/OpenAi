@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-04-01T00:00:00+03:00",
+  "generatedAtPrecision": "date_only_reconstructed_from_operator_report",
+  "artifactSource": "operator_report_synchronized_into_repo",
+  "artifactSourceNote": "This repo copy reconstructs the Phase 19 persistent disconnected-runtime follow-up from the deployed-host operator report after the latest follow-up route and admin section were confirmed. The exact remote generatedAt value, raw stage snapshots, and raw deployed-host JSON were not synced back into this checkout.",
+  "reconstructedFromOperatorReport": true,
+  "scriptCompatibilityVersion": "phase19-persistent-followup-v1",
+  "upstreamScriptCompatibilityVersion": "phase18-runtime-remediation-v1",
+  "sessionBaseUrl": "http://127.0.0.1:8080",
+  "publicApiBaseUrl": "http://77.66.186.75",
+  "internalBaseUrl": "http://127.0.0.1:8081",
+  "hostControllerBaseUrl": "http://127.0.0.1:4040",
+  "windowsEdgeBaseUrl": "http://127.0.0.1",
+  "publicHostHeader": "77.66.186.75",
+  "canaryWorkerId": "shared-6",
+  "requestedWorkerIds": [
+    "dad",
+    "wife",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5",
+    "shared-6",
+    "shared-7"
+  ],
+  "runtimeReviveWaitSeconds": 15,
+  "forcedHostSettleSeconds": 10,
+  "publicOwnerSettleSeconds": 10,
+  "stageOrder": [
+    "before_followup",
+    "after_targeted_runtime_revive",
+    "after_loopback_confirmation",
+    "after_forced_host_recheck",
+    "after_public_owner_recheck",
+    "after_canary_stop"
+  ],
+  "preFollowupReadyCount": 0,
+  "preFollowupTotalWorkers": 9,
+  "postFollowupReadyCount": 0,
+  "postFollowupTotalWorkers": 9,
+  "dominantRuntimeBlocker": "disconnected",
+  "firstFailingHop": "windows_edge_forced_host",
+  "forcedHostStatus": {
+    "passed": false,
+    "healthzStatusCode": null,
+    "modelsStatusCode": null,
+    "chatStatusCode": null,
+    "errorKind": "transport_error",
+    "requestUrl": "http://127.0.0.1"
+  },
+  "publicOwnerStatus": {
+    "passed": false,
+    "healthzStatusCode": 502,
+    "modelsStatusCode": 502,
+    "chatStatusCode": 502,
+    "errorKind": "http_error",
+    "requestUrl": "http://77.66.186.75"
+  },
+  "verdict": "hold_rollout",
+  "summary": "Hold rollout after the Phase 19 persistent follow-up: the follow-up started at 0/9 ready, stayed at 0/9 ready, the dominant runtime blocker remained disconnected, the first failing hop remained windows_edge_forced_host, and the public owner still returned 502.",
+  "operatorSurfaceConfirmation": {
+    "routeConfirmed": true,
+    "adminSectionVisible": true,
+    "routePath": "/internal/persistent-disconnected-runtime-followup/latest",
+    "adminSectionTitle": "Latest persistent disconnected runtime follow-up"
+  },
+  "preserveFirst": {
+    "profilesDeleted": false,
+    "cookiesCleared": false,
+    "localStorageCleared": false,
+    "blindFullPoolRestartPerformed": false,
+    "massReloginPerformed": false,
+    "canaryStoppedAfterRun": true
+  },
+  "postRunChecks": {
+    "shared6StoppedAfterRun": true,
+    "canaryPort": 4028,
+    "canaryPortListening": false
+  },
+  "runtimeParityNotes": [
+    "During the live Phase 19 follow-up the deployed host had to restore compatibility in probe-public-api.ps1, recover-browser-block-readiness.ps1, remediate-disconnected-runtime-and-forced-host-edge.ps1, remediate-persistent-disconnected-runtime-and-public-502.ps1, test-rollout-smoke.ps1, and test-host-worker-relay.ps1 after overlay.",
+    "Those raw deployed-host compatibility restores are not yet synced back into this checkout verbatim."
+  ]
+}

@@ -1,0 +1,8 @@
+# 24-01 Summary
+
+- Backported the exact smoke-wrapper compatibility marker `phase24-exact-smoke-wrapper-compat-backport-v1` into `infra/windows-block/probe-public-api.ps1`, `infra/windows-block/test-rollout-smoke.ps1`, and `infra/windows-block/remediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1`.
+- Made the public probe payload tolerant for archive overlays by writing both `chatCompletions` and `chat`, and made the smoke wrapper accept either property before normalizing the public canary result.
+- Added `infra/windows-block/remediate-post-phase23-exact-smoke-wrapper-compat-and-persistent-disconnected-runtime.ps1` as the canonical Phase 24 preserve-first remediation harness.
+- The Phase 24 wrapper writes `.planning/phases/24-deployed-windows-post-phase23-exact-smoke-wrapper-compat-backport-and-persistent-disconnected-runtime-forced-host-public-owner-502-remediation/24-COMPAT-REMEDIATION-SUMMARY.json`, `.planning/phases/24-deployed-windows-post-phase23-exact-smoke-wrapper-compat-backport-and-persistent-disconnected-runtime-forced-host-public-owner-502-remediation/24-COMPAT-REMEDIATION-SUMMARY.md`, and `infra/data/post-phase23-exact-smoke-wrapper-compat-remediation/latest.json`.
+- Updated `docs/windows-browser-block.md`, `docs/windows-public-api-block.md`, and `docs/internal-worker-ops.md` with the exact Phase 24 sync list, the exact live command, and the explicit note that the smoke rerun must use the archive-overlaid `test-rollout-smoke.ps1`.
+- Preserve-first guardrails remain unchanged: no profile deletion, no cookie clearing, no local storage clearing, no blind full-pool restart, and no mass relogin.
