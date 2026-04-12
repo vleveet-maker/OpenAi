@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase26-ubuntu-sync-recovery-v1`
+`phase27-ubuntu-ssh-recovery-v1`
 
 This file keeps the public API story honest.
 
@@ -102,12 +102,12 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\start-reverse-tun
   -Foreground
 ```
 
-## Phase 25 External Readiness
+## Phase 27 External Readiness
 
 Before claiming the public API is externally ready, capture one preserve-first artifact:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-tunnels-and-external-api-readiness.ps1 `
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1 `
   -RemoteHost 77.66.186.75 `
   -RemotePort 2222 `
   -RemoteUser mi50
@@ -115,6 +115,8 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-t
 
 That artifact must prove:
 
+- Ubuntu SSH is reachable or precisely classified
+- exact Ubuntu repo path/hash are explicit
 - canonical public upstream is still `Ubuntu nginx -> 127.0.0.1:4010`
 - the reverse-tunnel scheduled task is healthy
 - Ubuntu still exposes the forwarded listener set
@@ -122,7 +124,7 @@ That artifact must prove:
 
 ## Final External Smoke
 
-Use the live model, not `gpt-4.1`. Run the authenticated smoke from the host that actually has the bearer token:
+Use the live model, not `gpt-4.1`. Run the authenticated smoke from the host that actually has the bearer token while still targeting `77.66.186.75`:
 
 ```bash
 curl -i -H "Authorization: Bearer <TOKEN>" http://77.66.186.75/v1/models

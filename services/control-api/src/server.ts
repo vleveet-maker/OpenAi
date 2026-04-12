@@ -65,6 +65,9 @@ import {
   createInternalPostPhase25ExternalRestorationRouter
 } from "./routes/internal-post-phase25-external-restoration.js";
 import {
+  createInternalPostPhase26UbuntuSshRecoveryRouter
+} from "./routes/internal-post-phase26-ubuntu-ssh-recovery.js";
+import {
   createInternalPostRemediationDegradedSmokeRouter
 } from "./routes/internal-post-remediation-degraded-smoke.js";
 import {
@@ -513,6 +516,9 @@ export function createControlApiApp(
       }),
       createInternalPostPhase25ExternalRestorationRouter({
         statePath: config.postPhase25ExternalRestorationStatePath
+      }),
+      createInternalPostPhase26UbuntuSshRecoveryRouter({
+        statePath: config.postPhase26UbuntuSshRecoveryStatePath
       }),
       createInternalPostRemediationDegradedSmokeRouter({
         statePath: config.postRemediationDegradedSmokeStatePath

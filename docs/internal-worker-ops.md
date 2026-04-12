@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase26-ubuntu-sync-recovery-v1`
+`phase27-ubuntu-ssh-recovery-v1`
 
 The public API is alive through Ubuntu. Internal worker operations now matter mainly for:
 
@@ -73,12 +73,12 @@ This should still prove:
 
 `Temporary Chat -> GPT-5.4 Thinking -> relay -> smoke-ok`
 
-## Phase 25 Readiness Artifact
+## Phase 27 Readiness Artifact
 
 Use this before any final external claim:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-tunnels-and-external-api-readiness.ps1 `
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1 `
   -RemoteHost 77.66.186.75 `
   -RemotePort 2222 `
   -RemoteUser mi50
@@ -86,11 +86,13 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-t
 
 It captures:
 
+- Ubuntu SSH truth
+- exact Ubuntu repo path/hash
 - reverse-tunnel task state
 - Ubuntu tunnel listener status
 - ready worker count
 - canonical public upstream
-- verdict for whether we are ready for authenticated external smoke
+- verdict for whether we are externally ready or still `hold_rollout`
 
 ## External Smoke
 

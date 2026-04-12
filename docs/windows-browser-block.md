@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase26-ubuntu-sync-recovery-v1`
+`phase27-ubuntu-ssh-recovery-v1`
 
 The Windows browser block is the browser-runtime side of the system. It is not the active public edge.
 
@@ -100,12 +100,12 @@ Healthy current truth:
 - `127.0.0.1:8081` listens
 - `80` and `443` are not owned by Windows `Caddy`
 
-## Phase 25 External Readiness
+## Phase 27 Ubuntu SSH Recovery
 
 Before claiming external readiness, write the durable artifact:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-tunnels-and-external-api-readiness.ps1 `
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1 `
   -RemoteHost 77.66.186.75 `
   -RemotePort 2222 `
   -RemoteUser mi50
@@ -113,11 +113,15 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-t
 
 This records:
 
+- Ubuntu SSH truth plus `sshFailureKind`
+- exact Ubuntu repo path and commit hash when reachable
 - canonical public upstream truth
 - reverse-tunnel task truth
 - Ubuntu tunnel listener truth
 - ready worker count
 - verdict before final external smoke
+
+Final authenticated smoke may run from another operator-controlled host if that host is the one that actually holds the bearer token. Exact Ubuntu repo path/hash should be reported explicitly in the live handoff.
 
 Authenticated external smoke may run from another operator-controlled host if that host is the one that actually holds the bearer token.
 
@@ -126,5 +130,5 @@ Authenticated external smoke may run from another operator-controlled host if th
 - [start-browser-block.ps1](d:/OpenAi/infra/windows-block/start-browser-block.ps1)
 - [start-reverse-tunnels.ps1](d:/OpenAi/infra/windows-block/start-reverse-tunnels.ps1)
 - [register-browser-block-tasks.ps1](d:/OpenAi/infra/windows-block/register-browser-block-tasks.ps1)
-- [recover-reverse-tunnels-and-external-api-readiness.ps1](d:/OpenAi/infra/windows-block/recover-reverse-tunnels-and-external-api-readiness.ps1)
+- [recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1](d:/OpenAi/infra/windows-block/recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1)
 - [remote-relay-server.md](d:/OpenAi/docs/remote-relay-server.md)

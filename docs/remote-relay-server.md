@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase26-ubuntu-sync-recovery-v1`
+`phase27-ubuntu-ssh-recovery-v1`
 
 The remote relay host is Ubuntu. The relay/API process is local-only and the public edge is owned by Ubuntu `nginx`.
 
@@ -105,7 +105,7 @@ Cross-host handoff is GitHub-first.
 Before claiming the public API is externally ready, use:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-tunnels-and-external-api-readiness.ps1 `
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1 `
   -RemoteHost 77.66.186.75 `
   -RemotePort 2222 `
   -RemoteUser mi50
@@ -113,11 +113,12 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-reverse-t
 
 That artifact captures:
 
+- Ubuntu SSH truth and failure kind
+- exact Ubuntu repo path/hash truth
 - canonical public upstream truth
-- Windows `Caddy` presence or absence
 - reverse-tunnel task truth
 - Ubuntu tunnel-listener truth
 - ready-worker truth
-- verdict: `ready_for_external_smoke` or `hold_rollout`
+- verdict: `externally_ready` or `hold_rollout`
 
 Final authenticated smoke may run from whichever host actually has the bearer token, as long as it still targets `77.66.186.75`.

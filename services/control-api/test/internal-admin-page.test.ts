@@ -130,6 +130,8 @@ describe("internal admin page", () => {
     expect(response.text).toContain("No post-phase24 external API readiness result captured yet.");
     expect(response.text).toContain("Latest post-phase25 external restoration");
     expect(response.text).toContain("No post-phase25 external restoration result captured yet.");
+    expect(response.text).toContain("Latest post-phase26 Ubuntu SSH recovery");
+    expect(response.text).toContain("No post-phase26 Ubuntu SSH recovery result captured yet.");
     expect(response.text).toContain("Start pool now uses compact visible fallback");
     expect(response.text).toContain("Routine runtime");
     expect(response.text).toContain("Routine window mode");
@@ -171,6 +173,7 @@ describe("internal admin page", () => {
     expect(response.text).toContain("/internal/post-phase23-exact-smoke-wrapper-compat-remediation/latest");
     expect(response.text).toContain("/internal/post-phase24-external-api-readiness/latest");
     expect(response.text).toContain("/internal/post-phase25-external-restoration/latest");
+    expect(response.text).toContain("/internal/post-phase26-ubuntu-ssh-recovery/latest");
     expect(response.text).toContain("reauth_required");
     expect(response.text).toContain("reachable_but_unusable");
     expect(response.text).toContain("disconnected");
@@ -206,6 +209,7 @@ describe("internal admin page", () => {
     expect(response.text).toContain("Latest post-phase23 exact smoke-wrapper compat remediation loaded from the internal latest-state artifact.");
     expect(response.text).toContain("Latest post-phase24 external API readiness loaded from the internal latest-state artifact.");
     expect(response.text).toContain("Latest post-phase25 external restoration loaded from the internal latest-state artifact.");
+    expect(response.text).toContain("Latest post-phase26 Ubuntu SSH recovery loaded from the internal latest-state artifact.");
     expect(response.text).toContain("parityBackportFiles");
     expect(response.text).toContain("smokeWrapperParityStatus");
     expect(response.text).toContain("smokeWrapperCompatStatus");
@@ -221,6 +225,10 @@ describe("internal admin page", () => {
     expect(response.text).toContain("externalChatStatus");
     expect(response.text).toContain("authenticatedSmokeTokenSource");
     expect(response.text).toContain("externalModelUsed");
+    expect(response.text).toContain("sshFailureKind");
+    expect(response.text).toContain("ubuntuRepoPath");
+    expect(response.text).toContain("ubuntuRepoCommit");
+    expect(response.text).toContain("authenticatedSmokeExecutionHost");
     expect(response.text).toContain("shared-6");
   });
 });

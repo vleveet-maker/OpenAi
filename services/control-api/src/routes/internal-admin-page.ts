@@ -401,6 +401,15 @@ function renderInternalAdminPage(): string {
         </section>
 
         <section>
+          <h2>Latest post-phase26 Ubuntu SSH recovery</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase26-ubuntu-ssh-recovery-copy">Loading latest post-phase26 Ubuntu SSH recovery...</p>
+            <div class="counts" id="post-phase26-ubuntu-ssh-recovery-summary"></div>
+            <ul id="post-phase26-ubuntu-ssh-recovery-details"></ul>
+          </div>
+        </section>
+
+        <section>
           <h2>Worker status summary</h2>
           <div class="counts" id="worker-summary"></div>
           <div class="worker-cards" id="worker-cards"></div>
@@ -1553,6 +1562,72 @@ function renderInternalAdminPage(): string {
         \`).join("");
       }
 
+      function renderPostPhase26UbuntuSshRecovery(latest) {
+        const copy = document.getElementById("post-phase26-ubuntu-ssh-recovery-copy");
+        const summary = document.getElementById("post-phase26-ubuntu-ssh-recovery-summary");
+        const details = document.getElementById("post-phase26-ubuntu-ssh-recovery-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase26 Ubuntu SSH recovery result captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const reverseTunnelTaskStatus = latest.reverseTunnelTaskStatus ?? null;
+        const ubuntuTunnelListenerStatus = latest.ubuntuTunnelListenerStatus ?? null;
+        const canonicalPublicUpstreamStatus = latest.canonicalPublicUpstreamStatus ?? null;
+        const externalHealthStatus = latest.externalHealthStatus ?? null;
+        const externalModelsStatus = latest.externalModelsStatus ?? null;
+        const externalChatStatus = latest.externalChatStatus ?? null;
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["Ubuntu SSH", latest.ubuntuSshReachable ? "reachable" : "failed"],
+          ["sshFailureKind", String(latest.sshFailureKind || "none")],
+          ["Ubuntu repo", String(latest.ubuntuRepoPath || "unknown")],
+          ["reverse-tunnel task", String(reverseTunnelTaskStatus?.state || "unknown")],
+          ["tunnel listener", ubuntuTunnelListenerStatus?.allRequiredPresent ? "ready" : "failed"],
+          ["ready worker count", String(latest.readyWorkerCount ?? "0")],
+          ["external chat", externalChatStatus?.ok ? "pass" : "fail"],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "ubuntuSshReachable: " + String(latest.ubuntuSshReachable ?? false),
+          "sshFailureKind: " + String(latest.sshFailureKind || "none"),
+          "ubuntuRepoPath: " + String(latest.ubuntuRepoPath || "unknown"),
+          "ubuntuRepoCommit: " + String(latest.ubuntuRepoCommit || "unknown"),
+          "canonicalPublicUpstream: " + String(latest.canonicalPublicUpstream || "unknown"),
+          "canonical upstream matches expected: " + String(canonicalPublicUpstreamStatus?.matchesExpected ?? false),
+          "reverseTunnelTaskStatus: " + String(reverseTunnelTaskStatus?.state || "unknown"),
+          "reverse-tunnel retainedRunning: " + String(reverseTunnelTaskStatus?.retainedRunning ?? false),
+          "ubuntuTunnelListenerStatus: " + (ubuntuTunnelListenerStatus?.allRequiredPresent ? "ready" : "failed"),
+          "tunnel listener present ports: " + String((ubuntuTunnelListenerStatus?.presentPorts || []).join(", ") || "none"),
+          "tunnel listener missing ports: " + String((ubuntuTunnelListenerStatus?.missingPorts || []).join(", ") || "none"),
+          "readyWorkerCount: " + String(latest.readyWorkerCount ?? "0"),
+          "external healthz: " + String(externalHealthStatus?.statusCode ?? "n/a") + " ok=" + String(externalHealthStatus?.ok ?? false),
+          "external models: " + String(externalModelsStatus?.statusCode ?? "n/a") + " ok=" + String(externalModelsStatus?.ok ?? false),
+          "external chat: " + String(externalChatStatus?.statusCode ?? "n/a") + " ok=" + String(externalChatStatus?.ok ?? false),
+          "external chat worker: " + String(externalChatStatus?.workerId || "none"),
+          "authenticatedSmokeExecutionHost: " + String(latest.authenticatedSmokeExecutionHost || "unknown"),
+          "authenticatedSmokeTokenSource: " + String(latest.authenticatedSmokeTokenSource || "missing"),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase26 Ubuntu SSH recovery loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
       function renderHostPool(pool) {
         currentHostPool = pool;
 
@@ -1619,7 +1694,7 @@ function renderInternalAdminPage(): string {
       }
 
       async function loadSnapshot() {
-        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse, readinessRecoveryResponse, postRecoveryRegressionResponse, zeroReadyRootCauseResponse, disconnectedBaselineRemediationResponse, postRemediationDegradedSmokeResponse, postStabilizationRuntimeInvestigationResponse, disconnectedRuntimeRemediationResponse, persistentDisconnectedRuntimeFollowupResponse, runtimeParityBackportRemediationResponse, postParityDisconnectedRuntimeRemediationResponse, postPhase21DisconnectedRuntimeFollowupResponse, postPhase22SmokeWrapperParityRemediationResponse, postPhase23ExactSmokeWrapperCompatRemediationResponse, postPhase24ExternalApiReadinessResponse, postPhase25ExternalRestorationResponse] = await Promise.all([
+        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse, readinessRecoveryResponse, postRecoveryRegressionResponse, zeroReadyRootCauseResponse, disconnectedBaselineRemediationResponse, postRemediationDegradedSmokeResponse, postStabilizationRuntimeInvestigationResponse, disconnectedRuntimeRemediationResponse, persistentDisconnectedRuntimeFollowupResponse, runtimeParityBackportRemediationResponse, postParityDisconnectedRuntimeRemediationResponse, postPhase21DisconnectedRuntimeFollowupResponse, postPhase22SmokeWrapperParityRemediationResponse, postPhase23ExactSmokeWrapperCompatRemediationResponse, postPhase24ExternalApiReadinessResponse, postPhase25ExternalRestorationResponse, postPhase26UbuntuSshRecoveryResponse] = await Promise.all([
           fetch("/internal/host-pool"),
           fetch("/internal/observability/summary"),
           fetch("/internal/observability/events?limit=50"),
@@ -1639,10 +1714,11 @@ function renderInternalAdminPage(): string {
           fetch("/internal/post-phase22-smoke-wrapper-parity-remediation/latest"),
           fetch("/internal/post-phase23-exact-smoke-wrapper-compat-remediation/latest"),
           fetch("/internal/post-phase24-external-api-readiness/latest"),
-          fetch("/internal/post-phase25-external-restoration/latest")
+          fetch("/internal/post-phase25-external-restoration/latest"),
+          fetch("/internal/post-phase26-ubuntu-ssh-recovery/latest")
         ]);
 
-        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok || !readinessRecoveryResponse.ok || !postRecoveryRegressionResponse.ok || !zeroReadyRootCauseResponse.ok || !disconnectedBaselineRemediationResponse.ok || !postRemediationDegradedSmokeResponse.ok || !postStabilizationRuntimeInvestigationResponse.ok || !disconnectedRuntimeRemediationResponse.ok || !persistentDisconnectedRuntimeFollowupResponse.ok || !runtimeParityBackportRemediationResponse.ok || !postParityDisconnectedRuntimeRemediationResponse.ok || !postPhase21DisconnectedRuntimeFollowupResponse.ok || !postPhase22SmokeWrapperParityRemediationResponse.ok || !postPhase23ExactSmokeWrapperCompatRemediationResponse.ok || !postPhase24ExternalApiReadinessResponse.ok || !postPhase25ExternalRestorationResponse.ok) {
+        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok || !readinessRecoveryResponse.ok || !postRecoveryRegressionResponse.ok || !zeroReadyRootCauseResponse.ok || !disconnectedBaselineRemediationResponse.ok || !postRemediationDegradedSmokeResponse.ok || !postStabilizationRuntimeInvestigationResponse.ok || !disconnectedRuntimeRemediationResponse.ok || !persistentDisconnectedRuntimeFollowupResponse.ok || !runtimeParityBackportRemediationResponse.ok || !postParityDisconnectedRuntimeRemediationResponse.ok || !postPhase21DisconnectedRuntimeFollowupResponse.ok || !postPhase22SmokeWrapperParityRemediationResponse.ok || !postPhase23ExactSmokeWrapperCompatRemediationResponse.ok || !postPhase24ExternalApiReadinessResponse.ok || !postPhase25ExternalRestorationResponse.ok || !postPhase26UbuntuSshRecoveryResponse.ok) {
           throw new Error("Internal observability endpoints are unavailable");
         }
 
@@ -1666,6 +1742,7 @@ function renderInternalAdminPage(): string {
         const postPhase23ExactSmokeWrapperCompatRemediationPayload = await postPhase23ExactSmokeWrapperCompatRemediationResponse.json();
         const postPhase24ExternalApiReadinessPayload = await postPhase24ExternalApiReadinessResponse.json();
         const postPhase25ExternalRestorationPayload = await postPhase25ExternalRestorationResponse.json();
+        const postPhase26UbuntuSshRecoveryPayload = await postPhase26UbuntuSshRecoveryResponse.json();
         const workers = workersPayload.workers ?? [];
         const lifecycleEvents = events.filter((event) => lifecycleEventTypes.has(event.eventType));
         const browserAccessResults = await Promise.all(
@@ -1694,6 +1771,7 @@ function renderInternalAdminPage(): string {
         renderPostPhase23ExactSmokeWrapperCompatRemediation(postPhase23ExactSmokeWrapperCompatRemediationPayload.latest ?? null);
         renderPostPhase24ExternalApiReadiness(postPhase24ExternalApiReadinessPayload.latest ?? null);
         renderPostPhase25ExternalRestoration(postPhase25ExternalRestorationPayload.latest ?? null);
+        renderPostPhase26UbuntuSshRecovery(postPhase26UbuntuSshRecoveryPayload.latest ?? null);
         renderWorkerSummary(summary, workers);
         renderEvents(
           "recent-failures",
@@ -1902,6 +1980,8 @@ function renderInternalAdminPage(): string {
             "Unable to load the latest post-phase24 external API readiness.";
           document.getElementById("post-phase25-external-restoration-copy").textContent =
             "Unable to load the latest post-phase25 external restoration.";
+          document.getElementById("post-phase26-ubuntu-ssh-recovery-copy").textContent =
+            "Unable to load the latest post-phase26 Ubuntu SSH recovery.";
           document.getElementById("recent-failures").innerHTML =
             '<li class="error">' + escapeHtml(String(error instanceof Error ? error.message : error)) + "</li>";
           document.getElementById("recent-events").innerHTML =

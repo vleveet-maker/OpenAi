@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$scriptCompatibilityVersion = "phase26-ubuntu-sync-recovery-v1"
+$scriptCompatibilityVersion = "phase27-ubuntu-ssh-recovery-v1"
 
 function Resolve-RepoRoot {
   return (Resolve-Path (Join-Path $PSScriptRoot "..\\..")).Path

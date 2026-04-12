@@ -38,6 +38,7 @@ export interface ControlApiConfig {
   postPhase23ExactSmokeWrapperCompatRemediationStatePath?: string;
   postPhase24ExternalApiReadinessStatePath?: string;
   postPhase25ExternalRestorationStatePath?: string;
+  postPhase26UbuntuSshRecoveryStatePath?: string;
   postRemediationDegradedSmokeStatePath?: string;
   postStabilizationRuntimeInvestigationStatePath?: string;
   remoteRelayDefaultWorkerId?: string;
@@ -168,6 +169,13 @@ const DEFAULT_POST_PHASE25_EXTERNAL_RESTORATION_STATE_PATH = resolve(
   "infra",
   "data",
   "post-phase25-external-restoration",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE26_UBUNTU_SSH_RECOVERY_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase26-ubuntu-ssh-recovery",
   "latest.json"
 );
 const DEFAULT_POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH = resolve(
@@ -311,6 +319,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ControlApiConf
     postPhase25ExternalRestorationStatePath:
       env.POST_PHASE25_EXTERNAL_RESTORATION_STATE_PATH ??
       DEFAULT_POST_PHASE25_EXTERNAL_RESTORATION_STATE_PATH,
+    postPhase26UbuntuSshRecoveryStatePath:
+      env.POST_PHASE26_UBUNTU_SSH_RECOVERY_STATE_PATH ??
+      DEFAULT_POST_PHASE26_UBUNTU_SSH_RECOVERY_STATE_PATH,
     postRemediationDegradedSmokeStatePath:
       env.POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH ??
       DEFAULT_POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH,

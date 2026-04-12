@@ -55,7 +55,8 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 23: Deployed Windows post-phase22 smoke-wrapper parity recovery and persistent disconnected-runtime forced-host public-owner 502 remediation** - completed 2026-04-02 with `hold_rollout`; the live parity-remediation artifact, operator surface, and exact smoke rerun are now all real, but the deployed host still needed post-overlay compatibility restores and the smoke still settled at `1/9 ready` with public canary `502/502/502`
 - [x] **Phase 24: Deployed Windows post-phase23 exact smoke-wrapper compat backport and persistent disconnected-runtime forced-host public-owner 502 remediation** - completed 2026-04-02 with `hold_rollout`; the live compat-remediation artifact, operator surface, and exact smoke rerun are now all real, but the exact smoke still settled at `after_settle` with `1/9 ready`, a degraded pool, and public canary `503/503/503`
 - [x] **Phase 25: Deployed Windows post-phase24 live-fix smoke-wrapper backport and persistent disconnected-runtime forced-host public-owner 503 remediation** - completed 2026-04-12 with `hold_rollout`; the repo-backed reverse-tunnel and canonical-upstream truth are now explicit, but Ubuntu sync/topology was blocked, the reverse-tunnel task did not stay running, and the final outside proof regressed to `404/404/501`
-- [ ] **Phase 26: Deployed Ubuntu sync recovery, reverse-tunnel task retention, and external authenticated smoke restoration** - local Waves 1-2 completed 2026-04-12; GitHub-backed Ubuntu plus Windows verification and final authenticated external smoke remain
+- [x] **Phase 26: Deployed Ubuntu sync recovery, reverse-tunnel task retention, and external authenticated smoke restoration** - completed 2026-04-12 with `hold_rollout`; the repo-backed Windows run confirmed the operator surface, but Ubuntu SSH stayed blocked, the reverse-tunnel task did not retain `Running`, listeners stayed missing, and the final accessible-host proof remained `404/404/501`
+- [ ] **Phase 27: Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion** - local Waves 1-2 completed 2026-04-12; repo-backed Ubuntu plus Windows verification, reverse-tunnel retention proof, and final authenticated external smoke remain
 
 ## Phase Details
 
@@ -504,21 +505,23 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 | 23. Deployed Windows post-phase22 smoke-wrapper parity recovery and persistent disconnected-runtime forced-host public-owner 502 remediation | WSPR-01, WSPR-02, WSPR-03, WSPR-04 | Complete (`hold_rollout`) | 2026-04-02 |
 | 24. Deployed Windows post-phase23 exact smoke-wrapper compat backport and persistent disconnected-runtime forced-host public-owner 502 remediation | WSCB-01, WSCB-02, WSCB-03, WSCB-04 | Complete (`hold_rollout`) | 2026-04-02 |
 | 25. Deployed Windows post-phase24 live-fix smoke-wrapper backport and persistent disconnected-runtime forced-host public-owner 503 remediation | WLFB-01, WLFB-02, WLFB-03, WLFB-04 | Complete (`hold_rollout`) | 2026-04-12 |
-| 26. Deployed Ubuntu sync recovery, reverse-tunnel task retention, and external authenticated smoke restoration | UTSR-01, UTSR-02, UTSR-03, UTSR-04 | In Progress (2/3) | 2026-04-12 |
+| 26. Deployed Ubuntu sync recovery, reverse-tunnel task retention, and external authenticated smoke restoration | UTSR-01, UTSR-02, UTSR-03, UTSR-04 | Complete (`hold_rollout`) | 2026-04-12 |
+| 27. Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion | 2/3 | In Progress|  |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: execute Phase 26 Wave 3 on the real hosts through GitHub-backed sync, reverse-tunnel retention proof, and authenticated external smoke
-  - Phase 25 is now fully complete with `hold_rollout`
-  - Phase 26 local Waves 1-2 are now complete: the repo carries the canonical restoration wrapper, GitHub-first deployed-host prompt, latest-state route, and `/internal/admin` section
-  - Phase 26 Wave 3 is still pending on the real Ubuntu and Windows hosts because this environment does not hold the live SSH access plus bearer-token path needed for the final authenticated smoke proof
-  - Windows repo-backed validation passed on branch `windows-browser-block-api-20260331` at commit `8d269d6`
-  - Ubuntu sync/topology re-verification failed during the live run because `77.66.186.75:2222` closed SSH during key exchange, `:22` rejected auth, and `192.168.88.2:22/2222` timed out
-  - The Phase 25 readiness truth stayed negative: `7/9 ready`, reverse-tunnel task `Ready` with `LastTaskResult=1`, Windows `Caddy` absent, and no proof that tunnel listeners stayed up on Ubuntu
-  - Final outside proof also stayed negative: `/healthz=404`, `/v1/models=404`, `/v1/chat/completions=501`, and authenticated smoke could not complete because no local bearer token was available on the deployed Windows host
-  - New live truth from 2026-04-12: the public API on `77.66.186.75` is already externally reachable through Ubuntu `nginx`, `healthz` returns `200`, `v1/models` returns `401` without a bearer token and `200` with a bearer token, and external chat now succeeds again after reverse SSH tunnels were restored
-  - The real active topology is now `internet -> MikroTik -> Ubuntu nginx -> 127.0.0.1:4010`; the repo copy that still assumes `Ubuntu -> 192.168.88.250:80` is stale
+- Current next action: execute the deployed Ubuntu plus Windows live run for Phase 27
+  - Phase 25 is fully complete with `hold_rollout`
+  - Phase 26 is now also complete with `hold_rollout`
+  - Windows repo-backed validation passed on branch `windows-browser-block-api-20260331` at commit `8317e78`
+  - The Phase 26 latest-state route and `/internal/admin` section were both explicitly confirmed on the deployed Windows host
+  - Ubuntu sync/topology still could not be re-verified because SSH to `mi50@77.66.186.75:2222` closed immediately, so the exact live Ubuntu checkout path and hash remain unconfirmed
+  - The reverse-tunnel scheduled task still did not hold: the last observed state was `Ready`, `LastTaskResult=1`, and Ubuntu listeners `14021..14027` plus `14040` were recorded as missing
+  - External proof from the accessible Windows host stayed negative in the repo-backed Phase 26 run: `/healthz=404`, `/v1/models=404`, `/v1/chat/completions=501`
+  - Authenticated external smoke still could not complete from tracked assets because no bearer token was found on the Windows host and Ubuntu remained unavailable by SSH
+  - Earlier live evidence on 2026-04-12 still matters: the public API can work through `Ubuntu nginx -> 127.0.0.1:4010` when reverse tunnels are healthy, but the repo-backed restoration path has not reproduced that state durably yet
+  - Phase 27 local Waves 1-2 are now complete: the canonical Ubuntu-SSH wrapper, GitHub-first handoff prompt, latest-state route, and `/internal/admin` section are landed and locally verified
   - The Windows host `192.168.88.250` no longer has an active `Caddy` edge in the live path: `80/443` do not listen there, `Get-Service *caddy*` returns no service, and `Get-Process caddy` returns no process
   - The actual live blocker that broke external chat was a dead reverse SSH tunnel from the Windows browser block to Ubuntu, not a broken public `nginx` path and not a broken MikroTik public ingress rule
   - After the tunnel recovery, Ubuntu again exposed `127.0.0.1:14021..14027` and `127.0.0.1:14040`, `readyz` returned `7/7 ready`, and the external chat smoke returned `200` with `ping-ok` on worker `shared-2`
@@ -823,9 +826,9 @@ Plans:
 **Goal:** Recover repo-backed Ubuntu sync and reverse-tunnel retention, then rerun authenticated public smoke on the real canonical path so external API readiness is proven from tracked assets instead of one-off live fixes.
 **Requirements**: UTSR-01, UTSR-02, UTSR-03, UTSR-04
 **Depends on:** Phase 25
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans executed
 
-**Current status:** In progress on 2026-04-12. Wave 1 is complete locally: the repo now backports the remaining live operational fixes, stamps the deployment-critical chain with `phase26-ubuntu-sync-recovery-v1`, adds the canonical restoration wrapper, and adds the GitHub-first deployed-host handoff prompt. Wave 2 is also complete locally: `control-api` now exposes `GET /internal/post-phase25-external-restoration/latest`, `/internal/admin` renders `Latest post-phase25 external restoration`, targeted tests pass, the full suite passes, and build passes. Wave 3 is still pending on the real Ubuntu plus Windows hosts to prove repo-backed sync, reverse-tunnel retention, and authenticated external smoke with one final verdict `externally_ready` or `hold_rollout`.
+**Current status:** Completed on 2026-04-12 with verdict `hold_rollout`. Wave 1 backported the remaining live operational fixes, stamped the deployment-critical chain with `phase26-ubuntu-sync-recovery-v1`, added the canonical restoration wrapper, and published the GitHub-first deployed-host prompt. Wave 2 added `GET /internal/post-phase25-external-restoration/latest`, the matching `/internal/admin` section, and green targeted/full test plus build proof. Wave 3 then ran from the repo-backed Windows host at commit `8317e78`, confirmed the operator surface, but still failed to re-verify Ubuntu through SSH, did not retain the reverse-tunnel task in `Running`, recorded Ubuntu listeners as missing, and ended with external proof `/healthz=404`, `/v1/models=404`, `/v1/chat/completions=501`, so the final verdict remains `hold_rollout`.
 
 **Success Criteria** (what must be TRUE):
   1. Repo-backed GitHub sync can re-verify the Ubuntu public-owner host and confirm the canonical `80/443/8080 -> 127.0.0.1:4010` topology instead of relying on stale Windows-edge assumptions.
@@ -836,4 +839,24 @@ Plans:
 Plans:
   - [x] `26-01-PLAN.md` - live-fix backport, canonical restoration wrapper, and GitHub-first host handoff
   - [x] `26-02-PLAN.md` - file-backed latest restoration route, internal admin visibility, and runtime build parity
-  - [ ] `26-03-PLAN.md` - GitHub-backed Ubuntu plus Windows verification, reverse-tunnel retention proof, authenticated external smoke, and final verdict
+  - [x] `26-03-PLAN.md` - GitHub-backed Ubuntu plus Windows verification, reverse-tunnel retention proof, authenticated external smoke, and final verdict
+
+### Phase 27: Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion
+
+**Goal:** Recover repo-backed Ubuntu SSH verification, prove reverse-tunnel retention from tracked assets, and complete authenticated external smoke on the real public path so external readiness no longer depends on unverified Ubuntu state or one-off operator memory.
+**Requirements**: URTS-01, URTS-02, URTS-03, URTS-04
+**Depends on:** Phase 26
+**Plans:** 2/3 plans executed
+
+**Current status:** Local Waves 1-2 completed on 2026-04-12. Wave 1 added the canonical repo-backed Ubuntu-SSH-recovery wrapper, the GitHub-first deployed-host prompt, and exact docs for Ubuntu SSH plus reverse-tunnel truth. Wave 2 added `GET /internal/post-phase26-ubuntu-ssh-recovery/latest`, the matching `/internal/admin` section, route/admin coverage, and a green runtime rebuild. Wave 3 still needs the deployed Ubuntu plus Windows run to confirm live SSH truth, reverse-tunnel retention, operator-surface parity, and final authenticated external smoke.
+
+**Success Criteria** (what must be TRUE):
+  1. Repo-backed GitHub sync can recover or exactly classify Ubuntu SSH reachability and confirm the exact live Ubuntu checkout path plus commit hash while re-verifying the canonical `80/443/8080 -> 127.0.0.1:4010` topology.
+  2. The reverse-tunnel scheduled task stays `Running` long enough to preserve Ubuntu listeners `14021..14027` and `14040`, or the phase records the exact retention failure instead of collapsing it into vague external smoke noise.
+  3. The latest Phase 27 Ubuntu SSH recovery result is visible through an internal operator surface or durable file-backed artifact before the final external claim.
+  4. Authenticated external smoke for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun against `77.66.186.75` from a host that actually has a valid bearer token and ends with exactly `externally_ready` or `hold_rollout`.
+
+Plans:
+- [x] `27-01-PLAN.md` - canonical Ubuntu SSH recovery wrapper, GitHub-first deployed-host prompt, and exact docs
+- [x] `27-02-PLAN.md` - file-backed latest Ubuntu SSH recovery route, internal admin visibility, and runtime build parity
+- [ ] `27-03-PLAN.md` - repo-backed Ubuntu plus Windows verification, reverse-tunnel retention proof, authenticated external smoke, and final verdict
