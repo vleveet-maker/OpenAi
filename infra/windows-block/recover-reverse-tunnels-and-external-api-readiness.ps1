@@ -17,7 +17,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$scriptCompatibilityVersion = "phase25-live-fix-backport-v1"
+$scriptCompatibilityVersion = "phase26-ubuntu-sync-recovery-v1"
 $canonicalPublicUpstream = "ubuntu_nginx_to_127.0.0.1:4010"
 $requiredTunnelPorts = @(14021, 14022, 14023, 14024, 14025, 14026, 14027, 14040)
 
@@ -158,28 +158,30 @@ function Get-ScheduledTaskSnapshot {
   }
 
   $info = Get-ScheduledTaskInfo -TaskName $TaskName -ErrorAction SilentlyContinue
+  $lastRunTime = $null
+  $nextRunTime = $null
+
+  if ($info) {
+    if ($null -ne $info.LastRunTime -and $info.LastRunTime -is [datetime] -and $info.LastRunTime.Year -gt 1) {
+      $lastRunTime = $info.LastRunTime.ToString("o")
+    }
+
+    if ($null -ne $info.NextRunTime -and $info.NextRunTime -is [datetime] -and $info.NextRunTime.Year -gt 1) {
+      $nextRunTime = $info.NextRunTime.ToString("o")
+    }
+  }
 
   return [pscustomobject]@{
     exists = $true
     state = [string]$task.State
-    lastRunTime =
-      if ($info) {
-        $info.LastRunTime.ToString("o")
-      } else {
-        $null
-      }
+    lastRunTime = $lastRunTime
     lastTaskResult =
       if ($info) {
         $info.LastTaskResult
       } else {
         $null
       }
-    nextRunTime =
-      if ($info) {
-        $info.NextRunTime.ToString("o")
-      } else {
-        $null
-      }
+    nextRunTime = $nextRunTime
   }
 }
 

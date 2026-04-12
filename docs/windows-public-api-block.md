@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase25-live-fix-backport-v1`
+`phase26-ubuntu-sync-recovery-v1`
 
 This file keeps the public API story honest.
 
@@ -67,6 +67,14 @@ Expected truth:
 - `4040` and `8081` listen only on `127.0.0.1`
 - no live `Caddy` service or process
 
+## GitHub-First Handoff
+
+When files need to move between hosts, use GitHub branch `windows-browser-block-api-20260331` as the source of truth.
+
+- update existing tracked files in place
+- sync from GitHub on Ubuntu and Windows
+- do not rely on local-only archives as the canonical handoff
+
 ## Reverse Tunnel Dependency
 
 Reverse tunnels are rollout-critical because Ubuntu reaches the Windows workers through:
@@ -114,7 +122,7 @@ That artifact must prove:
 
 ## Final External Smoke
 
-Use the live model, not `gpt-4.1`:
+Use the live model, not `gpt-4.1`. Run the authenticated smoke from the host that actually has the bearer token:
 
 ```bash
 curl -i -H "Authorization: Bearer <TOKEN>" http://77.66.186.75/v1/models

@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase25-live-fix-backport-v1`
+`phase26-ubuntu-sync-recovery-v1`
 
 The Windows browser block is the browser-runtime side of the system. It is not the active public edge.
 
@@ -28,6 +28,14 @@ The Windows host owns:
 - reverse SSH tunnel origin back to Ubuntu
 
 The Windows host should not expose `4040` or `8081` publicly.
+
+## GitHub-First Handoff
+
+When a deployed host needs new files, sync branch `windows-browser-block-api-20260331` from GitHub on both Windows and Ubuntu.
+
+- prefer `git fetch`, `git checkout`, and `git pull --ff-only`
+- replace stale tracked files in place through GitHub-backed repo state
+- do not treat a local-only archive as the source of truth
 
 ## Reverse Tunnels
 
@@ -110,6 +118,8 @@ This records:
 - Ubuntu tunnel listener truth
 - ready worker count
 - verdict before final external smoke
+
+Authenticated external smoke may run from another operator-controlled host if that host is the one that actually holds the bearer token.
 
 ## Related Files
 

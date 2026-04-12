@@ -10,7 +10,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$scriptCompatibilityVersion = "phase25-live-fix-backport-v1"
+$scriptCompatibilityVersion = "phase26-ubuntu-sync-recovery-v1"
 
 function Resolve-SshExecutable {
   $candidate = Get-Command "ssh.exe" -ErrorAction SilentlyContinue

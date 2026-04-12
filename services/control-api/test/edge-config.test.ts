@@ -15,17 +15,18 @@ const EDGE_TEMPLATE_PATH = resolve(
 describe("edge nginx template", () => {
   it("splits public and internal entrypoints and injects the admin token", () => {
     const template = readFileSync(EDGE_TEMPLATE_PATH, "utf8");
+    const normalizedTemplate = template.replaceAll("\r\n", "\n");
 
-    expect(template).toContain("listen 8080;");
-    expect(template).toContain("listen 8081;");
-    expect(template).toContain("location ^~ /internal/");
-    expect(template).toContain("proxy_read_timeout 300s;");
-    expect(template).toContain("proxy_send_timeout 300s;");
-    expect(template).toContain('proxy_set_header x-internal-admin-token "${INTERNAL_ADMIN_TOKEN}";');
-    expect(template).toContain("proxy_pass http://control_api_upstream;");
-    expect(template).toContain("proxy_pass http://session_client_upstream;");
-    expect(template).toContain("location = /healthz {\n    return 404;");
-    expect(template).toContain("location = /readyz {\n    return 404;");
+    expect(normalizedTemplate).toContain("listen 8080;");
+    expect(normalizedTemplate).toContain("listen 8081;");
+    expect(normalizedTemplate).toContain("location ^~ /internal/");
+    expect(normalizedTemplate).toContain("proxy_read_timeout 300s;");
+    expect(normalizedTemplate).toContain("proxy_send_timeout 300s;");
+    expect(normalizedTemplate).toContain('proxy_set_header x-internal-admin-token "${INTERNAL_ADMIN_TOKEN}";');
+    expect(normalizedTemplate).toContain("proxy_pass http://control_api_upstream;");
+    expect(normalizedTemplate).toContain("proxy_pass http://session_client_upstream;");
+    expect(normalizedTemplate).toContain("location = /healthz {\n    return 404;");
+    expect(normalizedTemplate).toContain("location = /readyz {\n    return 404;");
   });
 
   it("protects internal browser viewer proxying behind auth_request", () => {

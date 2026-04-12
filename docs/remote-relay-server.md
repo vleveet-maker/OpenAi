@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase25-live-fix-backport-v1`
+`phase26-ubuntu-sync-recovery-v1`
 
 The remote relay host is Ubuntu. The relay/API process is local-only and the public edge is owned by Ubuntu `nginx`.
 
@@ -92,6 +92,14 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\start-reverse-tun
   -Foreground
 ```
 
+## GitHub-First Handoff
+
+Cross-host handoff is GitHub-first.
+
+- sync Ubuntu and Windows from branch `windows-browser-block-api-20260331`
+- use repo-backed files as the only source of truth
+- do not treat local-only zip archives as the authoritative deployment source
+
 ## External Readiness Contract
 
 Before claiming the public API is externally ready, use:
@@ -111,3 +119,5 @@ That artifact captures:
 - Ubuntu tunnel-listener truth
 - ready-worker truth
 - verdict: `ready_for_external_smoke` or `hold_rollout`
+
+Final authenticated smoke may run from whichever host actually has the bearer token, as long as it still targets `77.66.186.75`.

@@ -62,6 +62,9 @@ import {
   createInternalPostPhase24ExternalApiReadinessRouter
 } from "./routes/internal-post-phase24-external-api-readiness.js";
 import {
+  createInternalPostPhase25ExternalRestorationRouter
+} from "./routes/internal-post-phase25-external-restoration.js";
+import {
   createInternalPostRemediationDegradedSmokeRouter
 } from "./routes/internal-post-remediation-degraded-smoke.js";
 import {
@@ -507,6 +510,9 @@ export function createControlApiApp(
       }),
       createInternalPostPhase24ExternalApiReadinessRouter({
         statePath: config.postPhase24ExternalApiReadinessStatePath
+      }),
+      createInternalPostPhase25ExternalRestorationRouter({
+        statePath: config.postPhase25ExternalRestorationStatePath
       }),
       createInternalPostRemediationDegradedSmokeRouter({
         statePath: config.postRemediationDegradedSmokeStatePath

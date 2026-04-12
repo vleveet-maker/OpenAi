@@ -243,10 +243,17 @@
 
 ### Deployed Windows Post-Phase24 Live-Fix Smoke-Wrapper Backport And Persistent Disconnected-Runtime Forced-Host/Public-Owner 503 Remediation
 
-- [ ] **WLFB-01**: The repo and archive copy of the deployment-critical chain reflects the exact live tunnel, task, and topology fixes, including `start-reverse-tunnels.ps1`, `register-browser-block-tasks.ps1`, package/docs assets, and the canonical Ubuntu `nginx -> 127.0.0.1:4010` upstream truth, so the next overlay no longer depends on server-only tunnel or topology edits
-- [ ] **WLFB-02**: The project can run one preserve-first Phase 25 external-readiness flow that records reverse-tunnel task health, Ubuntu tunnel-listener truth, ready-worker truth, and canonical public-upstream truth without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
-- [ ] **WLFB-03**: The latest Phase 25 external-readiness result is visible through an internal operator surface or durable file-backed artifact before the authenticated external smoke claim
-- [ ] **WLFB-04**: After the live-fix-backed Phase 25 readiness run, the project reruns authenticated external smoke for `/healthz`, `/v1/models`, and `/v1/chat/completions` and records one explicit verdict `externally_ready` or `hold_rollout`
+- [x] **WLFB-01**: The repo and archive copy of the deployment-critical chain reflects the exact live tunnel, task, and topology fixes, including `start-reverse-tunnels.ps1`, `register-browser-block-tasks.ps1`, package/docs assets, and the canonical Ubuntu `nginx -> 127.0.0.1:4010` upstream truth, so the next overlay no longer depends on server-only tunnel or topology edits
+- [x] **WLFB-02**: The project can run one preserve-first Phase 25 external-readiness flow that records reverse-tunnel task health, Ubuntu tunnel-listener truth, ready-worker truth, and canonical public-upstream truth without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WLFB-03**: The latest Phase 25 external-readiness result is visible through an internal operator surface or durable file-backed artifact before the authenticated external smoke claim
+- [x] **WLFB-04**: After the live-fix-backed Phase 25 readiness run, the project reruns authenticated external smoke for `/healthz`, `/v1/models`, and `/v1/chat/completions` and records one explicit verdict `externally_ready` or `hold_rollout`
+
+### Deployed Ubuntu Sync Recovery, Reverse-Tunnel Task Retention, And External Authenticated Smoke Restoration
+
+- [ ] **UTSR-01**: The repo-backed GitHub sync path can re-verify the Ubuntu public-owner host and confirm `80/443/8080 -> 127.0.0.1:4010` plus SSH/topology truth from live evidence instead of stale Windows-only assumptions
+- [ ] **UTSR-02**: The reverse-tunnel scheduled task on the Windows host can be retained in `Running` state long enough to preserve Ubuntu listeners `127.0.0.1:14021..14027` and `127.0.0.1:14040` and keep ready-worker truth explicit without destructive preserve-first violations
+- [ ] **UTSR-03**: The latest Phase 26 Ubuntu-sync and external-restoration result is visible through an internal operator surface or durable file-backed artifact before the final external claim
+- [ ] **UTSR-04**: Authenticated external smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun from a host that actually has a valid bearer token and ends with one explicit verdict `externally_ready` or `hold_rollout`
 
 ## Future Requirements
 
@@ -399,16 +406,20 @@
 | WSCB-02 | Phase 24 | Complete |
 | WSCB-03 | Phase 24 | Complete |
 | WSCB-04 | Phase 24 | Complete |
-| WLFB-01 | Phase 25 | Pending |
-| WLFB-02 | Phase 25 | Pending |
-| WLFB-03 | Phase 25 | Pending |
-| WLFB-04 | Phase 25 | Pending |
+| WLFB-01 | Phase 25 | Complete |
+| WLFB-02 | Phase 25 | Complete |
+| WLFB-03 | Phase 25 | Complete |
+| WLFB-04 | Phase 25 | Complete |
+| UTSR-01 | Phase 26 | Planned |
+| UTSR-02 | Phase 26 | Planned |
+| UTSR-03 | Phase 26 | Planned |
+| UTSR-04 | Phase 26 | Planned |
 
 **Coverage:**
-- v1.2 requirements: 108 total
-- Mapped to phases: 108
+- v1.2 requirements: 112 total
+- Mapped to phases: 112
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-12 after replanning Phase 25 around reverse-tunnel recovery and the canonical Ubuntu upstream*
+*Last updated: 2026-04-12 after planning Phase 26 for Ubuntu sync recovery and authenticated external smoke restoration*
