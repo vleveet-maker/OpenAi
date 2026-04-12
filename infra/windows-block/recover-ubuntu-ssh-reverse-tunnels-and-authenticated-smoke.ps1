@@ -351,15 +351,15 @@ function Invoke-Phase26Wrapper {
   }
 
   $raw = & $WrapperPath @params
-
-  if ($LASTEXITCODE -ne 0) {
-    throw "recover-ubuntu-sync-and-external-auth-smoke.ps1 exited with code $LASTEXITCODE"
-  }
-
+  $wrapperExitCode = $LASTEXITCODE
   $parsed = ConvertFrom-JsonSafe -Raw ($raw -join "`n")
 
   if ($null -ne $parsed) {
     return $parsed
+  }
+
+  if ($wrapperExitCode -ne 0) {
+    throw "recover-ubuntu-sync-and-external-auth-smoke.ps1 exited with code $wrapperExitCode"
   }
 
   return ConvertFrom-JsonSafe -Raw (Get-Content -LiteralPath $Phase26JsonPath -Raw)
@@ -465,7 +465,7 @@ $summary =
   if ($verdict -eq "externally_ready") {
     "Repo-backed Ubuntu SSH recovery, reverse-tunnel retention, and authenticated external smoke are all green."
   } else {
-    "Hold rollout: ubuntuSshReachable=$($baseResult.ubuntuSshReachable), sshFailureKind=$(if ($sshFailureKind) { $sshFailureKind } else { 'none' }), ubuntuRepoFound=$($ubuntuRepoStatus.found), nginxTestOk=$($ubuntuNginxTestStatus.ok), canonicalUpstreamMatchesExpected=$($baseResult.canonicalPublicUpstreamStatus.matchesExpected), reverseTunnelRetainedRunning=$($baseResult.reverseTunnelTaskStatus.retainedRunning), ubuntuTunnelListenersReady=$($baseResult.ubuntuTunnelListenerStatus.allRequiredPresent), readyWorkerCount=$($baseResult.readyWorkerCount)/$($baseResult.totalWorkerCount), externalHealth=$($baseResult.externalHealthStatus.ok), externalModels=$($baseResult.externalModelsStatus.ok), externalChat=$($baseResult.externalChatStatus.ok)."
+    "Hold rollout: ubuntuSshReachable=$($baseResult.ubuntuSshReachable), sshFailureKind=$(if ($sshFailureKind) { $sshFailureKind } else { 'none' }), ubuntuRepoFound=$($ubuntuRepoStatus.found), nginxTestOk=$($ubuntuNginxTestStatus.ok), canonicalUpstreamMatchesExpected=$(Get-ObjectPropertyValue -InputObject $baseResult.canonicalPublicUpstreamStatus -PropertyName 'matchesExpected' -DefaultValue $false), reverseTunnelRetainedRunning=$(Get-ObjectPropertyValue -InputObject $baseResult.reverseTunnelTaskStatus -PropertyName 'retainedRunning' -DefaultValue $false), ubuntuTunnelListenersReady=$(Get-ObjectPropertyValue -InputObject $baseResult.ubuntuTunnelListenerStatus -PropertyName 'allRequiredPresent' -DefaultValue $false), readyWorkerCount=$($baseResult.readyWorkerCount)/$($baseResult.totalWorkerCount), externalHealth=$(Get-ObjectPropertyValue -InputObject $baseResult.externalHealthStatus -PropertyName 'ok' -DefaultValue $false), externalModels=$(Get-ObjectPropertyValue -InputObject $baseResult.externalModelsStatus -PropertyName 'ok' -DefaultValue $false), externalChat=$(Get-ObjectPropertyValue -InputObject $baseResult.externalChatStatus -PropertyName 'ok' -DefaultValue $false)."
   }
 
 $result = [pscustomobject][ordered]@{
@@ -531,12 +531,12 @@ $markdown = @(
   "- ubuntuRepoPath: $(if ($result.ubuntuRepoPath) { $result.ubuntuRepoPath } else { 'unknown' })",
   "- ubuntuRepoCommit: $(if ($result.ubuntuRepoCommit) { $result.ubuntuRepoCommit } else { 'unknown' })",
   "- nginx -t ok: $($result.ubuntuNginxTestStatus.ok)",
-  "- canonical upstream matches expected: $($result.canonicalPublicUpstreamStatus.matchesExpected)",
+  "- canonical upstream matches expected: $(Get-ObjectPropertyValue -InputObject $result.canonicalPublicUpstreamStatus -PropertyName 'matchesExpected' -DefaultValue $false)",
   "",
   "## Reverse Tunnels",
   "",
-  "- reverseTunnelTaskStatus: exists=$($result.reverseTunnelTaskStatus.exists) state=$($result.reverseTunnelTaskStatus.state) retainedRunning=$($result.reverseTunnelTaskStatus.retainedRunning) lastTaskResult=$($result.reverseTunnelTaskStatus.lastTaskResult)",
-  "- ubuntuTunnelListenerStatus: reachable=$($result.ubuntuTunnelListenerStatus.reachable) presentPorts=$(@($result.ubuntuTunnelListenerStatus.presentPorts) -join ', ') missingPorts=$(if (@($result.ubuntuTunnelListenerStatus.missingPorts).Count -gt 0) { @($result.ubuntuTunnelListenerStatus.missingPorts) -join ', ' } else { 'none' })",
+  "- reverseTunnelTaskStatus: exists=$(Get-ObjectPropertyValue -InputObject $result.reverseTunnelTaskStatus -PropertyName 'exists' -DefaultValue $false) state=$(Get-ObjectPropertyValue -InputObject $result.reverseTunnelTaskStatus -PropertyName 'state' -DefaultValue 'unknown') retainedRunning=$(Get-ObjectPropertyValue -InputObject $result.reverseTunnelTaskStatus -PropertyName 'retainedRunning' -DefaultValue $false) lastTaskResult=$(Get-ObjectPropertyValue -InputObject $result.reverseTunnelTaskStatus -PropertyName 'lastTaskResult' -DefaultValue 'unknown')",
+  "- ubuntuTunnelListenerStatus: reachable=$(Get-ObjectPropertyValue -InputObject $result.ubuntuTunnelListenerStatus -PropertyName 'reachable' -DefaultValue $false) presentPorts=$(@((Get-ObjectPropertyValue -InputObject $result.ubuntuTunnelListenerStatus -PropertyName 'presentPorts' -DefaultValue @())) -join ', ') missingPorts=$(if (@((Get-ObjectPropertyValue -InputObject $result.ubuntuTunnelListenerStatus -PropertyName 'missingPorts' -DefaultValue @())).Count -gt 0) { @((Get-ObjectPropertyValue -InputObject $result.ubuntuTunnelListenerStatus -PropertyName 'missingPorts' -DefaultValue @())) -join ', ' } else { 'none' })",
   "- readyWorkerCount: $($result.readyWorkerCount)/$($result.totalWorkerCount)",
   "",
   "## External Authenticated Smoke",
@@ -544,10 +544,10 @@ $markdown = @(
   "- tokenSource: $($result.authenticatedSmokeTokenSource)",
   "- tokenHost: $(if ($result.authenticatedSmokeTokenHost) { $result.authenticatedSmokeTokenHost } else { 'unknown' })",
   "- smokeExecutionHost: $($result.authenticatedSmokeExecutionHost)",
-  "- external healthz: $($result.externalHealthStatus.statusCode) ok=$($result.externalHealthStatus.ok)",
-  "- external models: $($result.externalModelsStatus.statusCode) ok=$($result.externalModelsStatus.ok)",
-  "- external chat: $($result.externalChatStatus.statusCode) ok=$($result.externalChatStatus.ok)",
-  "- external chat worker: $(if ($result.externalChatStatus.workerId) { $result.externalChatStatus.workerId } else { 'none' })",
+  "- external healthz: $(Get-ObjectPropertyValue -InputObject $result.externalHealthStatus -PropertyName 'statusCode' -DefaultValue 'unknown') ok=$(Get-ObjectPropertyValue -InputObject $result.externalHealthStatus -PropertyName 'ok' -DefaultValue $false)",
+  "- external models: $(Get-ObjectPropertyValue -InputObject $result.externalModelsStatus -PropertyName 'statusCode' -DefaultValue 'unknown') ok=$(Get-ObjectPropertyValue -InputObject $result.externalModelsStatus -PropertyName 'ok' -DefaultValue $false)",
+  "- external chat: $(Get-ObjectPropertyValue -InputObject $result.externalChatStatus -PropertyName 'statusCode' -DefaultValue 'unknown') ok=$(Get-ObjectPropertyValue -InputObject $result.externalChatStatus -PropertyName 'ok' -DefaultValue $false)",
+  "- external chat worker: $(if (Get-ObjectPropertyValue -InputObject $result.externalChatStatus -PropertyName 'workerId') { Get-ObjectPropertyValue -InputObject $result.externalChatStatus -PropertyName 'workerId' } else { 'none' })",
   "- external model used: $($result.externalModelUsed)",
   "",
   "## Preserve-First",

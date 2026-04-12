@@ -1,26 +1,21 @@
-# Phase 27 - понятный handoff для Windows/Ubuntu агента
+# Phase 27 - локальный Windows + Ubuntu handoff
 
-## Что нужно сделать
+## Что меняем
 
-Нужно закончить `Phase 27`.
+В этой фазе мы не трогаем Windows server `192.168.88.250`.
 
-Цель фазы:
+Работаем только в двух местах:
 
-- восстановить repo-backed проверку Ubuntu по SSH
-- зафиксировать exact live repo path и commit hash на Ubuntu
-- проверить, что живая схема все еще такая: `Ubuntu nginx -> 127.0.0.1:4010`
-- проверить, что reverse-tunnel task реально удерживается в `Running`
-- проверить, что на Ubuntu держатся listeners `14021..14027` и `14040`
-- записать артефакт Phase 27
-- проверить internal operator surface
-- завершить authenticated external smoke
+- на этом локальном Windows-хосте, где уже есть авторизованные аккаунты
+- на Ubuntu `77.66.186.75`
 
-Финальный verdict должен быть ровно один из двух:
+Смысл такой:
 
-- `externally_ready`
-- `hold_rollout`
+1. доказать внешний API через текущую живую схему
+2. сделать это preserve-first, без порчи аккаунтов
+3. и только после этого переносить проверенный кусок на Windows server
 
-## Откуда брать файлы
+## Источник файлов
 
 Источник истины только GitHub.
 
@@ -30,7 +25,7 @@ Repo:
 https://github.com/vleveet-maker/OpenAi
 ```
 
-Ветка:
+Branch:
 
 ```text
 windows-browser-block-api-20260331
@@ -42,17 +37,11 @@ windows-browser-block-api-20260331
 https://github.com/vleveet-maker/OpenAi/blob/windows-browser-block-api-20260331/.planning/phases/27-deployed-ubuntu-ssh-recovery-reverse-tunnel-task-retention-and-authenticated-external-smoke-completion/27-DEPLOYED-HOST-AGENT-TASK.md
 ```
 
-Не использовать локальные zip-архивы как source of truth.
+Не использовать локальные zip как source of truth.
 
 ## Где выполнять
 
-### Windows host
-
-Хост:
-
-```text
-192.168.88.250
-```
+### Локальный Windows
 
 Repo path:
 
@@ -60,25 +49,23 @@ Repo path:
 D:\OpenAi
 ```
 
-### Ubuntu host
+### Ubuntu
 
-Хост:
+Host:
 
 ```text
 77.66.186.75
 ```
 
-Нужно использовать live repo checkout, который реально обслуживает relay/nginx.
+Нужен exact live repo checkout, который реально обслуживает relay/nginx.
 
 Если путь checkout на Ubuntu неочевиден:
 
-1. сначала найди его
-2. потом явно укажи exact repo path в отчете
-3. только после этого считай Ubuntu sync подтвержденным
+1. сначала найти его
+2. потом явно указать exact path в отчете
+3. только после этого считать Ubuntu sync подтвержденным
 
-## Важные правила
-
-Работаем preserve-first.
+## Preserve-first правила
 
 Нельзя:
 
@@ -87,10 +74,11 @@ D:\OpenAi
 - чистить localStorage
 - делать blind full-pool restart
 - делать mass relogin
+- переносить что-либо на Windows server в этой фазе
 
-## Шаг 1. Подтянуть GitHub-код на Windows
+## Шаг 1. GitHub sync на локальном Windows
 
-На Windows в `D:\OpenAi` выполнить:
+В `D:\OpenAi` выполнить:
 
 ```powershell
 cd D:\OpenAi
@@ -100,9 +88,9 @@ git pull --ff-only origin windows-browser-block-api-20260331
 git rev-parse --short HEAD
 ```
 
-В отчете обязательно указать итоговый commit hash.
+В отчете вернуть итоговый commit hash.
 
-## Шаг 2. Прогнать локальные проверки на Windows
+## Шаг 2. Локальные проверки на Windows
 
 ### 2.1 Parser checks
 
@@ -116,9 +104,10 @@ $files = @(
 )
 
 foreach ($file in $files) {
+  $tokens = $null
   $parseErrors = $null
-  [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$null, [ref]$parseErrors)
-  if ($parseErrors.Count -gt 0) {
+  [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$parseErrors)
+  if ($parseErrors -and $parseErrors.Count -gt 0) {
     throw "Parser errors in $file"
   }
 }
@@ -142,17 +131,19 @@ npm.cmd --prefix services/control-api test
 npm.cmd --prefix services/control-api run build
 ```
 
-### 2.5 Перезапуск control-api
+## Шаг 3. Локальный control plane без слепого старта пула
 
-Если `control-api` живет из:
+Если `4040` не слушает, поднять только host-controller:
 
-```text
-D:\OpenAi\services\control-api\dist\server.js
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\start-browser-block.ps1 -SkipInstall
 ```
 
-то перезапустить его после `build`.
+Это не должно слепо запускать весь пул.
 
-## Шаг 3. Подтянуть GitHub-код на Ubuntu
+Если bearer token есть на этом Windows-хосте и нужен local relay runtime, его можно поднимать отдельно. Если token здесь нет, не выдумывать обходы и не считать это доказательством поломки API.
+
+## Шаг 4. GitHub sync на Ubuntu
 
 На Ubuntu в live repo checkout выполнить:
 
@@ -165,12 +156,12 @@ pwd
 git rev-parse --short HEAD
 ```
 
-В отчете обязательно указать:
+В отчете вернуть:
 
-- exact repo path на Ubuntu
-- итоговый commit hash на Ubuntu
+- exact Ubuntu repo path
+- Ubuntu commit hash
 
-## Шаг 4. Проверить живую Ubuntu truth
+## Шаг 5. Ubuntu truth
 
 На Ubuntu выполнить:
 
@@ -181,16 +172,33 @@ sudo nginx -T | egrep -n 'server_name|listen|proxy_pass|4010|192\.168\.88\.250'
 ss -ltnH | egrep '14021|14022|14023|14024|14025|14026|14027|14040'
 ```
 
-Что должно быть явно подтверждено в отчете:
+В отчете явно указать:
 
-- `127.0.0.1:4010/healthz` отвечает
-- `nginx -T` показывает `proxy_pass http://127.0.0.1:4010`
-- активного `proxy_pass http://192.168.88.250` нет
-- listeners `14021..14027` и `14040` есть, если tunnels здоровы
+- отвечает ли `127.0.0.1:4010/healthz`
+- показывает ли `nginx -T` `proxy_pass http://127.0.0.1:4010`
+- нет ли активного `proxy_pass http://192.168.88.250`
+- есть ли listeners `14021..14027` и `14040`
 
-## Шаг 5. Записать артефакт Phase 27 на Windows
+## Шаг 6. Временные reverse tunnels вместо постоянных task changes
 
-На Windows выполнить:
+Если на этом Windows-хосте есть рабочий SSH key для `mi50@77.66.186.75:2222`, сначала предпочесть foreground-run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\start-reverse-tunnels.ps1 `
+  -RemoteHost 77.66.186.75 `
+  -RemotePort 2222 `
+  -RemoteUser mi50 `
+  -IncludeHostController `
+  -Foreground
+```
+
+Если foreground-run невозможен, вернуть exact blocker.
+
+Не подменять эту фазу постоянной scheduled-task настройкой без явной необходимости.
+
+## Шаг 7. Phase 27 artifact на локальном Windows
+
+На этом Windows-хосте выполнить:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1 `
@@ -211,16 +219,16 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-ubuntu-ss
 - `.planning/phases/27-deployed-ubuntu-ssh-recovery-reverse-tunnel-task-retention-and-authenticated-external-smoke-completion/27-SSH-RECOVERY-SUMMARY.md`
 - `infra/data/post-phase26-ubuntu-ssh-recovery/latest.json`
 
-## Шаг 6. Проверить operator surface
+## Шаг 8. Operator surface
 
-На Windows выполнить:
+На этом Windows-хосте выполнить:
 
 ```powershell
 Invoke-RestMethod -Uri http://127.0.0.1:8081/internal/post-phase26-ubuntu-ssh-recovery/latest `
   -Headers @{ "x-internal-admin-token" = "local-internal-admin-token" }
 ```
 
-И отдельно проверить, что в `/internal/admin` есть секция:
+И отдельно проверить секцию:
 
 ```text
 Latest post-phase26 Ubuntu SSH recovery
@@ -228,15 +236,13 @@ Latest post-phase26 Ubuntu SSH recovery
 
 Route/admin должны совпадать с latest artifact.
 
-## Шаг 7. Финальный authenticated external smoke
+## Шаг 9. Финальный authenticated external smoke
 
-Финальный authenticated smoke можно выполнять с того хоста, где реально есть bearer token.
+Authenticated smoke можно выполнять с того хоста, где реально есть bearer token:
 
-Это может быть:
-
-- Windows
+- local Windows
 - Ubuntu
-- другой операторский хост
+- другой операторский host
 
 Но запросы всегда должны идти в:
 
@@ -258,28 +264,29 @@ curl -i \
 
 ## Что вернуть в отчете
 
-В отчете обязательно указать:
+Обязательно вернуть:
 
-- успешно ли прошел `git fetch/checkout/pull` на Windows
+- успешно ли прошел `git fetch/checkout/pull` на local Windows
 - успешно ли прошел `git fetch/checkout/pull` на Ubuntu
 - exact repo path на Ubuntu
-- commit hash на Windows
+- commit hash на local Windows
 - commit hash на Ubuntu
 - прошли ли parser checks
 - прошли ли targeted tests
 - прошел ли full suite
 - прошел ли build
 - подтверждается ли `Ubuntu nginx -> 127.0.0.1:4010`
-- удержался ли reverse-tunnel task в `Running`
+- удержался ли reverse-tunnel path
 - есть ли listeners `14021..14027` и `14040`
 - отвечает ли `/internal/post-phase26-ubuntu-ssh-recovery/latest`
 - есть ли секция в `/internal/admin`
-- результат внешнего smoke по:
+- результаты внешнего smoke по:
   - `/healthz`
   - `/v1/models`
   - `/v1/chat/completions`
 - на каком хосте реально был bearer token
-- понадобились ли post-pull hotfix
+- были ли post-pull hotfix
+- запускались ли tunnels во foreground или только через persistent task
 - финальный verdict:
   - `externally_ready`
   - или `hold_rollout`

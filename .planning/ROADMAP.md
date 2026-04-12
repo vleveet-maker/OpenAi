@@ -56,7 +56,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 24: Deployed Windows post-phase23 exact smoke-wrapper compat backport and persistent disconnected-runtime forced-host public-owner 502 remediation** - completed 2026-04-02 with `hold_rollout`; the live compat-remediation artifact, operator surface, and exact smoke rerun are now all real, but the exact smoke still settled at `after_settle` with `1/9 ready`, a degraded pool, and public canary `503/503/503`
 - [x] **Phase 25: Deployed Windows post-phase24 live-fix smoke-wrapper backport and persistent disconnected-runtime forced-host public-owner 503 remediation** - completed 2026-04-12 with `hold_rollout`; the repo-backed reverse-tunnel and canonical-upstream truth are now explicit, but Ubuntu sync/topology was blocked, the reverse-tunnel task did not stay running, and the final outside proof regressed to `404/404/501`
 - [x] **Phase 26: Deployed Ubuntu sync recovery, reverse-tunnel task retention, and external authenticated smoke restoration** - completed 2026-04-12 with `hold_rollout`; the repo-backed Windows run confirmed the operator surface, but Ubuntu SSH stayed blocked, the reverse-tunnel task did not retain `Running`, listeners stayed missing, and the final accessible-host proof remained `404/404/501`
-- [ ] **Phase 27: Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion** - local Waves 1-2 completed 2026-04-12; repo-backed Ubuntu plus Windows verification, reverse-tunnel retention proof, and final authenticated external smoke remain
+- [ ] **Phase 27: Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion** - local Waves 1-2 completed 2026-04-12; next is local Windows + Ubuntu verification, temporary tunnel proof, and final authenticated external smoke before any server transfer
 
 ## Phase Details
 
@@ -511,7 +511,7 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: execute the deployed Ubuntu plus Windows live run for Phase 27
+- Current next action: execute the local Windows plus Ubuntu live run for Phase 27 before any Windows-server transfer
   - Phase 25 is fully complete with `hold_rollout`
   - Phase 26 is now also complete with `hold_rollout`
   - Windows repo-backed validation passed on branch `windows-browser-block-api-20260331` at commit `8317e78`
@@ -522,6 +522,7 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
   - Authenticated external smoke still could not complete from tracked assets because no bearer token was found on the Windows host and Ubuntu remained unavailable by SSH
   - Earlier live evidence on 2026-04-12 still matters: the public API can work through `Ubuntu nginx -> 127.0.0.1:4010` when reverse tunnels are healthy, but the repo-backed restoration path has not reproduced that state durably yet
   - Phase 27 local Waves 1-2 are now complete: the canonical Ubuntu-SSH wrapper, GitHub-first handoff prompt, latest-state route, and `/internal/admin` section are landed and locally verified
+  - Phase 27 live execution is now intentionally re-scoped to the current local Windows machine plus Ubuntu, not the Windows server, so public API proof can be completed before any server transfer
   - The Windows host `192.168.88.250` no longer has an active `Caddy` edge in the live path: `80/443` do not listen there, `Get-Service *caddy*` returns no service, and `Get-Process caddy` returns no process
   - The actual live blocker that broke external chat was a dead reverse SSH tunnel from the Windows browser block to Ubuntu, not a broken public `nginx` path and not a broken MikroTik public ingress rule
   - After the tunnel recovery, Ubuntu again exposed `127.0.0.1:14021..14027` and `127.0.0.1:14040`, `readyz` returned `7/7 ready`, and the external chat smoke returned `200` with `ping-ok` on worker `shared-2`

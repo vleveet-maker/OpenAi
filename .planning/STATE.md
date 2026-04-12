@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 27 local Waves 1-2 complete; next action is the deployed Ubuntu plus Windows live run
+stopped_at: Phase 27 local Waves 1-2 complete; next action is the local Windows plus Ubuntu live run
 last_updated: "2026-04-12T15:42:00.000Z"
 last_activity: 2026-04-12 -- Phase 27 local Waves 1-2 completed; live verification pending
 progress:
@@ -21,14 +21,14 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-12)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Phase 27 - deployed-ubuntu-ssh-recovery-reverse-tunnel-task-retention-and-authenticated-external-smoke-completion
+**Current focus:** Phase 27 - local Windows plus Ubuntu SSH recovery, reverse-tunnel retention, and authenticated external smoke completion
 
 ## Current Position
 
 Phase: 27 (deployed-ubuntu-ssh-recovery-reverse-tunnel-task-retention-and-authenticated-external-smoke-completion) - EXECUTING
 Plan: 3 of 3
 Milestone: `v1.2 Rollout Stability`
-Status: Executing Phase 27 live follow-up
+Status: Executing Phase 27 local-plus-Ubuntu live follow-up
 Last activity: 2026-04-12 -- Phase 27 local Waves 1-2 completed; live verification pending
 
 Progress: [##########] 99%
@@ -56,6 +56,7 @@ Progress: [##########] 99%
 - Phase 25 is complete with `hold_rollout`: the deployed Windows host synced branch `windows-browser-block-api-20260331` at commit `8d269d6`, reran parser/tests/build successfully, and wrote the external-readiness artifact, but Ubuntu sync/topology could not be re-verified and the reverse-tunnel task did not stay running.
 - Phase 26 is complete with `hold_rollout`: the repo-backed Windows run reached commit `8317e78`, the latest-state route and `/internal/admin` were confirmed, but Ubuntu SSH still blocked the exact topology re-check, the reverse-tunnel task fell back to `Ready` with `LastTaskResult=1`, Ubuntu listener ports were missing, and the accessible Windows-host outside proof stayed at `404/404/501`.
 - Phase 27 local Waves 1-2 are now complete: the canonical Ubuntu-SSH wrapper, GitHub-first prompt, latest-state route, and `/internal/admin` section all landed and passed local verification.
+- Phase 27 live execution is intentionally re-scoped to the current local Windows machine plus Ubuntu before any Windows-server transfer.
 
 ### Remaining Rollout Debt
 
@@ -66,7 +67,7 @@ Progress: [##########] 99%
 ## Session Continuity
 
 Last session: 2026-04-12
-Stopped at: Phase 27 local Waves 1-2 complete; next action is the deployed Ubuntu plus Windows live run
+Stopped at: Phase 27 local Waves 1-2 complete; next action is the local Windows plus Ubuntu live run
 
 ## Accumulated Context
 
@@ -81,3 +82,4 @@ Stopped at: Phase 27 local Waves 1-2 complete; next action is the deployed Ubunt
 - Phase 27 planned: repo-backed Ubuntu SSH recovery, reverse-tunnel task retention, operator-surface visibility, and authenticated external smoke completion split into three waves
 - Phase 27 local Wave 1 complete: canonical Ubuntu-SSH wrapper, GitHub-first host prompt, and exact docs landed
 - Phase 27 local Wave 2 complete: latest Ubuntu-SSH recovery route, `/internal/admin` section, tests, and build landed
+- Phase 27 live scope changed: use the current local Windows machine plus Ubuntu for public API proof first, then transfer the proven path to the Windows server
