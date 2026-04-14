@@ -339,6 +339,13 @@
 - [x] **SBTU-03**: The latest Phase 36 token/SSH/listener recovery result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim
 - [ ] **SBTU-04**: Authenticated external `/healthz`, `/v1/models`, and `/v1/chat/completions` are rerun against `http://77.66.186.75` only after token plus listener truth, ending with exactly one verdict `externally_ready` or `hold_rollout`
 
+### Reverse Tunnel Listener Restoration And Authenticated Chat Smoke
+
+- [ ] **RTUN-01**: Reverse-tunnel startup can use key or password auth preserve-first without committing, printing, or storing SSH passwords or bearer tokens, and it retries intermittent SSH banner/session failures before giving up
+- [ ] **RTUN-02**: Ubuntu listener truth for `127.0.0.1:14021..14027` and `127.0.0.1:14040` is verified directly after tunnel startup and is not inferred from Windows task/process state alone
+- [ ] **RTUN-03**: The latest Phase 37 reverse-tunnel/chat-smoke result is visible through a durable latest artifact and an internal operator surface, including tunnel owner, Ubuntu listener truth, token source label, external smoke truth, verdict, and next blocker
+- [ ] **RTUN-04**: One authenticated external `/v1/chat/completions` against `http://77.66.186.75` runs only after token plus Ubuntu listener truth are green, returning exactly one final verdict `externally_ready` or `hold_rollout`
+
 ## Future Requirements
 
 ### Product Expansion
@@ -546,12 +553,16 @@
 | SBTU-02 | Phase 36 | Complete; listener truth is missing ports 14021..14027 plus 14040 |
 | SBTU-03 | Phase 36 | Complete |
 | SBTU-04 | Phase 36 | Blocked until token plus Ubuntu listener truth are green |
+| RTUN-01 | Phase 37 | Pending |
+| RTUN-02 | Phase 37 | Pending |
+| RTUN-03 | Phase 37 | Pending |
+| RTUN-04 | Phase 37 | Pending |
 
   **Coverage:**
-  - v1.2 requirements: 152 total
-  - Mapped to phases: 152
+  - v1.2 requirements: 156 total
+  - Mapped to phases: 156
   - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-14 after executing Phase 36*
+*Last updated: 2026-04-15 while planning Phase 37*

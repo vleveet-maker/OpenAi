@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planned
-stopped_at: Phase 37 added; next action is `$gsd-plan-phase 37`
-last_updated: "2026-04-14T21:13:51.000Z"
-last_activity: 2026-04-15 -- Phase 37 added for reverse SSH tunnel listener restoration and final authenticated external chat smoke
+stopped_at: Phase 37 planned; next action is `$gsd-execute-phase 37`
+last_updated: "2026-04-15T00:20:42.225+03:00"
+last_activity: 2026-04-15 -- Phase 37 planned for reverse SSH tunnel listener restoration and final authenticated external chat smoke
 progress:
   total_phases: 51
   completed_phases: 50
-  total_plans: 150
+  total_plans: 153
   completed_plans: 150
   percent: 98
 ---
@@ -25,18 +25,18 @@ See: `.planning/PROJECT.md` (updated 2026-04-14)
 
 ## Current Position
 
-Phase: 37 (restore-ubuntu-reverse-ssh-tunnel-listeners-and-complete-external-authenticated-chat-smoke-after-token-models-proof) -- ADDED / NOT PLANNED
-Plan: 0 of 0
+Phase: 37 (restore-ubuntu-reverse-ssh-tunnel-listeners-and-complete-external-authenticated-chat-smoke-after-token-models-proof) -- PLANNED
+Plan: 0 of 3
 Milestone: `v1.2 Rollout Stability`
-Status: Ready to plan Phase 37
-Last activity: 2026-04-15 -- Phase 37 added
+Status: Ready to execute Phase 37
+Last activity: 2026-04-15 -- Phase 37 planned
 
 Progress: [#########-] 98%
 
 ## Milestone Snapshot
 
 - Phases completed: `50 / 51`
-- Plans completed: `150 / 150`
+- Plans completed: `150 / 153`
 - Current roadmap: `.planning/ROADMAP.md`
 - Current requirements: `.planning/REQUIREMENTS.md`
 
@@ -75,8 +75,8 @@ Progress: [#########-] 98%
 
 ## Session Continuity
 
-Last session: 2026-04-14
-Stopped at: Phase 37 added; next action is `$gsd-plan-phase 37`
+Last session: 2026-04-15
+Stopped at: Phase 37 planned; next action is `$gsd-execute-phase 37`
 
 ## Accumulated Context
 
@@ -103,6 +103,7 @@ Stopped at: Phase 37 added; next action is `$gsd-plan-phase 37`
 - Phase 36 planned: three plans now target token source recovery/classification, Ubuntu SSH plus listener truth, operator-surface visibility, and one authenticated external isolated chat revalidation.
 - Phase 36 complete: implementation/tests/operator surface passed, direct SSH retry to `77.66.186.75:2222` resolved token source and authenticated public `/v1/models=200`, but Ubuntu listeners `14021..14027` plus `14040` are missing, so the next blocker is `ubuntu_listeners_missing`.
 - Phase 37 added: Restore Ubuntu reverse SSH tunnel listeners and complete external authenticated chat smoke after token/models proof
+- Phase 37 planned: three plans now target hardened reverse-tunnel startup, Ubuntu-side listener proof, operator-surface visibility, and one authenticated external chat smoke after listeners are green.
 
 ### Pending Todos
 
