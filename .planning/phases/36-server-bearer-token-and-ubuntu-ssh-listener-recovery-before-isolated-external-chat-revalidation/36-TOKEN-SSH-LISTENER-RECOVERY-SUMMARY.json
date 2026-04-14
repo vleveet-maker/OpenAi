@@ -1,0 +1,115 @@
+﻿{
+    "generatedAt":  "2026-04-14T23:36:42.7742007+03:00",
+    "scriptCompatibilityVersion":  "phase36-server-token-ssh-listener-recovery-v1",
+    "githubBranch":  "windows-browser-block-api-20260331",
+    "windowsRepoPath":  "D:\\OpenAi",
+    "windowsCommit":  "0075cff",
+    "publicBaseUrl":  "http://77.66.186.75",
+    "workerId":  "wife",
+    "ubuntuSshReachability":  [
+                                  {
+                                      "host":  "77.66.186.75",
+                                      "port":  2222,
+                                      "user":  "mi50",
+                                      "reachable":  false,
+                                      "failureKind":  "ssh_empty_response",
+                                      "error":  "ssh_empty_response"
+                                  }
+                              ],
+    "selectedUbuntuHost":  "",
+    "ubuntuRepoPath":  "",
+    "ubuntuCommit":  "",
+    "ubuntuBranch":  "",
+    "ubuntuRepoReachable":  false,
+    "ubuntuNginxConfigOk":  false,
+    "canonicalPublicUpstream":  "unconfirmed",
+    "canonicalPublicUpstreamPresent":  false,
+    "tokenResolution":  {
+                            "status":  "missing",
+                            "source":  "missing",
+                            "secretValueRecorded":  false,
+                            "remoteLookupError":  null
+                        },
+    "reverseTunnelTask":  {
+                              "name":  "OWMCGP Browser Block - Reverse Tunnels",
+                              "before":  {
+                                             "exists":  false,
+                                             "state":  "missing",
+                                             "lastTaskResult":  null,
+                                             "lastRunTime":  null,
+                                             "nextRunTime":  null
+                                         },
+                              "after":  {
+                                            "exists":  false,
+                                            "state":  "missing",
+                                            "lastTaskResult":  null,
+                                            "lastRunTime":  null,
+                                            "nextRunTime":  null
+                                        },
+                              "recoveryAttempt":  {
+                                                      "attempted":  false,
+                                                      "reason":  "not_needed_or_preconditions_missing",
+                                                      "taskStarted":  false
+                                                  }
+                          },
+    "ubuntuListenerTruth":  {
+                                "reachable":  false,
+                                "requiredPorts":  [
+                                                      14021,
+                                                      14022,
+                                                      14023,
+                                                      14024,
+                                                      14025,
+                                                      14026,
+                                                      14027,
+                                                      14040
+                                                  ],
+                                "presentPorts":  [
+
+                                                 ],
+                                "missingPorts":  [
+                                                     14021,
+                                                     14022,
+                                                     14023,
+                                                     14024,
+                                                     14025,
+                                                     14026,
+                                                     14027,
+                                                     14040
+                                                 ],
+                                "allRequiredPresent":  false,
+                                "error":  "ssh_unreachable"
+                            },
+    "externalHealthz":  {
+                            "ok":  false,
+                            "statusCode":  null,
+                            "error":  "The operation has timed out."
+                        },
+    "externalSmoke":  {
+                          "attempted":  false,
+                          "skippedReason":  "preconditions_not_met",
+                          "healthz":  {
+                                          "ok":  false,
+                                          "statusCode":  null,
+                                          "error":  "The operation has timed out."
+                                      },
+                          "models":  null,
+                          "chatCompletions":  null
+                      },
+    "phase35CarryForward":  {
+                                "robocopyExitCode11":  true,
+                                "note":  "Phase 35 reported copy_failed with robocopy exit code 11 for all seven server browser-data copy attempts."
+                            },
+    "recoveryStageVerdict":  "hold_rollout",
+    "revalidationAttempted":  false,
+    "nextBlocker":  "ubuntu_ssh_unreachable",
+    "preserveFirst":  {
+                          "profilesDeleted":  false,
+                          "cookiesCleared":  false,
+                          "localStorageCleared":  false,
+                          "blindFullPoolRestartPerformed":  false,
+                          "massReloginPerformed":  false
+                      },
+    "verdict":  "hold_rollout",
+    "summary":  "Hold rollout: nextBlocker=ubuntu_ssh_unreachable; tokenStatus=missing; selectedHost=none; listenersReady=False."
+}

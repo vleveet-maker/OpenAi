@@ -152,6 +152,8 @@ describe("internal admin page", () => {
     expect(response.text).toContain("No post-phase33 isolated external chat proof captured yet.");
     expect(response.text).toContain("Latest post-phase34 server isolated external chat proof");
     expect(response.text).toContain("No post-phase34 server isolated chat transfer captured yet.");
+    expect(response.text).toContain("Latest post-phase35 server token SSH listener recovery");
+    expect(response.text).toContain("No post-phase35 server token SSH listener recovery captured yet.");
     expect(response.text).toContain("Start pool now uses compact visible fallback");
     expect(response.text).toContain("Routine runtime");
     expect(response.text).toContain("Routine window mode");
@@ -204,6 +206,7 @@ describe("internal admin page", () => {
     expect(response.text).toContain("/internal/post-phase33-account-browser-isolation/latest");
     expect(response.text).toContain("/internal/post-phase33-isolated-external-chat-proof/latest");
     expect(response.text).toContain("/internal/post-phase34-server-isolated-chat-transfer/latest");
+    expect(response.text).toContain("/internal/post-phase35-server-token-ssh-listener-recovery/latest");
     expect(response.text).toContain("reauth_required");
     expect(response.text).toContain("reachable_but_unusable");
     expect(response.text).toContain("disconnected");
@@ -297,6 +300,7 @@ describe("internal admin page", () => {
     expect(response.text).toContain("Latest post-phase33 account browser isolation loaded from the internal latest-state artifact.");
     expect(response.text).toContain("Latest post-phase33 isolated external chat proof loaded from the internal latest-state artifact.");
     expect(response.text).toContain("Latest post-phase34 server isolated external chat proof loaded from the internal latest-state artifact.");
+    expect(response.text).toContain("Latest post-phase35 server token SSH listener recovery loaded from the internal latest-state artifact.");
     expect(response.text).toContain("selectedCanaryClassification");
     expect(response.text).toContain("runtimeUsability");
     expect(response.text).toContain("shared2Deferred");
@@ -313,6 +317,10 @@ describe("internal admin page", () => {
     expect(response.text).toContain("exhaustionReason");
     expect(response.text).toContain("Windows commit");
     expect(response.text).toContain("Ubuntu commit");
+    expect(response.text).toContain("Token status");
+    expect(response.text).toContain("Listeners ready");
+    expect(response.text).toContain("secretValueRecorded");
+    expect(response.text).toContain("phase35 robocopyExitCode11");
     expect(response.text).toContain("serverAccountInventory count");
     expect(response.text).toContain("copyResult");
     expect(response.text).toContain("shared-6");

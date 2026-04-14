@@ -336,7 +336,7 @@
 
 - [ ] **SBTU-01**: Bearer-token discovery can recover or exactly classify the token source for authenticated external smoke without committing, printing, or storing the token value in tracked artifacts
 - [ ] **SBTU-02**: Ubuntu SSH and listener truth can be verified directly, including repo path/hash, nginx `127.0.0.1:4010` upstream, and Ubuntu listeners `14021..14027` plus `14040`
-- [ ] **SBTU-03**: The latest Phase 36 token/SSH/listener recovery result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim
+- [x] **SBTU-03**: The latest Phase 36 token/SSH/listener recovery result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim
 - [ ] **SBTU-04**: Authenticated external `/healthz`, `/v1/models`, and `/v1/chat/completions` are rerun against `http://77.66.186.75` only after token plus listener truth, ending with exactly one verdict `externally_ready` or `hold_rollout`
 
 ## Future Requirements
@@ -542,10 +542,10 @@
 | STRV-02 | Phase 35 | Complete |
 | STRV-03 | Phase 35 | Complete |
 | STRV-04 | Phase 35 | Complete |
-| SBTU-01 | Phase 36 | Pending |
-| SBTU-02 | Phase 36 | Pending |
-| SBTU-03 | Phase 36 | Pending |
-| SBTU-04 | Phase 36 | Pending |
+| SBTU-01 | Phase 36 | Blocked by unstable Ubuntu SSH on 77.66.186.75:2222 |
+| SBTU-02 | Phase 36 | Blocked by unstable Ubuntu SSH on 77.66.186.75:2222 |
+| SBTU-03 | Phase 36 | Complete |
+| SBTU-04 | Phase 36 | Blocked until token plus Ubuntu listener truth are green |
 
   **Coverage:**
   - v1.2 requirements: 152 total
@@ -554,4 +554,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-14 after planning Phase 36*
+*Last updated: 2026-04-14 after executing Phase 36*

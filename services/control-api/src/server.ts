@@ -98,6 +98,9 @@ import {
   createInternalPostPhase34ServerIsolatedChatTransferRouter
 } from "./routes/internal-post-phase34-server-isolated-chat-transfer.js";
 import {
+  createInternalPostPhase35ServerTokenSshListenerRecoveryRouter
+} from "./routes/internal-post-phase35-server-token-ssh-listener-recovery.js";
+import {
   createInternalPostRemediationDegradedSmokeRouter
 } from "./routes/internal-post-remediation-degraded-smoke.js";
 import {
@@ -579,6 +582,9 @@ export function createControlApiApp(
       }),
       createInternalPostPhase34ServerIsolatedChatTransferRouter({
         statePath: config.postPhase34ServerIsolatedChatTransferStatePath
+      }),
+      createInternalPostPhase35ServerTokenSshListenerRecoveryRouter({
+        statePath: config.postPhase35ServerTokenSshListenerRecoveryStatePath
       }),
       createInternalPostRemediationDegradedSmokeRouter({
         statePath: config.postRemediationDegradedSmokeStatePath

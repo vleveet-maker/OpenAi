@@ -500,6 +500,15 @@ function renderInternalAdminPage(): string {
         </section>
 
         <section>
+          <h2>Latest post-phase35 server token SSH listener recovery</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase35-server-token-ssh-listener-recovery-copy">Loading latest post-phase35 server token SSH listener recovery...</p>
+            <div class="counts" id="post-phase35-server-token-ssh-listener-recovery-summary"></div>
+            <ul id="post-phase35-server-token-ssh-listener-recovery-details"></ul>
+          </div>
+        </section>
+
+        <section>
           <h2>Worker status summary</h2>
           <div class="counts" id="worker-summary"></div>
           <div class="worker-cards" id="worker-cards"></div>
@@ -2416,6 +2425,71 @@ function renderInternalAdminPage(): string {
         \`).join("");
       }
 
+      function renderPostPhase35ServerTokenSshListenerRecovery(latest) {
+        const copy = document.getElementById("post-phase35-server-token-ssh-listener-recovery-copy");
+        const summary = document.getElementById("post-phase35-server-token-ssh-listener-recovery-summary");
+        const details = document.getElementById("post-phase35-server-token-ssh-listener-recovery-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase35 server token SSH listener recovery captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const sshReachability = Array.isArray(latest.ubuntuSshReachability)
+          ? latest.ubuntuSshReachability
+          : [];
+        const listenerTruth = latest.ubuntuListenerTruth || {};
+        const externalSmoke = latest.externalSmoke || {};
+        const tokenResolution = latest.tokenResolution || {};
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["Token status", String(tokenResolution.status || "unknown")],
+          ["Token source", String(tokenResolution.source || "missing")],
+          ["Selected Ubuntu host", String(latest.selectedUbuntuHost || "none")],
+          ["Listeners ready", String(listenerTruth.allRequiredPresent ?? false)],
+          ["Next blocker", String(latest.nextBlocker || "none")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "recoveryStageVerdict: " + String(latest.recoveryStageVerdict || "unknown"),
+          "secretValueRecorded: " + String(tokenResolution.secretValueRecorded ?? false),
+          "ubuntuRepoPath: " + String(latest.ubuntuRepoPath || "unknown"),
+          "ubuntuCommit: " + String(latest.ubuntuCommit || "unknown"),
+          "nginxConfigOk: " + String(latest.ubuntuNginxConfigOk ?? false),
+          "canonicalPublicUpstream: " + String(latest.canonicalPublicUpstream || "unconfirmed"),
+          "presentPorts: " + String((listenerTruth.presentPorts || []).join ? listenerTruth.presentPorts.join(", ") : "none"),
+          "missingPorts: " + String((listenerTruth.missingPorts || []).join ? listenerTruth.missingPorts.join(", ") : "none"),
+          "external healthz: " + statusDetail(latest.externalHealthz),
+          "external models: " + statusDetail(externalSmoke.models),
+          "external chat: " + statusDetail(externalSmoke.chatCompletions),
+          "revalidationAttempted: " + String(latest.revalidationAttempted ?? false),
+          "phase35 robocopyExitCode11: " + String(latest.phase35CarryForward?.robocopyExitCode11 ?? false),
+          ...sshReachability.map((entry) =>
+            "ssh " +
+            String(entry.host || "unknown") +
+            ":" + String(entry.port || "unknown") +
+            " reachable=" + String(entry.reachable ?? false) +
+            " failureKind=" + String(entry.failureKind || "none")
+          ),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase35 server token SSH listener recovery loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
       function renderHostPool(pool) {
         currentHostPool = pool;
 
@@ -2482,7 +2556,7 @@ function renderInternalAdminPage(): string {
       }
 
       async function loadSnapshot() {
-        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse, readinessRecoveryResponse, postRecoveryRegressionResponse, zeroReadyRootCauseResponse, disconnectedBaselineRemediationResponse, postRemediationDegradedSmokeResponse, postStabilizationRuntimeInvestigationResponse, disconnectedRuntimeRemediationResponse, persistentDisconnectedRuntimeFollowupResponse, runtimeParityBackportRemediationResponse, postParityDisconnectedRuntimeRemediationResponse, postPhase21DisconnectedRuntimeFollowupResponse, postPhase22SmokeWrapperParityRemediationResponse, postPhase23ExactSmokeWrapperCompatRemediationResponse, postPhase24ExternalApiReadinessResponse, postPhase25ExternalRestorationResponse, postPhase26UbuntuSshRecoveryResponse, postPhase27LocalProxyBootstrapResponse, postPhase28LocalProxyTransportResponse, postPhase29Shared2Chat409Response, postPhase30Shared2BootstrapRecoveryResponse, postPhase31AccountSurfaceInventoryResponse, postPhase31SelectedCanaryChatRecoveryResponse, postPhase32RotatingReadyAccountChatProofResponse, postPhase33AccountBrowserIsolationResponse, postPhase33IsolatedExternalChatProofResponse, postPhase34ServerIsolatedChatTransferResponse] = await Promise.all([
+        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse, readinessRecoveryResponse, postRecoveryRegressionResponse, zeroReadyRootCauseResponse, disconnectedBaselineRemediationResponse, postRemediationDegradedSmokeResponse, postStabilizationRuntimeInvestigationResponse, disconnectedRuntimeRemediationResponse, persistentDisconnectedRuntimeFollowupResponse, runtimeParityBackportRemediationResponse, postParityDisconnectedRuntimeRemediationResponse, postPhase21DisconnectedRuntimeFollowupResponse, postPhase22SmokeWrapperParityRemediationResponse, postPhase23ExactSmokeWrapperCompatRemediationResponse, postPhase24ExternalApiReadinessResponse, postPhase25ExternalRestorationResponse, postPhase26UbuntuSshRecoveryResponse, postPhase27LocalProxyBootstrapResponse, postPhase28LocalProxyTransportResponse, postPhase29Shared2Chat409Response, postPhase30Shared2BootstrapRecoveryResponse, postPhase31AccountSurfaceInventoryResponse, postPhase31SelectedCanaryChatRecoveryResponse, postPhase32RotatingReadyAccountChatProofResponse, postPhase33AccountBrowserIsolationResponse, postPhase33IsolatedExternalChatProofResponse, postPhase34ServerIsolatedChatTransferResponse, postPhase35ServerTokenSshListenerRecoveryResponse] = await Promise.all([
           fetch("/internal/host-pool"),
           fetch("/internal/observability/summary"),
           fetch("/internal/observability/events?limit=50"),
@@ -2513,10 +2587,11 @@ function renderInternalAdminPage(): string {
           fetch("/internal/post-phase32-rotating-ready-account-chat-proof/latest"),
           fetch("/internal/post-phase33-account-browser-isolation/latest"),
           fetch("/internal/post-phase33-isolated-external-chat-proof/latest"),
-          fetch("/internal/post-phase34-server-isolated-chat-transfer/latest")
+          fetch("/internal/post-phase34-server-isolated-chat-transfer/latest"),
+          fetch("/internal/post-phase35-server-token-ssh-listener-recovery/latest")
         ]);
 
-        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok || !readinessRecoveryResponse.ok || !postRecoveryRegressionResponse.ok || !zeroReadyRootCauseResponse.ok || !disconnectedBaselineRemediationResponse.ok || !postRemediationDegradedSmokeResponse.ok || !postStabilizationRuntimeInvestigationResponse.ok || !disconnectedRuntimeRemediationResponse.ok || !persistentDisconnectedRuntimeFollowupResponse.ok || !runtimeParityBackportRemediationResponse.ok || !postParityDisconnectedRuntimeRemediationResponse.ok || !postPhase21DisconnectedRuntimeFollowupResponse.ok || !postPhase22SmokeWrapperParityRemediationResponse.ok || !postPhase23ExactSmokeWrapperCompatRemediationResponse.ok || !postPhase24ExternalApiReadinessResponse.ok || !postPhase25ExternalRestorationResponse.ok || !postPhase26UbuntuSshRecoveryResponse.ok || !postPhase27LocalProxyBootstrapResponse.ok || !postPhase28LocalProxyTransportResponse.ok || !postPhase29Shared2Chat409Response.ok || !postPhase30Shared2BootstrapRecoveryResponse.ok || !postPhase31AccountSurfaceInventoryResponse.ok || !postPhase31SelectedCanaryChatRecoveryResponse.ok || !postPhase32RotatingReadyAccountChatProofResponse.ok || !postPhase33AccountBrowserIsolationResponse.ok || !postPhase33IsolatedExternalChatProofResponse.ok || !postPhase34ServerIsolatedChatTransferResponse.ok) {
+        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok || !readinessRecoveryResponse.ok || !postRecoveryRegressionResponse.ok || !zeroReadyRootCauseResponse.ok || !disconnectedBaselineRemediationResponse.ok || !postRemediationDegradedSmokeResponse.ok || !postStabilizationRuntimeInvestigationResponse.ok || !disconnectedRuntimeRemediationResponse.ok || !persistentDisconnectedRuntimeFollowupResponse.ok || !runtimeParityBackportRemediationResponse.ok || !postParityDisconnectedRuntimeRemediationResponse.ok || !postPhase21DisconnectedRuntimeFollowupResponse.ok || !postPhase22SmokeWrapperParityRemediationResponse.ok || !postPhase23ExactSmokeWrapperCompatRemediationResponse.ok || !postPhase24ExternalApiReadinessResponse.ok || !postPhase25ExternalRestorationResponse.ok || !postPhase26UbuntuSshRecoveryResponse.ok || !postPhase27LocalProxyBootstrapResponse.ok || !postPhase28LocalProxyTransportResponse.ok || !postPhase29Shared2Chat409Response.ok || !postPhase30Shared2BootstrapRecoveryResponse.ok || !postPhase31AccountSurfaceInventoryResponse.ok || !postPhase31SelectedCanaryChatRecoveryResponse.ok || !postPhase32RotatingReadyAccountChatProofResponse.ok || !postPhase33AccountBrowserIsolationResponse.ok || !postPhase33IsolatedExternalChatProofResponse.ok || !postPhase34ServerIsolatedChatTransferResponse.ok || !postPhase35ServerTokenSshListenerRecoveryResponse.ok) {
           throw new Error("Internal observability endpoints are unavailable");
         }
 
@@ -2551,6 +2626,7 @@ function renderInternalAdminPage(): string {
         const postPhase33AccountBrowserIsolationPayload = await postPhase33AccountBrowserIsolationResponse.json();
         const postPhase33IsolatedExternalChatProofPayload = await postPhase33IsolatedExternalChatProofResponse.json();
         const postPhase34ServerIsolatedChatTransferPayload = await postPhase34ServerIsolatedChatTransferResponse.json();
+        const postPhase35ServerTokenSshListenerRecoveryPayload = await postPhase35ServerTokenSshListenerRecoveryResponse.json();
         const workers = workersPayload.workers ?? [];
         const lifecycleEvents = events.filter((event) => lifecycleEventTypes.has(event.eventType));
         const browserAccessResults = await Promise.all(
@@ -2590,6 +2666,7 @@ function renderInternalAdminPage(): string {
         renderPostPhase33AccountBrowserIsolation(postPhase33AccountBrowserIsolationPayload.latest ?? null);
         renderPostPhase33IsolatedExternalChatProof(postPhase33IsolatedExternalChatProofPayload.latest ?? null);
         renderPostPhase34ServerIsolatedChatTransfer(postPhase34ServerIsolatedChatTransferPayload.latest ?? null);
+        renderPostPhase35ServerTokenSshListenerRecovery(postPhase35ServerTokenSshListenerRecoveryPayload.latest ?? null);
         renderWorkerSummary(summary, workers);
         renderEvents(
           "recent-failures",

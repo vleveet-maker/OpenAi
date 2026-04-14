@@ -141,3 +141,21 @@ That artifact captures:
 - verdict: `externally_ready` or `hold_rollout`
 
 Final authenticated smoke may run from whichever host actually has the bearer token, as long as it still targets `77.66.186.75`.
+
+## Phase 36 Token, SSH, And Listener Gate
+
+Phase 36 is the narrow gate after server isolated-browser transfer proof stayed on hold.
+
+Canonical wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-server-token-ssh-listeners-and-external-chat.ps1 `
+  -RemoteHosts 77.66.186.75,95.78.126.163 `
+  -RemotePort 2222 `
+  -RemoteUser mi50 `
+  -PublicBaseUrl http://77.66.186.75 `
+  -WorkerId wife `
+  -AttemptTunnelRecovery
+```
+
+The wrapper records only redacted token source labels. It must not write bearer-token values or SSH passwords to artifacts. External chat revalidation is attempted only after token source and Ubuntu listener truth are green.

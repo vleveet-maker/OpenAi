@@ -160,6 +160,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 
 - Phase 34 is now complete with `externally_ready`: on the isolated per-account browser-root baseline, `wife` produced the first honest outside `/v1/chat/completions = 200` with `assistantReplyText = probe-ok`, which means local external API readiness is now proven on this machine.
 - Phase 35 is now complete with `hold_rollout`: server transfer/revalidation reached public `/healthz=200`, but `tokenSource=missing` blocked authenticated `/v1/models` and `/v1/chat/completions`, Ubuntu SSH/listener truth stayed unconfirmed, and all seven server browser-data copy attempts reported `robocopy exit code 11`.
+- Phase 36 is now complete with `hold_rollout`: the token/SSH/listener wrapper, latest route, admin section, focused tests, full tests, and build are green, but live SSH to `77.66.186.75:2222` returned intermittent empty/banner-timeout responses, so bearer-token lookup, Ubuntu listener truth, and authenticated external chat were correctly skipped.
 
 ## Key Decisions
 
@@ -208,6 +209,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 | Once the isolated account roots are manually activated and composer-visible, the next proof should use the full isolated ready set and stop at the first real outside chat success | After the 2026-04-14 manual activation pass, the blocker is no longer account-surface readiness; the product now needs one honest external `chat` success on the isolated baseline rather than more surface debugging | - Recorded during Phase 34 planning |
 | Keep the isolated per-account browser-root model as the current local truth baseline | Phase 34 proved that the isolated model can carry the first honest outside `/v1/chat/completions = 200`, so server transfer should reuse this shape instead of revisiting the retired shared-root browser model | - Recorded during Phase 34 completion |
 | Treat server transfer as a revalidation of the proven isolated model, not as a return to the retired shared-root browser layout | Phase 34 already proved the local architecture, so the next honest risk is server transfer/revalidation on Windows browser-block plus Ubuntu public owner, performed GitHub-first and preserve-first | - Recorded during Phase 35 planning |
+| Fix Ubuntu SSH/NAT stability before more browser or proxy debugging | Phase 36 proved the current blocker is the public SSH ingress returning empty/banner-timeout responses on repeated attempts; without stable SSH, the agent cannot safely retrieve token source or confirm Ubuntu-side reverse-tunnel listeners | - Recorded during Phase 36 completion |
 
 ## Evolution
 
@@ -227,4 +229,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-14 after live completion of Phase 35 with `hold_rollout`*
+*Last updated: 2026-04-14 after live completion of Phase 36 with `hold_rollout`*

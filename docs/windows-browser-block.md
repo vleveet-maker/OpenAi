@@ -186,5 +186,10 @@ Public authenticated chat against `http://77.66.186.75` must be rerun only after
 - [prepare-isolated-account-browser-roots.ps1](d:/OpenAi/infra/windows-block/prepare-isolated-account-browser-roots.ps1)
 - [revalidate-server-isolated-external-chat-proof.ps1](d:/OpenAi/infra/windows-block/revalidate-server-isolated-external-chat-proof.ps1)
 - [recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1](d:/OpenAi/infra/windows-block/recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1)
+- [recover-server-token-ssh-listeners-and-external-chat.ps1](d:/OpenAi/infra/windows-block/recover-server-token-ssh-listeners-and-external-chat.ps1)
 - [stabilize-local-proxy-tls-and-bounded-worker-bootstrap.ps1](d:/OpenAi/infra/windows-block/stabilize-local-proxy-tls-and-bounded-worker-bootstrap.ps1)
 - [remote-relay-server.md](d:/OpenAi/docs/remote-relay-server.md)
+
+## Phase 36 Server Gate
+
+Before claiming that the transferred server path is externally ready, run the Phase 36 token/SSH/listener gate. This step checks bearer-token source, Ubuntu SSH, Ubuntu-side listeners `14021..14027` plus `14040`, and only then performs authenticated external smoke. It does not delete profiles, clear cookies/localStorage, restart the full pool, or relogin accounts.
