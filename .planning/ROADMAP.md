@@ -67,7 +67,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 33.1: Dedicated per-account desktop Chrome roots and isolated account-browser storage before external chat proof** - (INSERTED) completed 2026-04-14 with `isolated_browser_roots_ready`; the old shared browser-root model is now retired, and the current machine has one isolated desktop Chrome root plus one browser-data root per account
 - [x] **Phase 34: Preserve-first external chat proof on isolated per-account browser roots** - completed 2026-04-14 with `externally_ready`; the isolated browser-root baseline proved the first honest outside `/v1/chat/completions = 200`, with `wife` returning `probe-ok`
 - [x] **Phase 35: Server transfer and revalidation of isolated per-account external chat proof** - completed 2026-04-14 with `hold_rollout`; the local helper/operator surface stayed green and the live server revalidation reached public `/healthz=200`, but bearer-token discovery was missing, Ubuntu SSH/listener truth was unconfirmed, authenticated models/chat were not proven, and seven server copy attempts reported `robocopy exit code 11`
-- [x] **Phase 36: Server bearer token and Ubuntu SSH listener recovery before isolated external chat revalidation** - completed 2026-04-14 with `hold_rollout`; the wrapper/operator surface are in place and public HTTP edge still responds, but repeated SSH to `77.66.186.75:2222` returned empty/banner-timeout behavior, so bearer-token lookup, Ubuntu listener truth, and authenticated external chat were correctly skipped
+- [x] **Phase 36: Server bearer token and Ubuntu SSH listener recovery before isolated external chat revalidation** - completed 2026-04-15 with `hold_rollout`; direct SSH retry to `77.66.186.75:2222` succeeded, token source was resolved, Ubuntu nginx/public models are green, and the remaining blocker is missing reverse-tunnel listeners `14021..14027` plus `14040`
 
 ## Phase Details
 
@@ -1059,7 +1059,7 @@ Plans:
 **Requirements**: SBTU-01, SBTU-02, SBTU-03, SBTU-04
 **Depends on:** Phase 35
 **Plans:** 3 plans
-**Current status:** Completed on 2026-04-14 with `hold_rollout`. The implementation and operator surface are ready, but the live run stopped at `nextBlocker=ubuntu_ssh_unreachable`: `77.66.186.75:2222` is TCP-open yet returns intermittent empty SSH banner/session responses. Authenticated external smoke was intentionally skipped because bearer-token and Ubuntu listener truth were not green.
+**Current status:** Completed on 2026-04-15 with `hold_rollout`. The implementation and operator surface are ready. Direct SSH retry to `77.66.186.75:2222` succeeded, bearer token source resolved from the Ubuntu env file, nginx still proxies to `127.0.0.1:4010`, and authenticated `/v1/models=200`. Authenticated chat was intentionally skipped because Ubuntu listeners `14021..14027` and `14040` are missing.
 
 **Success Criteria** (what must be TRUE):
   1. Bearer-token discovery is recovered or exactly classified, with only redacted source labels written to artifacts and no token values committed or printed.

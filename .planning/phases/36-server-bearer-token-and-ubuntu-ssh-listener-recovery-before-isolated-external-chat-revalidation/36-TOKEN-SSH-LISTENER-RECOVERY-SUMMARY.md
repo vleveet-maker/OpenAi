@@ -1,26 +1,26 @@
 ﻿# Phase 36 Token SSH Listener Recovery Summary
 
-- Generated: 2026-04-14T23:36:42.7742007+03:00
+- Generated: 2026-04-15T00:07:08.1595472+03:00
 - Script compatibility version: phase36-server-token-ssh-listener-recovery-v1
 - Verdict: hold_rollout
 - Recovery stage verdict: hold_rollout
-- Summary: Hold rollout: nextBlocker=ubuntu_ssh_unreachable; tokenStatus=missing; selectedHost=none; listenersReady=False.
+- Summary: Hold rollout: token and public models are green, but Ubuntu listeners 14021..14027 and 14040 are missing, so authenticated chat was not run.
 - Public base URL: http://77.66.186.75
 - WorkerId: wife
 
 ## Token
 
-- status: missing
-- source: missing
+- status: resolved
+- source: ssh:77.66.186.75:remote_env_file:REMOTE_RELAY_API_TOKEN
 - secretValueRecorded: False
 
 ## Ubuntu SSH
 
-- selectedUbuntuHost: none
-- ubuntuRepoPath: unknown
+- selectedUbuntuHost: 77.66.186.75
+- ubuntuRepoPath: /opt/owmcgp-remote-relay/services/control-api
 - ubuntuCommit: unknown
-- nginxConfigOk: False
-- canonicalPublicUpstreamPresent: False
+- nginxConfigOk: True
+- canonicalPublicUpstreamPresent: True
 
 ## Listeners
 
@@ -30,10 +30,10 @@
 
 ## External Smoke
 
-- healthz: status= ok=False
+- healthz: status=200 ok=True
 - revalidationAttempted: False
 - smokeOk: False
-- nextBlocker: ubuntu_ssh_unreachable
+- nextBlocker: ubuntu_listeners_missing
 
 ## Preserve-First
 

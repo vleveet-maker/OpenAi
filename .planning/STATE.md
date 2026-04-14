@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: blocked
-stopped_at: Phase 36 completed with `hold_rollout`; next action is to stabilize Ubuntu SSH/NAT on `77.66.186.75:2222`, then rerun the Phase 36 wrapper
-last_updated: "2026-04-14T20:45:00.000Z"
-last_activity: 2026-04-14 -- Phase 36 executed; blocker is unstable Ubuntu SSH banner/session on 77.66.186.75:2222
+stopped_at: Phase 36 completed with `hold_rollout`; next action is to restore reverse SSH tunnel listeners on Ubuntu ports `14021..14027` plus `14040`
+last_updated: "2026-04-14T21:07:08.000Z"
+last_activity: 2026-04-15 -- Phase 36 direct SSH retry resolved token/models; blocker is missing Ubuntu listeners 14021..14027 plus 14040
 progress:
   total_phases: 50
   completed_phases: 50
@@ -21,15 +21,15 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-14)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Phase 36 completed with `hold_rollout`; next focus is Ubuntu SSH/NAT stabilization before rerunning token/listener/authenticated-smoke proof
+**Current focus:** Phase 36 completed with `hold_rollout`; next focus is reverse SSH tunnel restoration before authenticated chat smoke
 
 ## Current Position
 
 Phase: 36 (server-bearer-token-and-ubuntu-ssh-listener-recovery-before-isolated-external-chat-revalidation) -- COMPLETE / HOLD
 Plan: 3 of 3
 Milestone: `v1.2 Rollout Stability`
-Status: Blocked on unstable Ubuntu SSH ingress before authenticated external chat revalidation
-Last activity: 2026-04-14 -- Phase 36 executed and recorded `nextBlocker=ubuntu_ssh_unreachable`
+Status: Blocked on missing Ubuntu reverse-tunnel listeners before authenticated external chat revalidation
+Last activity: 2026-04-15 -- Phase 36 direct SSH retry recorded `nextBlocker=ubuntu_listeners_missing`
 
 Progress: [##########] 100%
 
@@ -68,7 +68,7 @@ Progress: [##########] 100%
 
 - Durable reverse-tunnel retention still needs a stable non-manual path; temporary password-backed tunnels can expose the right Ubuntu listeners, but this is still a proof path, not durable retention.
 - The local external chat proof remains green on the isolated browser-root baseline; the remaining rollout work is now server-side token/SSH/listener recovery and revalidation of the same proven shape.
-- Phase 36 is complete with `hold_rollout`: the wrapper, latest route, and admin surface are in place, but live SSH to `77.66.186.75:2222` returned intermittent empty/banner-timeout behavior, so bearer-token lookup, Ubuntu listener truth, and authenticated external chat were correctly skipped.
+- Phase 36 is complete with `hold_rollout`: token source and public `/v1/models` are now green through `77.66.186.75`, but Ubuntu listeners `14021..14027` and `14040` are missing, so authenticated external chat was correctly skipped.
 - `shared-2` is back in the active isolated ready set after manual activation, but it is no longer the gate for local API readiness because `wife` has already proven the first honest outside chat success.
 - Local proxy TLS egress on `127.0.0.1:7897` still needs repair: `CONNECT` succeeds, but TLS resets on `https://www.gstatic.com/generate_204` and `https://chatgpt.com`.
 - Dedicated per-account browser isolation has now landed and already produced the first real external chat success locally; any next rollout step should preserve that isolated model instead of going back to the retired shared-root layout.
@@ -76,7 +76,7 @@ Progress: [##########] 100%
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Phase 36 completed with `hold_rollout`; next action is to stabilize Ubuntu SSH/NAT on `77.66.186.75:2222`, then rerun `infra/windows-block/recover-server-token-ssh-listeners-and-external-chat.ps1`
+Stopped at: Phase 36 completed with `hold_rollout`; next action is to restore reverse SSH tunnels so Ubuntu listens on `14021..14027` plus `14040`, then rerun authenticated external chat
 
 ## Accumulated Context
 
@@ -101,7 +101,7 @@ Stopped at: Phase 36 completed with `hold_rollout`; next action is to stabilize 
 - Phase 35 complete: the live server transfer/revalidation wrote the Phase 35 artifact and latest-state truth, reached public `/healthz=200`, but stopped at `hold_rollout` because `tokenSource=missing`, Ubuntu SSH/listener truth was unconfirmed, and server browser-data copy reported `robocopy exit code 11` across all seven accounts.
 - Phase 36 added: Server bearer token and Ubuntu SSH listener recovery before isolated external chat revalidation
 - Phase 36 planned: three plans now target token source recovery/classification, Ubuntu SSH plus listener truth, operator-surface visibility, and one authenticated external isolated chat revalidation.
-- Phase 36 complete: implementation/tests/operator surface passed, public HTTP edge still responds, but the live wrapper stopped at `nextBlocker=ubuntu_ssh_unreachable` because the public SSH ingress returned empty/banner-timeout responses on repeated attempts.
+- Phase 36 complete: implementation/tests/operator surface passed, direct SSH retry to `77.66.186.75:2222` resolved token source and authenticated public `/v1/models=200`, but Ubuntu listeners `14021..14027` plus `14040` are missing, so the next blocker is `ubuntu_listeners_missing`.
 
 ### Pending Todos
 

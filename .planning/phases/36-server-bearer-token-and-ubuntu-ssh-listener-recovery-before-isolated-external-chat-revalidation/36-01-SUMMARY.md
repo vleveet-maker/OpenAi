@@ -9,11 +9,11 @@
 
 ## Live Truth
 
-- Final live wrapper verdict: `hold_rollout`.
-- Exact next blocker: `ubuntu_ssh_unreachable`.
-- `77.66.186.75:2222` is TCP-open, but the SSH service/NAT path returned empty banner/session responses during the bounded wrapper run.
-- Bearer token was not resolved because the Ubuntu-side token lookup could not be completed over SSH.
-- Ubuntu listener truth for `14021..14027` and `14040` could not be confirmed.
+- Final live verdict: `hold_rollout`.
+- Exact next blocker after direct SSH retry: `ubuntu_listeners_missing`.
+- `77.66.186.75:2222` can connect as `mi50` with retry; `95.78.126.163:2222` still timed out waiting for SSH banner.
+- Bearer token was resolved from `ssh:77.66.186.75:remote_env_file:REMOTE_RELAY_API_TOKEN`; the token value was not printed or stored.
+- Ubuntu listener truth confirmed that `14021..14027` and `14040` are missing.
 
 ## Preserve-First
 

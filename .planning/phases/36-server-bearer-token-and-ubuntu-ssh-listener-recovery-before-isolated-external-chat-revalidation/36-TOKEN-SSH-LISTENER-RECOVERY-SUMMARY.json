@@ -1,9 +1,9 @@
 ﻿{
-    "generatedAt":  "2026-04-14T23:36:42.7742007+03:00",
+    "generatedAt":  "2026-04-15T00:07:08.1595472+03:00",
     "scriptCompatibilityVersion":  "phase36-server-token-ssh-listener-recovery-v1",
     "githubBranch":  "windows-browser-block-api-20260331",
     "windowsRepoPath":  "D:\\OpenAi",
-    "windowsCommit":  "0075cff",
+    "windowsCommit":  "b64fc44",
     "publicBaseUrl":  "http://77.66.186.75",
     "workerId":  "wife",
     "ubuntuSshReachability":  [
@@ -11,22 +11,22 @@
                                       "host":  "77.66.186.75",
                                       "port":  2222,
                                       "user":  "mi50",
-                                      "reachable":  false,
-                                      "failureKind":  "ssh_empty_response",
-                                      "error":  "ssh_empty_response"
+                                      "reachable":  true,
+                                      "failureKind":  null,
+                                      "error":  null
                                   }
                               ],
-    "selectedUbuntuHost":  "",
-    "ubuntuRepoPath":  "",
+    "selectedUbuntuHost":  "77.66.186.75",
+    "ubuntuRepoPath":  "/opt/owmcgp-remote-relay/services/control-api",
     "ubuntuCommit":  "",
     "ubuntuBranch":  "",
-    "ubuntuRepoReachable":  false,
-    "ubuntuNginxConfigOk":  false,
-    "canonicalPublicUpstream":  "unconfirmed",
-    "canonicalPublicUpstreamPresent":  false,
+    "ubuntuRepoReachable":  true,
+    "ubuntuNginxConfigOk":  true,
+    "canonicalPublicUpstream":  "Ubuntu nginx -> 127.0.0.1:4010",
+    "canonicalPublicUpstreamPresent":  true,
     "tokenResolution":  {
-                            "status":  "missing",
-                            "source":  "missing",
+                            "status":  "resolved",
+                            "source":  "ssh:77.66.186.75:remote_env_file:REMOTE_RELAY_API_TOKEN",
                             "secretValueRecorded":  false,
                             "remoteLookupError":  null
                         },
@@ -53,7 +53,7 @@
                                                   }
                           },
     "ubuntuListenerTruth":  {
-                                "reachable":  false,
+                                "reachable":  true,
                                 "requiredPorts":  [
                                                       14021,
                                                       14022,
@@ -78,22 +78,26 @@
                                                      14040
                                                  ],
                                 "allRequiredPresent":  false,
-                                "error":  "ssh_unreachable"
+                                "error":  null
                             },
     "externalHealthz":  {
-                            "ok":  false,
-                            "statusCode":  null,
-                            "error":  "The operation has timed out."
+                            "ok":  true,
+                            "statusCode":  200,
+                            "error":  null
                         },
     "externalSmoke":  {
                           "attempted":  false,
-                          "skippedReason":  "preconditions_not_met",
+                          "skippedReason":  "listeners_missing",
                           "healthz":  {
-                                          "ok":  false,
-                                          "statusCode":  null,
-                                          "error":  "The operation has timed out."
+                                          "ok":  true,
+                                          "statusCode":  200,
+                                          "error":  null
                                       },
-                          "models":  null,
+                          "models":  {
+                                         "ok":  true,
+                                         "statusCode":  200,
+                                         "error":  null
+                                     },
                           "chatCompletions":  null
                       },
     "phase35CarryForward":  {
@@ -102,7 +106,7 @@
                             },
     "recoveryStageVerdict":  "hold_rollout",
     "revalidationAttempted":  false,
-    "nextBlocker":  "ubuntu_ssh_unreachable",
+    "nextBlocker":  "ubuntu_listeners_missing",
     "preserveFirst":  {
                           "profilesDeleted":  false,
                           "cookiesCleared":  false,
@@ -111,5 +115,5 @@
                           "massReloginPerformed":  false
                       },
     "verdict":  "hold_rollout",
-    "summary":  "Hold rollout: nextBlocker=ubuntu_ssh_unreachable; tokenStatus=missing; selectedHost=none; listenersReady=False."
+    "summary":  "Hold rollout: token and public models are green, but Ubuntu listeners 14021..14027 and 14040 are missing, so authenticated chat was not run."
 }
