@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 35 local checkpoint 2/3 complete; next action is the live Windows+Ubuntu revalidation run for the proven isolated external chat path
-last_updated: "2026-04-14T20:30:00+03:00"
-last_activity: 2026-04-14 -- Phase 35 plans 01 and 02 completed locally; 35-03 live pending
+status: ready_for_next_phase
+stopped_at: Phase 35 complete with hold_rollout; next action is adding a bounded token + Ubuntu SSH/listener recovery phase before rerunning server external chat
+last_updated: "2026-04-14T22:34:30+03:00"
+last_activity: 2026-04-14 -- Phase 35 live server revalidation completed with hold_rollout
 progress:
   total_phases: 49
-  completed_phases: 48
+  completed_phases: 49
   total_plans: 147
-  completed_plans: 146
-  percent: 99
+  completed_plans: 147
+  percent: 100
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-14)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Phase 35 — server-transfer-and-revalidation-of-isolated-per-account-external-chat-proof
+**Current focus:** Phase 35 complete; next phase should recover bearer-token discovery plus Ubuntu SSH/listener truth before rerunning server external chat
 
 ## Current Position
 
-Phase: 35 (server-transfer-and-revalidation-of-isolated-per-account-external-chat-proof) — EXECUTING
-Plan: 1 of 3
+Phase: 35 (server-transfer-and-revalidation-of-isolated-per-account-external-chat-proof) - COMPLETE
+Plan: 3 of 3
 Milestone: `v1.2 Rollout Stability`
-Status: Executing Phase 35
-Last activity: 2026-04-14 -- Phase 35 execution started
+Status: Ready for next phase
+Last activity: 2026-04-14 -- Phase 35 completed with hold_rollout
 
-Progress: [#########-] 98%
+Progress: [##########] 100%
 
 ## Milestone Snapshot
 
-- Phases completed: `48 / 49`
-- Plans completed: `144 / 144`
+- Phases completed: `49 / 49`
+- Plans completed: `147 / 147`
 - Current roadmap: `.planning/ROADMAP.md`
 - Current requirements: `.planning/REQUIREMENTS.md`
 
@@ -62,12 +62,13 @@ Progress: [#########-] 98%
 - Phase 33.1 is now complete with `isolated_browser_roots_ready`: every current local account has one dedicated desktop Chrome root plus one dedicated browser-data root, and the isolated windows stayed open for inspection without cross-account reuse.
 - After manual activation on the isolated roots, all seven local accounts (`dad`, `wife`, `shared-1`, `shared-2`, `shared-3`, `shared-4`, `shared-5`) now sit on real ChatGPT pages with a visible composer, so Phase 34 can treat the full isolated set as ready again.
 - Phase 34 is now complete with `externally_ready`: on the isolated browser-root baseline, `dad` still failed with `409 chat_bootstrap_failed / worker_chat_bootstrap_timeout`, but `wife` produced the first honest outside `/v1/chat/completions = 200` with `assistantReplyText = probe-ok`.
+- Phase 35 is now complete with `hold_rollout`: the server-transfer wrapper and operator surface are live, public `/healthz` returned `200`, but bearer-token discovery was missing, Ubuntu SSH/listener truth was unconfirmed, authenticated models/chat were not proven, and server browser-data copy reported `robocopy exit code 11` for all seven accounts.
 
 ### Remaining Rollout Debt
 
 - Durable reverse-tunnel retention still needs a stable non-manual path; temporary password-backed tunnels can expose the right Ubuntu listeners, but this is still a proof path, not durable retention.
-- The local external chat proof is now green on the isolated browser-root baseline; the remaining rollout work has moved from local proof to server transfer and server-side revalidation of the same proven shape.
-- Phase 35 is now the active step, but only its live slice remains: the local helper/wrapper/operator-surface work is complete, and the next honest move is the Windows+Ubuntu revalidation run on the proven isolated browser-root model instead of reopening the retired shared-root model.
+- The local external chat proof remains green on the isolated browser-root baseline; the remaining rollout work is now server-side token/SSH/listener recovery and revalidation of the same proven shape.
+- Phase 35 is closed with `hold_rollout`; the next honest move is a bounded follow-up for bearer-token discovery plus Ubuntu SSH/listener truth before rerunning server external chat, not another local browser architecture change.
 - `shared-2` is back in the active isolated ready set after manual activation, but it is no longer the gate for local API readiness because `wife` has already proven the first honest outside chat success.
 - Local proxy TLS egress on `127.0.0.1:7897` still needs repair: `CONNECT` succeeds, but TLS resets on `https://www.gstatic.com/generate_204` and `https://chatgpt.com`.
 - Dedicated per-account browser isolation has now landed and already produced the first real external chat success locally; any next rollout step should preserve that isolated model instead of going back to the retired shared-root layout.
@@ -75,7 +76,7 @@ Progress: [#########-] 98%
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Phase 35 local checkpoint 2/3 complete; next action is the live Windows+Ubuntu revalidation run for the proven isolated external chat path
+Stopped at: Phase 35 complete with hold_rollout; next action is a bounded token + Ubuntu SSH/listener recovery phase before rerunning server external chat
 
 ## Accumulated Context
 
@@ -97,7 +98,7 @@ Stopped at: Phase 35 local checkpoint 2/3 complete; next action is the live Wind
 - Phase 34 added: Preserve-first external chat proof on isolated per-account browser roots
 - Phase 34 complete: the preserve-first isolated-root proof reached the first real outside chat success, with `dad` failing narrowly on `worker_chat_bootstrap_timeout` and `wife` succeeding on `/v1/chat/completions = 200` with `probe-ok`.
 - Phase 35 added: Server transfer and revalidation of isolated per-account external chat proof
-- Phase 35 local checkpoint reached: `35-01` and `35-02` are complete with the server-transfer helper, canonical revalidation wrapper, GitHub-first host prompt, latest-route, and `/internal/admin` section now green locally; `35-03` remains the live Windows+Ubuntu rerun.
+- Phase 35 complete: the live server transfer/revalidation wrote the Phase 35 artifact and latest-state truth, reached public `/healthz=200`, but stopped at `hold_rollout` because `tokenSource=missing`, Ubuntu SSH/listener truth was unconfirmed, and server browser-data copy reported `robocopy exit code 11` across all seven accounts.
 
 ### Pending Todos
 

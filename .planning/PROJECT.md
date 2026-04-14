@@ -159,7 +159,7 @@ A family user gets a stable, bounded 60-minute conversation through a managed Ch
 - Phase 24 is now planned: the next pass stays narrow around exact smoke-wrapper compat backport for probe-public-api.ps1, 	est-rollout-smoke.ps1, and emediate-post-phase22-smoke-wrapper-parity-and-persistent-disconnected-runtime.ps1, followed by the same preserve-first remediation plus exact smoke rerun on the archive-overlaid scripts.
 
 - Phase 34 is now complete with `externally_ready`: on the isolated per-account browser-root baseline, `wife` produced the first honest outside `/v1/chat/completions = 200` with `assistantReplyText = probe-ok`, which means local external API readiness is now proven on this machine.
-- Phase 35 is now at local checkpoint `2/3`: the server-transfer helper, canonical revalidation wrapper, GitHub-first host prompt, and operator surface are done locally, and the only remaining work is the live Windows+Ubuntu revalidation run on the proven isolated browser-root model.
+- Phase 35 is now complete with `hold_rollout`: server transfer/revalidation reached public `/healthz=200`, but `tokenSource=missing` blocked authenticated `/v1/models` and `/v1/chat/completions`, Ubuntu SSH/listener truth stayed unconfirmed, and all seven server browser-data copy attempts reported `robocopy exit code 11`.
 
 ## Key Decisions
 
@@ -227,4 +227,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-14 after local completion of Phase 35 plans 01 and 02*
+*Last updated: 2026-04-14 after live completion of Phase 35 with `hold_rollout`*

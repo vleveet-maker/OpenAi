@@ -327,10 +327,10 @@
 
 ### Server Transfer And Revalidation Of Isolated Per-Account External Chat Proof
 
-- [ ] **STRV-01**: The project can sync the Windows browser-block host and Ubuntu relay host from the same GitHub branch/commit and record the exact repo path/hash truth used for the live server revalidation run
-- [ ] **STRV-02**: One preserve-first server flow can transfer or reuse at least one preserved server account on the isolated per-account browser-root model, record exact transfer/preflight truth, and avoid cross-account browser-root or browser-data reuse without deleting profiles, clearing cookies/local storage, blind broad-starting the pool, or mass relogin
-- [ ] **STRV-03**: The latest Phase 35 server transfer/revalidation result is visible through an internal operator surface or durable file-backed artifact before any new server external-readiness claim
-- [ ] **STRV-04**: Public `/healthz`, `/v1/models`, and `/v1/chat/completions` are rerun against `http://77.66.186.75` after the server transfer and end with exactly one verdict `externally_ready` or `hold_rollout`
+- [x] **STRV-01**: The project can sync the Windows browser-block host and Ubuntu relay host from the same GitHub branch/commit and record the exact repo path/hash truth used for the live server revalidation run
+- [x] **STRV-02**: One preserve-first server flow can transfer or reuse at least one preserved server account on the isolated per-account browser-root model, record exact transfer/preflight truth, and avoid cross-account browser-root or browser-data reuse without deleting profiles, clearing cookies/local storage, blind broad-starting the pool, or mass relogin
+- [x] **STRV-03**: The latest Phase 35 server transfer/revalidation result is visible through an internal operator surface or durable file-backed artifact before any new server external-readiness claim
+- [x] **STRV-04**: Public `/healthz`, `/v1/models`, and `/v1/chat/completions` are rerun against `http://77.66.186.75` after the server transfer and end with exactly one verdict `externally_ready` or `hold_rollout`
 
 ## Future Requirements
 
@@ -534,7 +534,7 @@
 | STRV-01 | Phase 35 | Complete |
 | STRV-02 | Phase 35 | Complete |
 | STRV-03 | Phase 35 | Complete |
-| STRV-04 | Phase 35 | Pending |
+| STRV-04 | Phase 35 | Complete |
 
   **Coverage:**
   - v1.2 requirements: 148 total
@@ -543,4 +543,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-14 after local completion of Phase 35 plans 01 and 02*
+*Last updated: 2026-04-14 after live completion of Phase 35 with `hold_rollout`*

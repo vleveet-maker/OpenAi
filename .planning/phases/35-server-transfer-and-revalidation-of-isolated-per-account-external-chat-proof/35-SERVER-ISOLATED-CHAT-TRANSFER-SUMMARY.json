@@ -1,0 +1,166 @@
+{
+  "generatedAt": "2026-04-14T22:34:30+03:00",
+  "reconstructedFromOperatorReport": true,
+  "scriptCompatibilityVersion": "phase35-server-isolated-chat-transfer-v1",
+  "githubBranch": "windows-browser-block-api-20260331",
+  "windowsRepoPath": "D:\\OpenAi",
+  "windowsCommit": "9f0d8b2",
+  "windowsBranch": "windows-browser-block-api-20260331",
+  "ubuntuSshReachable": false,
+  "ubuntuRepoPath": "/opt/owmcgp-remote-relay/services/control-api",
+  "ubuntuCommit": "",
+  "ubuntuBranch": "",
+  "ubuntuNginxConfigOk": false,
+  "canonicalPublicUpstream": "unconfirmed_live_due_ssh_blocker",
+  "externalHealthz": {
+    "url": "http://77.66.186.75/healthz",
+    "statusCode": 200,
+    "passed": true
+  },
+  "tokenSource": "missing",
+  "externalSmoke": {
+    "baseUrl": "http://77.66.186.75",
+    "healthz": {
+      "statusCode": 200,
+      "passed": true
+    },
+    "models": {
+      "statusCode": null,
+      "passed": false,
+      "notRunReason": "tokenSource_missing"
+    },
+    "chatCompletions": {
+      "statusCode": null,
+      "passed": false,
+      "notRunReason": "tokenSource_missing"
+    }
+  },
+  "reverseTunnelLifecycle": {
+    "taskState": "Running",
+    "ubuntuListenerTruthConfirmed": false,
+    "requestedPorts": [
+      14021,
+      14022,
+      14023,
+      14024,
+      14025,
+      14026,
+      14027,
+      14040
+    ],
+    "blocker": "ubuntu_ssh_unreachable"
+  },
+  "serverAccountInventory": [
+    {
+      "workerId": "dad",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true
+    },
+    {
+      "workerId": "wife",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true
+    },
+    {
+      "workerId": "shared-1",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true
+    },
+    {
+      "workerId": "shared-2",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true
+    },
+    {
+      "workerId": "shared-3",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true
+    },
+    {
+      "workerId": "shared-4",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true
+    },
+    {
+      "workerId": "shared-5",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true
+    }
+  ],
+  "accountOrder": [
+    "wife",
+    "dad",
+    "shared-1",
+    "shared-2",
+    "shared-3",
+    "shared-4",
+    "shared-5"
+  ],
+  "transferResults": [
+    {
+      "workerId": "dad",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true,
+      "crossAccountReuseDetected": false
+    },
+    {
+      "workerId": "wife",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true,
+      "crossAccountReuseDetected": false
+    },
+    {
+      "workerId": "shared-1",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true,
+      "crossAccountReuseDetected": false
+    },
+    {
+      "workerId": "shared-2",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true,
+      "crossAccountReuseDetected": false
+    },
+    {
+      "workerId": "shared-3",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true,
+      "crossAccountReuseDetected": false
+    },
+    {
+      "workerId": "shared-4",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true,
+      "crossAccountReuseDetected": false
+    },
+    {
+      "workerId": "shared-5",
+      "copyResult": "copy_failed",
+      "robocopyExitCode": 11,
+      "isolatedRootsPrepared": true,
+      "crossAccountReuseDetected": false
+    }
+  ],
+  "preflightAccounts": [],
+  "attempts": [],
+  "successfulWorkerId": null,
+  "commonBlocker": "token_missing_and_ubuntu_ssh_unconfirmed",
+  "exhaustionReason": "tokenSource_missing prevented authenticated models/chat proof; Ubuntu SSH blocker prevented live repo/nginx/listener recheck",
+  "transferHelperVerdict": "hold_rollout",
+  "proofVerdict": "hold_rollout",
+  "verdict": "hold_rollout",
+  "summary": "Server transfer revalidation ran end-to-end but cannot be promoted: external healthz is 200, while tokenSource is missing, Ubuntu SSH/listener truth is unconfirmed, and authenticated models/chat were not proven."
+}

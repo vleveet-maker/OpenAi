@@ -66,7 +66,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 33: Preserve-first rotating ready-account external chat proof until first real outside success** - completed 2026-04-14 with `hold_rollout`; the ready local set rotated preserve-first across `dad`, `wife`, `shared-1`, `shared-3`, `shared-4`, and `shared-5`, but every attempt repeated the same `listener_only / selected_canary_not_usable` blocker before public chat
 - [x] **Phase 33.1: Dedicated per-account desktop Chrome roots and isolated account-browser storage before external chat proof** - (INSERTED) completed 2026-04-14 with `isolated_browser_roots_ready`; the old shared browser-root model is now retired, and the current machine has one isolated desktop Chrome root plus one browser-data root per account
 - [x] **Phase 34: Preserve-first external chat proof on isolated per-account browser roots** - completed 2026-04-14 with `externally_ready`; the isolated browser-root baseline proved the first honest outside `/v1/chat/completions = 200`, with `wife` returning `probe-ok`
-- [ ] **Phase 35: Server transfer and revalidation of isolated per-account external chat proof** - executing 2026-04-14; `35-01` and `35-02` are complete locally, and `35-03` is now the live Windows+Ubuntu revalidation step on the proven isolated browser-root contract
+- [x] **Phase 35: Server transfer and revalidation of isolated per-account external chat proof** - completed 2026-04-14 with `hold_rollout`; the local helper/operator surface stayed green and the live server revalidation reached public `/healthz=200`, but bearer-token discovery was missing, Ubuntu SSH/listener truth was unconfirmed, authenticated models/chat were not proven, and seven server copy attempts reported `robocopy exit code 11`
 
 ## Phase Details
 
@@ -1039,7 +1039,7 @@ Plans:
 **Requirements**: STRV-01, STRV-02, STRV-03, STRV-04
 **Depends on:** Phase 34
 **Plans:** 3 plans
-**Current status:** Executing on 2026-04-14. `35-01` and `35-02` are complete locally: the preserve-first server-transfer helper, canonical revalidation wrapper, GitHub-first host prompt, latest route, and `/internal/admin` surface are all in place and verified. The remaining work is `35-03`: live Windows + Ubuntu sync, canary-first isolated transfer, and one honest server-side outside-chat verdict.
+**Current status:** Completed on 2026-04-14 with `hold_rollout`. The preserve-first server-transfer helper, canonical revalidation wrapper, GitHub-first host prompt, latest route, and `/internal/admin` surface are all in place and verified. The live server revalidation reached public `/healthz=200`, but `tokenSource=missing` blocked authenticated `/v1/models` and `/v1/chat/completions`, Ubuntu SSH/listener truth could not be confirmed, and the server transfer path still reported `robocopy exit code 11` for all seven browser-data copy attempts.
 
 **Success Criteria** (what must be TRUE):
   1. One repo-backed GitHub-first sync aligns the Windows browser-block host and Ubuntu relay host to the same tracked branch/commit and records the exact repo paths and hashes used in the live run.
@@ -1050,4 +1050,4 @@ Plans:
 Plans:
 - [x] `35-01-PLAN.md` - preserve-first server isolation transfer helper, canonical server revalidation wrapper, and GitHub-first host prompt
 - [x] `35-02-PLAN.md` - latest-route, internal admin visibility, and focused operator-surface coverage for server transfer truth
-- [ ] `35-03-PLAN.md` - live Windows + Ubuntu sync, canary-first server revalidation, and final verdict
+- [x] `35-03-PLAN.md` - live Windows + Ubuntu sync, canary-first server revalidation, and final verdict
