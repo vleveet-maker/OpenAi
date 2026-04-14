@@ -250,10 +250,87 @@
 
 ### Deployed Ubuntu Sync Recovery, Reverse-Tunnel Task Retention, And External Authenticated Smoke Restoration
 
-- [ ] **UTSR-01**: The repo-backed GitHub sync path can re-verify the Ubuntu public-owner host and confirm `80/443/8080 -> 127.0.0.1:4010` plus SSH/topology truth from live evidence instead of stale Windows-only assumptions
-- [ ] **UTSR-02**: The reverse-tunnel scheduled task on the Windows host can be retained in `Running` state long enough to preserve Ubuntu listeners `127.0.0.1:14021..14027` and `127.0.0.1:14040` and keep ready-worker truth explicit without destructive preserve-first violations
-- [ ] **UTSR-03**: The latest Phase 26 Ubuntu-sync and external-restoration result is visible through an internal operator surface or durable file-backed artifact before the final external claim
-- [ ] **UTSR-04**: Authenticated external smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun from a host that actually has a valid bearer token and ends with one explicit verdict `externally_ready` or `hold_rollout`
+- [x] **UTSR-01**: The repo-backed GitHub sync path can re-verify the Ubuntu public-owner host and confirm `80/443/8080 -> 127.0.0.1:4010` plus SSH/topology truth from live evidence instead of stale Windows-only assumptions
+- [x] **UTSR-02**: The reverse-tunnel scheduled task on the Windows host can be retained in `Running` state long enough to preserve Ubuntu listeners `127.0.0.1:14021..14027` and `127.0.0.1:14040` and keep ready-worker truth explicit without destructive preserve-first violations
+- [x] **UTSR-03**: The latest Phase 26 Ubuntu-sync and external-restoration result is visible through an internal operator surface or durable file-backed artifact before the final external claim
+- [x] **UTSR-04**: Authenticated external smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun from a host that actually has a valid bearer token and ends with one explicit verdict `externally_ready` or `hold_rollout`
+
+### Deployed Ubuntu SSH Recovery, Reverse-Tunnel Task Retention, And Authenticated External Smoke Completion
+
+- [x] **URTS-01**: Repo-backed GitHub sync can recover or exactly classify Ubuntu SSH reachability, confirm the exact live Ubuntu repo path plus commit hash, and re-verify that public `80/443/8080` still proxy to `127.0.0.1:4010` instead of relying on stale topology assumptions
+- [x] **URTS-02**: The reverse-tunnel scheduled task can stay `Running` long enough to preserve Ubuntu listeners `127.0.0.1:14021..14027` and `127.0.0.1:14040`, or the phase records the exact retention failure without collapsing it into vague external smoke noise
+- [x] **URTS-03**: The latest Phase 27 Ubuntu SSH recovery result is visible through an internal operator surface or durable file-backed artifact before the final external claim
+- [x] **URTS-04**: Authenticated external smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun from a host that actually has a valid bearer token and ends with one explicit verdict `externally_ready` or `hold_rollout`
+
+### Local Proxy TLS Egress And Bounded Worker Bootstrap Stabilization For External Chat Readiness
+
+- [x] **PXBT-01**: The project can capture one durable local artifact that proves whether proxy TLS egress on `127.0.0.1:7897` succeeds or still resets for `https://www.gstatic.com/generate_204` and `https://chatgpt.com`, instead of collapsing that branch into vague bootstrap failure
+- [x] **PXBT-02**: One bounded preserve-first local worker flow can move or honestly reclassify `shared-2` from `disconnected` toward `ready`, while keeping profiles, cookies, local storage, and the rest of the worker pool untouched
+- [x] **PXBT-03**: The latest Phase 28 local proxy/bootstrap result is visible through an internal operator surface or durable file-backed artifact before any external chat readiness claim
+- [x] **PXBT-04**: Authenticated external smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun only after the bounded local runtime branch is explicit and ends with exactly one verdict `externally_ready` or `hold_rollout`
+
+### Local Proxy TLS Transport Repair And Bounded Shared-2 Runtime Recovery For External Chat Completion
+
+- [x] **PXTR-01**: The project can produce one durable local artifact that separates mixed proxy truth from pinned per-outbound truth and distinguishes `all_outbounds_failed`, `single_outbound_failed`, `auto_selection_failed`, and `runtime_unusable_after_transport` instead of collapsing everything into one vague bootstrap error
+- [x] **PXTR-02**: One bounded preserve-first local worker flow can record both `proxy_backed` and `no_proxy_fallback` branches for `shared-2`, write one explicit `runtimePathUsed`, and keep profiles, cookies, local storage, and the rest of the local worker pool untouched
+- [x] **PXTR-03**: The latest Phase 29 local proxy transport result is visible through an internal operator surface or durable file-backed artifact before any external chat completion claim
+- [x] **PXTR-04**: Authenticated public smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun after the bounded runtime branch becomes explicit and ends with exactly one verdict `externally_ready` or `hold_rollout`
+
+### Bounded Shared-2 External Chat 409 Root-Cause And Usability Stabilization
+
+- [x] **CHAT409-01**: The project can produce one durable artifact that classifies the exact external chat `409` source for bounded `shared-2` across session, bootstrap, relay, and worker-usability state instead of collapsing the blocker into one vague chat failure
+- [x] **CHAT409-02**: One bounded preserve-first local worker flow can move `shared-2` from internal `ready but unusable` toward externally usable chat, or honestly record the exact remaining mismatch without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **CHAT409-03**: The latest Phase 30 shared-2 chat-409 result is visible through an internal operator surface or durable file-backed artifact before any external-readiness claim
+- [x] **CHAT409-04**: Authenticated public smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun in the same tracked flow and ends with exactly one verdict `externally_ready` or `hold_rollout`
+
+### Bounded Shared-2 Bootstrap Navigation Failure Root-Cause And Usability Recovery
+
+- [x] **S2BF-01**: The project can produce one durable artifact that reduces the bounded `shared-2` `chat_bootstrap_failed/bootstrap_navigation_failed` branch to one exact browser/bootstrap or worker-registration defect instead of another generic public-chat failure
+- [x] **S2BF-02**: One bounded preserve-first local worker flow can either recover `shared-2` into externally usable chat or honestly record the exact remaining mismatch without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **S2BF-03**: The latest Phase 31 shared-2 bootstrap/usability result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim
+- [x] **S2BF-04**: The phase ends with one tracked final verdict `externally_ready` or `hold_rollout`, and if a public chat rerun is still unsafe, the artifact records the exact blocked reason in the same flow instead of pretending the run was inconclusive
+
+### Full Local Account Surface Inventory And Bounded Canary Reselection
+
+- [x] **ACINV-01**: The project can produce one durable local inventory artifact that records the visible surface classification for every current local account/profile instead of assuming one suspicious worker represents the whole pool
+- [x] **ACINV-02**: One preserve-first local inventory flow can classify each current profile as `ready`, `needs_manual_confirm`, `needs_login`, `broken_surface`, `runtime_blocked`, or another explicit blocked state without deleting profiles, clearing cookies/local storage, or broad-starting the full pool
+- [x] **ACINV-03**: The latest Phase 31.1 local account-surface inventory result is visible through an internal operator surface or durable file-backed artifact before any further narrow single-worker external-chat claim
+- [x] **ACINV-04**: The phase ends with one explicit bounded-canary decision that names the next honest worker for narrow runtime/debug proof, or honestly records that no current local worker is safe to use as the next canary
+
+### Bounded Shared-2 Worker-Registry Drift Reconciliation And Externally Usable Chat Recovery
+
+- [x] **WRDR-01**: The project can produce one durable artifact that explains the bounded selected-canary (`dad`) runtime truth across host-controller truth, internal worker-registry truth, listener/CDP truth, and direct browser evidence instead of collapsing the blocker into another generic bootstrap failure
+- [x] **WRDR-02**: One bounded preserve-first local worker flow can either reconcile the selected canary (`dad`) into externally usable chat or honestly record the exact remaining mismatch without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **WRDR-03**: The latest Phase 32 selected-canary reconciliation result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim
+- [x] **WRDR-04**: The phase ends with one tracked final verdict `externally_ready` or `hold_rollout`, and if a public chat rerun is still unsafe, the artifact records the exact blocked reason in the same flow instead of pretending the run was inconclusive
+
+### Preserve-First Rotating Ready-Account External Chat Proof Until First Real Outside Success
+
+- [x] **RRAC-01**: The project can produce one durable artifact that records the ordered preserve-first attempts across the current ready local accounts, including per-account local-surface truth, tunnel truth, public smoke truth, and one final stop reason
+- [x] **RRAC-02**: One bounded preserve-first local flow can try the ready local accounts one by one until the first real external chat success or the ready set is exhausted, without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **RRAC-03**: The latest Phase 33 rotating ready-account result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim
+- [x] **RRAC-04**: The phase ends with one tracked final verdict `externally_ready` or `hold_rollout`, and if no account succeeds, the artifact records the exact repeated/common blocker or exhaustion reason instead of pretending the run was inconclusive
+
+### Dedicated Per-Account Desktop Chrome Roots And Isolated Account-Browser Storage Before External Chat Proof
+
+- [x] **ABIS-01**: Every current local account (`dad`, `wife`, `shared-1`, `shared-2`, `shared-3`, `shared-4`, `shared-5`) gets one dedicated desktop Chrome root and one dedicated browser-data root so no shared browser-storage chain can silently mix sessions across accounts
+- [x] **ABIS-02**: A preserve-first local helper can open all current local accounts through those isolated roots and keep the windows open for manual inspection without deleting profiles, clearing cookies/local storage, or broad-starting the worker runtime
+- [x] **ABIS-03**: The latest Phase 33.1 browser-isolation result is visible through an internal operator surface or durable file-backed artifact before any more external chat proof claims
+- [x] **ABIS-04**: The phase ends with one tracked final verdict `isolated_browser_roots_ready` or `hold_rollout`, and if any account still fails launch or isolation, the artifact records the exact workers and failure branch
+
+### Preserve-First External Chat Proof On Isolated Per-Account Browser Roots
+
+- [x] **IECP-01**: The project can produce one durable artifact that records the ordered preserve-first external-chat attempts across the isolated local account roots, including per-account preflight surface truth, tunnel/token source truth, and external smoke truth
+- [x] **IECP-02**: One bounded preserve-first local flow can try the isolated accounts one by one until the first real external `chat` success or the isolated ready set is exhausted, without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin
+- [x] **IECP-03**: The latest Phase 34 isolated external-chat result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim
+- [x] **IECP-04**: The phase ends with one tracked final verdict `externally_ready` or `hold_rollout`, and if no isolated account succeeds, the artifact records the exact repeated/common blocker or exhaustion reason instead of pretending the run was inconclusive
+
+### Server Transfer And Revalidation Of Isolated Per-Account External Chat Proof
+
+- [ ] **STRV-01**: The project can sync the Windows browser-block host and Ubuntu relay host from the same GitHub branch/commit and record the exact repo path/hash truth used for the live server revalidation run
+- [ ] **STRV-02**: One preserve-first server flow can transfer or reuse at least one preserved server account on the isolated per-account browser-root model, record exact transfer/preflight truth, and avoid cross-account browser-root or browser-data reuse without deleting profiles, clearing cookies/local storage, blind broad-starting the pool, or mass relogin
+- [ ] **STRV-03**: The latest Phase 35 server transfer/revalidation result is visible through an internal operator surface or durable file-backed artifact before any new server external-readiness claim
+- [ ] **STRV-04**: Public `/healthz`, `/v1/models`, and `/v1/chat/completions` are rerun against `http://77.66.186.75` after the server transfer and end with exactly one verdict `externally_ready` or `hold_rollout`
 
 ## Future Requirements
 
@@ -410,16 +487,60 @@
 | WLFB-02 | Phase 25 | Complete |
 | WLFB-03 | Phase 25 | Complete |
 | WLFB-04 | Phase 25 | Complete |
-| UTSR-01 | Phase 26 | Planned |
-| UTSR-02 | Phase 26 | Planned |
-| UTSR-03 | Phase 26 | Planned |
-| UTSR-04 | Phase 26 | Planned |
+| UTSR-01 | Phase 26 | Complete |
+| UTSR-02 | Phase 26 | Complete |
+| UTSR-03 | Phase 26 | Complete |
+| UTSR-04 | Phase 26 | Complete |
+| URTS-01 | Phase 27 | Complete |
+| URTS-02 | Phase 27 | Complete |
+| URTS-03 | Phase 27 | Complete |
+| URTS-04 | Phase 27 | Complete |
+| PXBT-01 | Phase 28 | Complete |
+| PXBT-02 | Phase 28 | Complete |
+| PXBT-03 | Phase 28 | Complete |
+| PXBT-04 | Phase 28 | Complete |
+| PXTR-01 | Phase 29 | Complete |
+| PXTR-02 | Phase 29 | Complete |
+| PXTR-03 | Phase 29 | Complete |
+| PXTR-04 | Phase 29 | Complete |
+| CHAT409-01 | Phase 30 | Complete |
+| CHAT409-02 | Phase 30 | Complete |
+| CHAT409-03 | Phase 30 | Complete |
+| CHAT409-04 | Phase 30 | Complete |
+| S2BF-01 | Phase 31 | Complete |
+| S2BF-02 | Phase 31 | Complete |
+| S2BF-03 | Phase 31 | Complete |
+| S2BF-04 | Phase 31 | Complete |
+| ACINV-01 | Phase 31.1 | Complete |
+| ACINV-02 | Phase 31.1 | Complete |
+| ACINV-03 | Phase 31.1 | Complete |
+| ACINV-04 | Phase 31.1 | Complete |
+| WRDR-01 | Phase 32 | Complete |
+| WRDR-02 | Phase 32 | Complete |
+| WRDR-03 | Phase 32 | Complete |
+| WRDR-04 | Phase 32 | Complete |
+| RRAC-01 | Phase 33 | Complete |
+| RRAC-02 | Phase 33 | Complete |
+| RRAC-03 | Phase 33 | Complete |
+| RRAC-04 | Phase 33 | Complete |
+| ABIS-01 | Phase 33.1 | Complete |
+| ABIS-02 | Phase 33.1 | Complete |
+| ABIS-03 | Phase 33.1 | Complete |
+| ABIS-04 | Phase 33.1 | Complete |
+| IECP-01 | Phase 34 | Complete |
+| IECP-02 | Phase 34 | Complete |
+| IECP-03 | Phase 34 | Complete |
+| IECP-04 | Phase 34 | Complete |
+| STRV-01 | Phase 35 | Complete |
+| STRV-02 | Phase 35 | Complete |
+| STRV-03 | Phase 35 | Complete |
+| STRV-04 | Phase 35 | Pending |
 
-**Coverage:**
-- v1.2 requirements: 112 total
-- Mapped to phases: 112
-- Unmapped: 0
+  **Coverage:**
+  - v1.2 requirements: 148 total
+  - Mapped to phases: 148
+  - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-12 after planning Phase 26 for Ubuntu sync recovery and authenticated external smoke restoration*
+*Last updated: 2026-04-14 after local completion of Phase 35 plans 01 and 02*

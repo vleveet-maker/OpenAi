@@ -38,6 +38,18 @@ Cross-host operational fixes should be delivered through GitHub branch `windows-
 - keep tracked host scripts aligned with the branch
 - avoid treating local-only archives as the durable source of truth
 
+## Isolated Browser Contract
+
+The current server-transfer contract is no longer based on one shared desktop browser footprint.
+
+Use:
+
+- one dedicated browser root per account
+- one dedicated browser-data root per account
+- canary-first transfer and proof
+
+Do not reintroduce cross-account desktop-browser reuse when proving external chat on the server path.
+
 ## Reverse Tunnel Supervision
 
 The durable task is:
@@ -105,3 +117,27 @@ After readiness is green, run the authenticated public checks against Ubuntu-own
 Use model `owmcgp-browser`.
 
 Run the authenticated smoke from the host that actually has the bearer token, even if that host is not the Windows browser-block machine.
+
+## Phase 28 Local-Only Contract
+
+Phase 28 is intentionally local-only.
+
+- run it on the current Windows machine
+- do not move it to `192.168.88.250` yet
+- keep the worker scope bounded to `shared-2`
+- keep public target explicit as `http://77.66.186.75`
+- only rerun authenticated public chat after the wrapper verdict is `ready_for_external_chat_smoke`
+
+Canonical command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\stabilize-local-proxy-tls-and-bounded-worker-bootstrap.ps1 `
+  -WorkerId shared-2 `
+  -ProxyAddress http://127.0.0.1:7897 `
+  -InternalBaseUrl http://127.0.0.1:8081 `
+  -HostControllerBaseUrl http://127.0.0.1:4040 `
+  -PublicBaseUrl http://77.66.186.75 `
+  -ApiTokenEnvVar OWMCGP_REMOTE_RELAY_API_TOKEN
+```
+
+If the proxy-backed branch still fails, the wrapper may classify a bounded no-proxy fallback when explicitly requested. That fallback is still `shared-2` only and must not be treated as permission to widen the run or touch preserved profiles.

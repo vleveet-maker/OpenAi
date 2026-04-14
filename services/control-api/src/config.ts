@@ -39,6 +39,16 @@ export interface ControlApiConfig {
   postPhase24ExternalApiReadinessStatePath?: string;
   postPhase25ExternalRestorationStatePath?: string;
   postPhase26UbuntuSshRecoveryStatePath?: string;
+  postPhase27LocalProxyBootstrapStatePath?: string;
+  postPhase28LocalProxyTransportStatePath?: string;
+  postPhase29Shared2Chat409StatePath?: string;
+  postPhase30Shared2BootstrapRecoveryStatePath?: string;
+  postPhase31AccountSurfaceInventoryStatePath?: string;
+  postPhase31SelectedCanaryChatRecoveryStatePath?: string;
+  postPhase32RotatingReadyAccountChatProofStatePath?: string;
+  postPhase33AccountBrowserIsolationStatePath?: string;
+  postPhase33IsolatedExternalChatProofStatePath?: string;
+  postPhase34ServerIsolatedChatTransferStatePath?: string;
   postRemediationDegradedSmokeStatePath?: string;
   postStabilizationRuntimeInvestigationStatePath?: string;
   remoteRelayDefaultWorkerId?: string;
@@ -176,6 +186,77 @@ const DEFAULT_POST_PHASE26_UBUNTU_SSH_RECOVERY_STATE_PATH = resolve(
   "infra",
   "data",
   "post-phase26-ubuntu-ssh-recovery",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE27_LOCAL_PROXY_BOOTSTRAP_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase27-local-proxy-bootstrap",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE28_LOCAL_PROXY_TRANSPORT_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase28-local-proxy-transport",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE29_SHARED2_CHAT_409_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase29-shared-2-chat-409",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE30_SHARED2_BOOTSTRAP_RECOVERY_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase30-shared-2-bootstrap-recovery",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE31_ACCOUNT_SURFACE_INVENTORY_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase31-account-surface-inventory",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE31_SELECTED_CANARY_CHAT_RECOVERY_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase31-selected-canary-chat-recovery",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE32_ROTATING_READY_ACCOUNT_CHAT_PROOF_STATE_PATH =
+  resolve(
+    REPO_ROOT,
+    "infra",
+    "data",
+    "post-phase32-rotating-ready-account-chat-proof",
+    "latest.json"
+  );
+const DEFAULT_POST_PHASE33_ACCOUNT_BROWSER_ISOLATION_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase33-account-browser-isolation",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE33_ISOLATED_EXTERNAL_CHAT_PROOF_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase33-isolated-external-chat-proof",
+  "latest.json"
+);
+const DEFAULT_POST_PHASE34_SERVER_ISOLATED_CHAT_TRANSFER_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase34-server-isolated-chat-transfer",
   "latest.json"
 );
 const DEFAULT_POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH = resolve(
@@ -322,6 +403,36 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ControlApiConf
     postPhase26UbuntuSshRecoveryStatePath:
       env.POST_PHASE26_UBUNTU_SSH_RECOVERY_STATE_PATH ??
       DEFAULT_POST_PHASE26_UBUNTU_SSH_RECOVERY_STATE_PATH,
+    postPhase27LocalProxyBootstrapStatePath:
+      env.POST_PHASE27_LOCAL_PROXY_BOOTSTRAP_STATE_PATH ??
+      DEFAULT_POST_PHASE27_LOCAL_PROXY_BOOTSTRAP_STATE_PATH,
+    postPhase28LocalProxyTransportStatePath:
+      env.POST_PHASE28_LOCAL_PROXY_TRANSPORT_STATE_PATH ??
+      DEFAULT_POST_PHASE28_LOCAL_PROXY_TRANSPORT_STATE_PATH,
+    postPhase29Shared2Chat409StatePath:
+      env.POST_PHASE29_SHARED2_CHAT_409_STATE_PATH ??
+      DEFAULT_POST_PHASE29_SHARED2_CHAT_409_STATE_PATH,
+    postPhase30Shared2BootstrapRecoveryStatePath:
+      env.POST_PHASE30_SHARED2_BOOTSTRAP_RECOVERY_STATE_PATH ??
+      DEFAULT_POST_PHASE30_SHARED2_BOOTSTRAP_RECOVERY_STATE_PATH,
+    postPhase31AccountSurfaceInventoryStatePath:
+      env.POST_PHASE31_ACCOUNT_SURFACE_INVENTORY_STATE_PATH ??
+      DEFAULT_POST_PHASE31_ACCOUNT_SURFACE_INVENTORY_STATE_PATH,
+    postPhase31SelectedCanaryChatRecoveryStatePath:
+      env.POST_PHASE31_SELECTED_CANARY_CHAT_RECOVERY_STATE_PATH ??
+      DEFAULT_POST_PHASE31_SELECTED_CANARY_CHAT_RECOVERY_STATE_PATH,
+    postPhase32RotatingReadyAccountChatProofStatePath:
+      env.POST_PHASE32_ROTATING_READY_ACCOUNT_CHAT_PROOF_STATE_PATH ??
+      DEFAULT_POST_PHASE32_ROTATING_READY_ACCOUNT_CHAT_PROOF_STATE_PATH,
+    postPhase33AccountBrowserIsolationStatePath:
+      env.POST_PHASE33_ACCOUNT_BROWSER_ISOLATION_STATE_PATH ??
+      DEFAULT_POST_PHASE33_ACCOUNT_BROWSER_ISOLATION_STATE_PATH,
+    postPhase33IsolatedExternalChatProofStatePath:
+      env.POST_PHASE33_ISOLATED_EXTERNAL_CHAT_PROOF_STATE_PATH ??
+      DEFAULT_POST_PHASE33_ISOLATED_EXTERNAL_CHAT_PROOF_STATE_PATH,
+    postPhase34ServerIsolatedChatTransferStatePath:
+      env.POST_PHASE34_SERVER_ISOLATED_CHAT_TRANSFER_STATE_PATH ??
+      DEFAULT_POST_PHASE34_SERVER_ISOLATED_CHAT_TRANSFER_STATE_PATH,
     postRemediationDegradedSmokeStatePath:
       env.POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH ??
       DEFAULT_POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH,

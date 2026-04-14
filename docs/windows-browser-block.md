@@ -37,6 +37,24 @@ When a deployed host needs new files, sync branch `windows-browser-block-api-202
 - replace stale tracked files in place through GitHub-backed repo state
 - do not treat a local-only archive as the source of truth
 
+## Isolated Per-Account Browser Roots
+
+The old shared desktop-browser root is now retired for rollout proof and server transfer.
+
+Current canonical browser shape is:
+
+- one account = one dedicated desktop Chrome root
+- one account = one dedicated browser-data root
+- no cross-account reuse of browser root or browser-data paths
+
+The canonical helper for preparing this layout is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\prepare-isolated-account-browser-roots.ps1
+```
+
+For server transfer or server revalidation, the same helper is reused with explicit source browser-data mapping so the server path keeps the same isolation contract instead of falling back to the retired shared-root layout.
+
 ## Reverse Tunnels
 
 Ubuntu expects these listeners to exist when the block is healthy:
@@ -125,10 +143,48 @@ Final authenticated smoke may run from another operator-controlled host if that 
 
 Authenticated external smoke may run from another operator-controlled host if that host is the one that actually holds the bearer token.
 
+## Phase 28 Local Proxy And Bounded Bootstrap
+
+Phase 28 stays on the current local Windows machine only.
+
+- do not transfer this phase to `192.168.88.250` yet
+- do not widen beyond bounded worker `shared-2`
+- do not delete profiles
+- do not clear cookies or local storage
+- do not blind-restart the whole pool
+- do not mass-relogin accounts
+
+Canonical local wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\stabilize-local-proxy-tls-and-bounded-worker-bootstrap.ps1 `
+  -WorkerId shared-2 `
+  -ProxyAddress http://127.0.0.1:7897 `
+  -InternalBaseUrl http://127.0.0.1:8081 `
+  -HostControllerBaseUrl http://127.0.0.1:4040 `
+  -PublicBaseUrl http://77.66.186.75 `
+  -ApiTokenEnvVar OWMCGP_REMOTE_RELAY_API_TOKEN `
+  -OutputJsonPath .\.planning\phases\28-local-proxy-tls-egress-and-bounded-worker-bootstrap-stabilization-for-external-chat-readiness\28-LOCAL-PROXY-BOOTSTRAP-SUMMARY.json `
+  -OutputMarkdownPath .\.planning\phases\28-local-proxy-tls-egress-and-bounded-worker-bootstrap-stabilization-for-external-chat-readiness\28-LOCAL-PROXY-BOOTSTRAP-SUMMARY.md
+```
+
+The wrapper must record:
+
+- proxy TLS truth for `https://www.gstatic.com/generate_204`
+- proxy TLS truth for `https://chatgpt.com`
+- bounded `shared-2` listener truth for `4040`, `8081`, `4024`, and `9225`
+- whether proxy-backed bootstrap reached `ready`
+- whether a bounded no-proxy fallback was requested or attempted
+
+Public authenticated chat against `http://77.66.186.75` must be rerun only after the wrapper verdict becomes `ready_for_external_chat_smoke`.
+
 ## Related Files
 
 - [start-browser-block.ps1](d:/OpenAi/infra/windows-block/start-browser-block.ps1)
 - [start-reverse-tunnels.ps1](d:/OpenAi/infra/windows-block/start-reverse-tunnels.ps1)
 - [register-browser-block-tasks.ps1](d:/OpenAi/infra/windows-block/register-browser-block-tasks.ps1)
+- [prepare-isolated-account-browser-roots.ps1](d:/OpenAi/infra/windows-block/prepare-isolated-account-browser-roots.ps1)
+- [revalidate-server-isolated-external-chat-proof.ps1](d:/OpenAi/infra/windows-block/revalidate-server-isolated-external-chat-proof.ps1)
 - [recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1](d:/OpenAi/infra/windows-block/recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1)
+- [stabilize-local-proxy-tls-and-bounded-worker-bootstrap.ps1](d:/OpenAi/infra/windows-block/stabilize-local-proxy-tls-and-bounded-worker-bootstrap.ps1)
 - [remote-relay-server.md](d:/OpenAi/docs/remote-relay-server.md)

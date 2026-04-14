@@ -100,6 +100,25 @@ Cross-host handoff is GitHub-first.
 - use repo-backed files as the only source of truth
 - do not treat local-only zip archives as the authoritative deployment source
 
+## Phase 35 Server Revalidation
+
+Local proof is already green on the isolated per-account browser-root model, so server revalidation should reuse that same shape instead of reopening the retired shared-root model.
+
+Canonical Windows-side wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\revalidate-server-isolated-external-chat-proof.ps1
+```
+
+That wrapper is expected to record:
+
+- exact Windows repo path and commit
+- exact Ubuntu repo path and commit
+- server account inventory
+- isolated transfer results per account
+- preflight and attempt truth
+- final verdict `externally_ready` or `hold_rollout`
+
 ## External Readiness Contract
 
 Before claiming the public API is externally ready, use:

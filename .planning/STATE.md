@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 27 local Waves 1-2 complete; next action is the local Windows plus Ubuntu live run
-last_updated: "2026-04-12T15:42:00.000Z"
-last_activity: 2026-04-12 -- Phase 27 local Waves 1-2 completed; live verification pending
+stopped_at: Phase 35 local checkpoint 2/3 complete; next action is the live Windows+Ubuntu revalidation run for the proven isolated external chat path
+last_updated: "2026-04-14T20:30:00+03:00"
+last_activity: 2026-04-14 -- Phase 35 plans 01 and 02 completed locally; 35-03 live pending
 progress:
-  total_phases: 39
-  completed_phases: 38
-  total_plans: 117
-  completed_plans: 116
+  total_phases: 49
+  completed_phases: 48
+  total_plans: 147
+  completed_plans: 146
   percent: 99
 ---
 
@@ -18,25 +18,25 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-04-12)
+See: `.planning/PROJECT.md` (updated 2026-04-14)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Phase 27 - local Windows plus Ubuntu SSH recovery, reverse-tunnel retention, and authenticated external smoke completion
+**Current focus:** Phase 35 — server-transfer-and-revalidation-of-isolated-per-account-external-chat-proof
 
 ## Current Position
 
-Phase: 27 (deployed-ubuntu-ssh-recovery-reverse-tunnel-task-retention-and-authenticated-external-smoke-completion) - EXECUTING
-Plan: 3 of 3
+Phase: 35 (server-transfer-and-revalidation-of-isolated-per-account-external-chat-proof) — EXECUTING
+Plan: 1 of 3
 Milestone: `v1.2 Rollout Stability`
-Status: Executing Phase 27 local-plus-Ubuntu live follow-up
-Last activity: 2026-04-12 -- Phase 27 local Waves 1-2 completed; live verification pending
+Status: Executing Phase 35
+Last activity: 2026-04-14 -- Phase 35 execution started
 
-Progress: [##########] 99%
+Progress: [#########-] 98%
 
 ## Milestone Snapshot
 
-- Phases completed: `38 / 39`
-- Plans completed: `116 / 117`
+- Phases completed: `48 / 49`
+- Plans completed: `144 / 144`
 - Current roadmap: `.planning/ROADMAP.md`
 - Current requirements: `.planning/REQUIREMENTS.md`
 
@@ -53,33 +53,52 @@ Progress: [##########] 99%
 - Reverse SSH tunnels from Windows workers to Ubuntu are the runtime-critical dependency for external chat.
 - Cross-host file handoff is GitHub-first: publish tracked files to GitHub and point receiving agents at the GitHub source instead of local-only archives.
 - Authenticated external smoke should run from whichever host actually has a valid bearer token while still targeting the public path `77.66.186.75`; absence of a token on the Windows host is not itself proof that the API is broken.
-- Phase 25 is complete with `hold_rollout`: the deployed Windows host synced branch `windows-browser-block-api-20260331` at commit `8d269d6`, reran parser/tests/build successfully, and wrote the external-readiness artifact, but Ubuntu sync/topology could not be re-verified and the reverse-tunnel task did not stay running.
-- Phase 26 is complete with `hold_rollout`: the repo-backed Windows run reached commit `8317e78`, the latest-state route and `/internal/admin` were confirmed, but Ubuntu SSH still blocked the exact topology re-check, the reverse-tunnel task fell back to `Ready` with `LastTaskResult=1`, Ubuntu listener ports were missing, and the accessible Windows-host outside proof stayed at `404/404/501`.
-- Phase 27 local Waves 1-2 are now complete: the canonical Ubuntu-SSH wrapper, GitHub-first prompt, latest-state route, and `/internal/admin` section all landed and passed local verification.
-- Phase 27 live execution is intentionally re-scoped to the current local Windows machine plus Ubuntu before any Windows-server transfer.
+- Before trusting one suspicious worker as the next canary, the project now requires a preserve-first all-account surface inventory whenever a bounded browser/runtime branch may actually be stuck on a manual confirm/login/interstitial screen.
+- Phase 31.1 is complete with `canary_reselected`: `dad`, `wife`, `shared-1`, `shared-3`, `shared-4`, and `shared-5` are already `ready`, while `shared-2` is `needs_login`, so the honest next canary became `dad`.
+- Phase 32 is complete with `hold_rollout`: `shared-2` stayed explicit `needs_login` deferred debt, the honest selected canary `dad` reached a usable local ChatGPT surface, temporary reverse tunnels plus authenticated public `/healthz` and `/v1/models` passed in the same tracked flow, but external `/v1/chat/completions` still failed on `dad` with `409 chat_bootstrap_failed / bootstrap_auth_required`.
+- The next external-chat follow-up must use preserve-first rotating canaries across the currently ready local profiles (`dad`, `wife`, `shared-1`, `shared-3`, `shared-4`, `shared-5`) instead of getting stuck on one account-specific blocker.
+- Phase 33 is complete with `hold_rollout`: the project rotated preserve-first across `dad`, `wife`, `shared-1`, `shared-3`, `shared-4`, and `shared-5`, and every attempted ready account repeated the same blocker `selected_canary_not_usable` with local ChatGPT visible but bounded runtime truth still at `listener_only / surface_unusable`.
+- The old shared browser-root/storage model is now explicit technical debt: account/session files can bleed across profiles, so new runtime proof must stop assuming that one shared Chrome footprint can safely represent isolated accounts.
+- Phase 33.1 is now complete with `isolated_browser_roots_ready`: every current local account has one dedicated desktop Chrome root plus one dedicated browser-data root, and the isolated windows stayed open for inspection without cross-account reuse.
+- After manual activation on the isolated roots, all seven local accounts (`dad`, `wife`, `shared-1`, `shared-2`, `shared-3`, `shared-4`, `shared-5`) now sit on real ChatGPT pages with a visible composer, so Phase 34 can treat the full isolated set as ready again.
+- Phase 34 is now complete with `externally_ready`: on the isolated browser-root baseline, `dad` still failed with `409 chat_bootstrap_failed / worker_chat_bootstrap_timeout`, but `wife` produced the first honest outside `/v1/chat/completions = 200` with `assistantReplyText = probe-ok`.
 
 ### Remaining Rollout Debt
 
-- Ubuntu SSH access to `mi50@77.66.186.75:2222` still needs to be recovered so the exact live repo path, live hash, and local relay topology can be re-verified from tracked assets.
-- The reverse-tunnel scheduled task still needs durable proof that it stays `Running` long enough to keep Ubuntu listener ports `14021..14027` and `14040`.
-- Authenticated external smoke still needs one repo-backed run from a host that actually has a bearer token.
+- Durable reverse-tunnel retention still needs a stable non-manual path; temporary password-backed tunnels can expose the right Ubuntu listeners, but this is still a proof path, not durable retention.
+- The local external chat proof is now green on the isolated browser-root baseline; the remaining rollout work has moved from local proof to server transfer and server-side revalidation of the same proven shape.
+- Phase 35 is now the active step, but only its live slice remains: the local helper/wrapper/operator-surface work is complete, and the next honest move is the Windows+Ubuntu revalidation run on the proven isolated browser-root model instead of reopening the retired shared-root model.
+- `shared-2` is back in the active isolated ready set after manual activation, but it is no longer the gate for local API readiness because `wife` has already proven the first honest outside chat success.
+- Local proxy TLS egress on `127.0.0.1:7897` still needs repair: `CONNECT` succeeds, but TLS resets on `https://www.gstatic.com/generate_204` and `https://chatgpt.com`.
+- Dedicated per-account browser isolation has now landed and already produced the first real external chat success locally; any next rollout step should preserve that isolated model instead of going back to the retired shared-root layout.
 
 ## Session Continuity
 
-Last session: 2026-04-12
-Stopped at: Phase 27 local Waves 1-2 complete; next action is the local Windows plus Ubuntu live run
+Last session: 2026-04-14
+Stopped at: Phase 35 local checkpoint 2/3 complete; next action is the live Windows+Ubuntu revalidation run for the proven isolated external chat path
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- Phase 26 added: Deployed Ubuntu sync recovery, reverse-tunnel task retention, and external authenticated smoke restoration
-- Phase 26 planned: repo-backed Ubuntu sync recovery, reverse-tunnel task retention, operator-surface visibility, and authenticated external smoke restoration split into three waves
-- Phase 26 local Wave 1 complete: live-fix backport, canonical restoration wrapper, GitHub-first handoff prompt, and docs landed
-- Phase 26 local Wave 2 complete: latest restoration route, `/internal/admin` section, tests, and build landed
-- Phase 26 complete: the repo-backed Windows run reached commit `8317e78`, the route/admin surface was confirmed live, but Ubuntu SSH stayed blocked, the reverse-tunnel task did not stay `Running`, listeners were missing, and the final external proof stayed at `/healthz=404`, `/v1/models=404`, `/v1/chat/completions=501`
-- Phase 27 added: Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion
-- Phase 27 planned: repo-backed Ubuntu SSH recovery, reverse-tunnel task retention, operator-surface visibility, and authenticated external smoke completion split into three waves
-- Phase 27 local Wave 1 complete: canonical Ubuntu-SSH wrapper, GitHub-first host prompt, and exact docs landed
-- Phase 27 local Wave 2 complete: latest Ubuntu-SSH recovery route, `/internal/admin` section, tests, and build landed
-- Phase 27 live scope changed: use the current local Windows machine plus Ubuntu for public API proof first, then transfer the proven path to the Windows server
+- Phase 27 complete: local Windows plus Ubuntu proof confirmed Ubuntu path, canonical public topology, authenticated `/healthz` plus `/v1/models`, and the operator surface, but external chat remained blocked by the bounded local worker runtime.
+- Phase 28 complete: local proxy/bootstrap truth and operator surface became explicit, but proxy TLS still reset and bounded `shared-2` still remained unusable.
+- Phase 29 complete: proxy transport truth became explicit, bounded `shared-2` could reach internal `ready` through fallback, temporary reverse tunnels plus authenticated public `/healthz` and `/v1/models` passed in the same tracked flow, but external chat still failed with `409`.
+- Phase 30 complete: the exact public chat `409` branch on bounded `shared-2` was classified as `chat_bootstrap_failed`, but public chat still stayed blocked by `bootstrap_navigation_failed`.
+- Phase 31 complete: the remaining bounded `shared-2` blocker was narrowed to `worker_registry_drift`.
+- Phase 31.1 complete: preserve-first local inventory proved that `shared-2` currently sits on `needs_login`, six other local profiles are already `ready`, and the next honest bounded canary is `dad`.
+- Phase 32 complete: the selected-canary proof confirmed that `dad` is the honest active path, temporary reverse tunnels and authenticated public `healthz` plus `v1/models` pass in the same run, and the remaining blocker is narrowed to public chat bootstrap auth on `dad`.
+- Follow-up correction after Phase 32: do not loop on `dad` forever; the next proof should walk the ready local profiles one by one preserve-first and stop at the first real external chat success or at a repeated common blocker.
+- Phase 33 added: Preserve-first rotating ready-account external chat proof until first real outside success
+- Phase 33 planned: rotating preserve-first proof now targets the ready local profiles in order and stops at the first real outside chat success or one honest repeated/common blocker
+- Phase 33 complete: the rotating preserve-first proof did not find one outside chat success, but it proved that the same blocker `selected_canary_not_usable` now repeats across the whole current ready-account set.
+- Phase 33.1 inserted after Phase 33: Dedicated per-account desktop Chrome roots and isolated account-browser storage before external chat proof (URGENT)
+- Phase 33.1 complete: the shared-root browser model is now retired locally, and the current machine has one dedicated browser root and one dedicated browser-data root per account before the next external chat proof.
+- Phase 34 added: Preserve-first external chat proof on isolated per-account browser roots
+- Phase 34 complete: the preserve-first isolated-root proof reached the first real outside chat success, with `dad` failing narrowly on `worker_chat_bootstrap_timeout` and `wife` succeeding on `/v1/chat/completions = 200` with `probe-ok`.
+- Phase 35 added: Server transfer and revalidation of isolated per-account external chat proof
+- Phase 35 local checkpoint reached: `35-01` and `35-02` are complete with the server-transfer helper, canonical revalidation wrapper, GitHub-first host prompt, latest-route, and `/internal/admin` section now green locally; `35-03` remains the live Windows+Ubuntu rerun.
+
+### Pending Todos
+
+- Restore local proxy TLS egress before final closeout of this local external-chat branch: `.planning/todos/pending/2026-04-12-restore-local-proxy-tls-egress-before-phase-27-closeout.md`

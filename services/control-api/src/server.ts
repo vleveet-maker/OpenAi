@@ -68,6 +68,36 @@ import {
   createInternalPostPhase26UbuntuSshRecoveryRouter
 } from "./routes/internal-post-phase26-ubuntu-ssh-recovery.js";
 import {
+  createInternalPostPhase27LocalProxyBootstrapRouter
+} from "./routes/internal-post-phase27-local-proxy-bootstrap.js";
+import {
+  createInternalPostPhase28LocalProxyTransportRouter
+} from "./routes/internal-post-phase28-local-proxy-transport.js";
+import {
+  createInternalPostPhase29Shared2Chat409Router
+} from "./routes/internal-post-phase29-shared-2-chat-409.js";
+import {
+  createInternalPostPhase30Shared2BootstrapRecoveryRouter
+} from "./routes/internal-post-phase30-shared-2-bootstrap-recovery.js";
+import {
+  createInternalPostPhase31AccountSurfaceInventoryRouter
+} from "./routes/internal-post-phase31-account-surface-inventory.js";
+import {
+  createInternalPostPhase31SelectedCanaryChatRecoveryRouter
+} from "./routes/internal-post-phase31-selected-canary-chat-recovery.js";
+import {
+  createInternalPostPhase32RotatingReadyAccountChatProofRouter
+} from "./routes/internal-post-phase32-rotating-ready-account-chat-proof.js";
+import {
+  createInternalPostPhase33AccountBrowserIsolationRouter
+} from "./routes/internal-post-phase33-account-browser-isolation.js";
+import {
+  createInternalPostPhase33IsolatedExternalChatProofRouter
+} from "./routes/internal-post-phase33-isolated-external-chat-proof.js";
+import {
+  createInternalPostPhase34ServerIsolatedChatTransferRouter
+} from "./routes/internal-post-phase34-server-isolated-chat-transfer.js";
+import {
   createInternalPostRemediationDegradedSmokeRouter
 } from "./routes/internal-post-remediation-degraded-smoke.js";
 import {
@@ -519,6 +549,36 @@ export function createControlApiApp(
       }),
       createInternalPostPhase26UbuntuSshRecoveryRouter({
         statePath: config.postPhase26UbuntuSshRecoveryStatePath
+      }),
+      createInternalPostPhase27LocalProxyBootstrapRouter({
+        statePath: config.postPhase27LocalProxyBootstrapStatePath
+      }),
+      createInternalPostPhase28LocalProxyTransportRouter({
+        statePath: config.postPhase28LocalProxyTransportStatePath
+      }),
+      createInternalPostPhase29Shared2Chat409Router({
+        statePath: config.postPhase29Shared2Chat409StatePath
+      }),
+      createInternalPostPhase30Shared2BootstrapRecoveryRouter({
+        statePath: config.postPhase30Shared2BootstrapRecoveryStatePath
+      }),
+      createInternalPostPhase31AccountSurfaceInventoryRouter({
+        statePath: config.postPhase31AccountSurfaceInventoryStatePath
+      }),
+      createInternalPostPhase31SelectedCanaryChatRecoveryRouter({
+        statePath: config.postPhase31SelectedCanaryChatRecoveryStatePath
+      }),
+      createInternalPostPhase32RotatingReadyAccountChatProofRouter({
+        statePath: config.postPhase32RotatingReadyAccountChatProofStatePath
+      }),
+      createInternalPostPhase33AccountBrowserIsolationRouter({
+        statePath: config.postPhase33AccountBrowserIsolationStatePath
+      }),
+      createInternalPostPhase33IsolatedExternalChatProofRouter({
+        statePath: config.postPhase33IsolatedExternalChatProofStatePath
+      }),
+      createInternalPostPhase34ServerIsolatedChatTransferRouter({
+        statePath: config.postPhase34ServerIsolatedChatTransferStatePath
       }),
       createInternalPostRemediationDegradedSmokeRouter({
         statePath: config.postRemediationDegradedSmokeStatePath

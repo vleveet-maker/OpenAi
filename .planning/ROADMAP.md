@@ -56,7 +56,17 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 24: Deployed Windows post-phase23 exact smoke-wrapper compat backport and persistent disconnected-runtime forced-host public-owner 502 remediation** - completed 2026-04-02 with `hold_rollout`; the live compat-remediation artifact, operator surface, and exact smoke rerun are now all real, but the exact smoke still settled at `after_settle` with `1/9 ready`, a degraded pool, and public canary `503/503/503`
 - [x] **Phase 25: Deployed Windows post-phase24 live-fix smoke-wrapper backport and persistent disconnected-runtime forced-host public-owner 503 remediation** - completed 2026-04-12 with `hold_rollout`; the repo-backed reverse-tunnel and canonical-upstream truth are now explicit, but Ubuntu sync/topology was blocked, the reverse-tunnel task did not stay running, and the final outside proof regressed to `404/404/501`
 - [x] **Phase 26: Deployed Ubuntu sync recovery, reverse-tunnel task retention, and external authenticated smoke restoration** - completed 2026-04-12 with `hold_rollout`; the repo-backed Windows run confirmed the operator surface, but Ubuntu SSH stayed blocked, the reverse-tunnel task did not retain `Running`, listeners stayed missing, and the final accessible-host proof remained `404/404/501`
-- [ ] **Phase 27: Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion** - local Waves 1-2 completed 2026-04-12; next is local Windows + Ubuntu verification, temporary tunnel proof, and final authenticated external smoke before any server transfer
+- [x] **Phase 27: Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion** - completed 2026-04-13 with `hold_rollout`; local Windows + Ubuntu proof confirmed Ubuntu path, canonical public topology, authenticated `/healthz` plus `/v1/models`, and the operator surface, but external chat is still blocked by the bounded local worker runtime
+- [x] **Phase 28: Local proxy TLS egress and bounded worker bootstrap stabilization for external chat readiness** - completed 2026-04-13 with `hold_rollout`; local proxy/bootstrap truth and operator surface are now explicit, but proxy TLS still resets and bounded `shared-2` still remains unusable
+- [x] **Phase 29: Local proxy TLS transport repair and bounded shared-2 runtime recovery for external chat completion** - completed 2026-04-13 with `hold_rollout`; proxy transport truth is now explicit, bounded `shared-2` can reach internal `ready` through fallback, but external chat still fails with `409`
+- [x] **Phase 30: Bounded shared-2 external chat 409 root-cause and usability stabilization after transport and tunnel proof** - completed 2026-04-13 with `hold_rollout`; the exact public chat `409` is now classified as `chat_bootstrap_failed`, temporary reverse tunnels plus authenticated public health/models passed in the same tracked flow, but bounded `shared-2` still remains externally unusable and public chat stays blocked by `bootstrap_navigation_failed`
+- [x] **Phase 31: Bounded shared-2 chat_bootstrap_failed bootstrap_navigation_failed root-cause and usability recovery** - completed 2026-04-13 with `hold_rollout`; the remaining bounded `shared-2` blocker is now classified as `worker_registry_drift`, where host-controller still reports local `ready` while the internal worker registry returns `worker_not_found` and no usable CDP/browser surface appears
+- [x] **Phase 31.1: Full local account surface inventory and bounded canary reselection before worker registry drift reconciliation** - (INSERTED) completed 2026-04-14 with `canary_reselected`; the preserve-first local inventory proved that `shared-2` currently sits on `needs_login`, six other local profiles are already `ready`, and the next honest bounded canary is now `dad`
+- [x] **Phase 32: Bounded shared-2 worker_registry_drift reconciliation and externally usable chat recovery** - completed 2026-04-14 with `hold_rollout`; `shared-2` was correctly deferred as `needs_login` debt, the honest selected canary `dad` reached a usable local ChatGPT surface, temporary reverse tunnels plus authenticated public `healthz` and `v1/models` passed in the same tracked flow, but external `chat` still failed on `dad` with `409 chat_bootstrap_failed / bootstrap_auth_required`
+- [x] **Phase 33: Preserve-first rotating ready-account external chat proof until first real outside success** - completed 2026-04-14 with `hold_rollout`; the ready local set rotated preserve-first across `dad`, `wife`, `shared-1`, `shared-3`, `shared-4`, and `shared-5`, but every attempt repeated the same `listener_only / selected_canary_not_usable` blocker before public chat
+- [x] **Phase 33.1: Dedicated per-account desktop Chrome roots and isolated account-browser storage before external chat proof** - (INSERTED) completed 2026-04-14 with `isolated_browser_roots_ready`; the old shared browser-root model is now retired, and the current machine has one isolated desktop Chrome root plus one browser-data root per account
+- [x] **Phase 34: Preserve-first external chat proof on isolated per-account browser roots** - completed 2026-04-14 with `externally_ready`; the isolated browser-root baseline proved the first honest outside `/v1/chat/completions = 200`, with `wife` returning `probe-ok`
+- [ ] **Phase 35: Server transfer and revalidation of isolated per-account external chat proof** - executing 2026-04-14; `35-01` and `35-02` are complete locally, and `35-03` is now the live Windows+Ubuntu revalidation step on the proven isolated browser-root contract
 
 ## Phase Details
 
@@ -506,41 +516,25 @@ Current milestone execution order: 9 -> 10 -> 10.1 -> 10.2 -> 10.3 -> 10.4 -> 10
 | 24. Deployed Windows post-phase23 exact smoke-wrapper compat backport and persistent disconnected-runtime forced-host public-owner 502 remediation | WSCB-01, WSCB-02, WSCB-03, WSCB-04 | Complete (`hold_rollout`) | 2026-04-02 |
 | 25. Deployed Windows post-phase24 live-fix smoke-wrapper backport and persistent disconnected-runtime forced-host public-owner 503 remediation | WLFB-01, WLFB-02, WLFB-03, WLFB-04 | Complete (`hold_rollout`) | 2026-04-12 |
 | 26. Deployed Ubuntu sync recovery, reverse-tunnel task retention, and external authenticated smoke restoration | UTSR-01, UTSR-02, UTSR-03, UTSR-04 | Complete (`hold_rollout`) | 2026-04-12 |
-| 27. Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion | 2/3 | In Progress|  |
+| 27. Deployed Ubuntu SSH recovery, reverse-tunnel task retention, and authenticated external smoke completion | URTS-01, URTS-02, URTS-03, URTS-04 | Complete (`hold_rollout`) | 2026-04-13 |
+| 28. Local proxy TLS egress and bounded worker bootstrap stabilization for external chat readiness | PXBT-01, PXBT-02, PXBT-03, PXBT-04 | Complete (`hold_rollout`) | 2026-04-13 |
+| 29. Local proxy TLS transport repair and bounded shared-2 runtime recovery for external chat completion | PXTR-01, PXTR-02, PXTR-03, PXTR-04 | Complete (`hold_rollout`) | 2026-04-13 |
+| 30. Bounded shared-2 external chat 409 root-cause and usability stabilization after transport and tunnel proof | CHAT409-01, CHAT409-02, CHAT409-03, CHAT409-04 | Complete (`hold_rollout`) | 2026-04-13 |
+| 31. Bounded shared-2 chat_bootstrap_failed bootstrap_navigation_failed root-cause and usability recovery | S2BF-01, S2BF-02, S2BF-03, S2BF-04 | Complete (`hold_rollout`) | 2026-04-13 |
+| 31.1. Full local account surface inventory and bounded canary reselection before worker registry drift reconciliation | ACINV-01, ACINV-02, ACINV-03, ACINV-04 | Complete (`canary_reselected`) | 2026-04-14 |
+| 32. Bounded shared-2 worker_registry_drift reconciliation and externally usable chat recovery | WRDR-01, WRDR-02, WRDR-03, WRDR-04 | Complete (`hold_rollout`) | 2026-04-14 |
+| 33. Preserve-first rotating ready-account external chat proof until first real outside success | RRAC-01, RRAC-02, RRAC-03, RRAC-04 | Complete (`hold_rollout`) | 2026-04-14 |
+| 33.1. Dedicated per-account desktop Chrome roots and isolated account-browser storage before external chat proof | ABIS-01, ABIS-02, ABIS-03, ABIS-04 | Complete (`isolated_browser_roots_ready`) | 2026-04-14 |
 
 ## Current Status
 
 - Active milestone: `v1.2 Rollout Stability`
-- Current next action: execute the local Windows plus Ubuntu live run for Phase 27 before any Windows-server transfer
-  - Phase 25 is fully complete with `hold_rollout`
-  - Phase 26 is now also complete with `hold_rollout`
-  - Windows repo-backed validation passed on branch `windows-browser-block-api-20260331` at commit `8317e78`
-  - The Phase 26 latest-state route and `/internal/admin` section were both explicitly confirmed on the deployed Windows host
-  - Ubuntu sync/topology still could not be re-verified because SSH to `mi50@77.66.186.75:2222` closed immediately, so the exact live Ubuntu checkout path and hash remain unconfirmed
-  - The reverse-tunnel scheduled task still did not hold: the last observed state was `Ready`, `LastTaskResult=1`, and Ubuntu listeners `14021..14027` plus `14040` were recorded as missing
-  - External proof from the accessible Windows host stayed negative in the repo-backed Phase 26 run: `/healthz=404`, `/v1/models=404`, `/v1/chat/completions=501`
-  - Authenticated external smoke still could not complete from tracked assets because no bearer token was found on the Windows host and Ubuntu remained unavailable by SSH
-  - Earlier live evidence on 2026-04-12 still matters: the public API can work through `Ubuntu nginx -> 127.0.0.1:4010` when reverse tunnels are healthy, but the repo-backed restoration path has not reproduced that state durably yet
-  - Phase 27 local Waves 1-2 are now complete: the canonical Ubuntu-SSH wrapper, GitHub-first handoff prompt, latest-state route, and `/internal/admin` section are landed and locally verified
-  - Phase 27 live execution is now intentionally re-scoped to the current local Windows machine plus Ubuntu, not the Windows server, so public API proof can be completed before any server transfer
-  - The Windows host `192.168.88.250` no longer has an active `Caddy` edge in the live path: `80/443` do not listen there, `Get-Service *caddy*` returns no service, and `Get-Process caddy` returns no process
-  - The actual live blocker that broke external chat was a dead reverse SSH tunnel from the Windows browser block to Ubuntu, not a broken public `nginx` path and not a broken MikroTik public ingress rule
-  - After the tunnel recovery, Ubuntu again exposed `127.0.0.1:14021..14027` and `127.0.0.1:14040`, `readyz` returned `7/7 ready`, and the external chat smoke returned `200` with `ping-ok` on worker `shared-2`
-  - Carry-forward debt from the completed smoke, recovery, remediation, and stabilization work: compact visible remains the official runtime fallback, the 9-account Windows block remains preserved, raw `4040`, worker-agent ports, and raw `:4010` stay private, public ownership is deliberately unified through Ubuntu, and the remaining rollout blocker is now the runtime itself rather than missing tooling or operator visibility
-  - Phase 16 is now fully complete: the deployed host ran the parity-synced stabilization command, `GET /internal/post-remediation-degraded-smoke/latest` returned latest, `/internal/admin` showed the same stabilization surface, and the repo now also carries BOM-tolerant latest-state parsing after the live route surfaced one BOM issue in `latest.json`
-  - Phase 17 is now fully complete: the deployed host ran the bounded runtime investigation, `GET /internal/post-stabilization-runtime-investigation/latest` returned latest, `/internal/admin` showed the same runtime-investigation surface, and the final verdict is `runtime_blocker_confirmed`
-  - Phase 18 is now fully complete: the deployed host ran the live remediation harness, confirmed `GET /internal/disconnected-runtime-remediation/latest` plus `/internal/admin`, reran the exact Phase 11 smoke, and ended with final verdict `hold_rollout`
-  - The final Phase 18 truth is explicit: remediation stayed `0/9 ready`, the final smoke settled at `after_settle` with pool `degraded` and only `1/9 ready`, and the public canary on `shared-6` still returned `502/502/502`
-  - The repo now backports string-or-object `Worker.status` normalization into the runtime-critical Windows wrappers so the next archive no longer depends on the old `status.detail`-only assumption
-  - Phase 19 is now fully complete: the deployed host overlaid the archive, restarted `control-api`, ran the live follow-up harness, confirmed `GET /internal/persistent-disconnected-runtime-followup/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke with final verdict `hold_rollout`
-  - The final Phase 19 truth is explicit: the follow-up stayed `0/9 -> 0/9 ready`, the dominant blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, the public owner still returned `502`, and the rerun smoke still ended at `after_settle` with only `1/9 ready`
-  - The deployed host still needed compatibility restores in `probe-public-api.ps1`, `recover-browser-block-readiness.ps1`, `remediate-disconnected-runtime-and-forced-host-edge.ps1`, `remediate-persistent-disconnected-runtime-and-public-502.ps1`, `test-rollout-smoke.ps1`, and `test-host-worker-relay.ps1`; those raw runtime fixes are not yet synced back into this checkout verbatim
-  - Phase 20 is now fully complete: the deployed host overlaid the parity-clean archive, restarted `control-api`, ran the live remediation harness, confirmed `GET /internal/runtime-parity-backport-remediation/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke with final verdict `hold_rollout`
-  - The final Phase 20 truth is explicit: remediation stayed `0/9 -> 0/9 ready`, the dominant blocker remained `disconnected`, the first failing hop remained `windows_edge_forced_host`, both forced-host plus public-owner checks stayed red, and the rerun smoke still ended at `after_settle` with only `1/9 ready` and public canary `502/502/502`
-  - Unlike the earlier follow-up phases, the live Phase 20 run did not report any new post-overlay server-only compatibility restore after the archive overlay, so repo/runtime parity is now proven for this wrapper chain even though rollout remains held
-  - Phase 21 is now fully complete: the deployed host overlaid the archive, restarted `control-api`, ran the exact post-parity remediation harness, confirmed both `GET /internal/post-parity-disconnected-runtime-remediation/latest` and `/internal/admin`, and reran the exact Phase 11 smoke
-  - The final Phase 21 truth is explicit: remediation stayed `0/9 -> 0/9 ready`, the dominant blocker stayed `disconnected`, the first failing hop stayed `windows_edge_forced_host`, both forced-host plus public-owner checks stayed red, and the rerun smoke still ended at `after_settle` with only `1/9 ready` plus public canary `502/502/502`
-  - The smoke rerun required restoring `test-rollout-smoke.ps1` to a probe-compatible call scheme because the checkpoint archive only contained Phase 21 checkpoint artifacts; the repo now backports a guard so the smoke wrapper no longer crashes when the probe payload omits `chatCompletions`
+- Current next action: add the follow-up phase that resumes external chat proof on top of the new isolated per-account browser baseline
+  - Phase 33.1 completed with final verdict `isolated_browser_roots_ready`
+  - the current local machine now has one isolated desktop Chrome root plus one browser-data root per account for `dad`, `wife`, `shared-1`, `shared-2`, `shared-3`, `shared-4`, and `shared-5`
+  - external `/healthz` remains green, but we intentionally paused external chat proof until this isolation baseline existed
+  - the next live phase should return to outside-chat proof on top of the new isolated browser roots instead of the old shared browser-storage chain
+  - `shared-2` still remains explicit `needs_login` deferred debt, but that is now separate from the browser-isolation foundation
 - Phase 22 is now fully complete: the deployed host overlaid the archive, restarted `control-api`, ran the exact post-Phase-21 follow-up harness, confirmed `GET /internal/post-phase21-disconnected-runtime-followup/latest` plus `/internal/admin`, and reran the exact Phase 11 smoke with final verdict `hold_rollout`
 - The final Phase 22 truth is explicit: the follow-up stayed `0/9 -> 0/9 ready`, the dominant blocker stayed `disconnected`, the first failing hop stayed `windows_edge_forced_host`, `loopbackStatus` stayed green while forced-host plus public-owner stayed red, and the rerun smoke still ended at `after_settle` with only `1/9 ready` plus public canary `502/502/502`
 - The successful smoke rerun used the current server-working `test-rollout-smoke.ps1` because the checkpoint archive `phase22-live-followup-checkpoint-sync-20260401-224716.zip` carried a stale smoke-wrapper copy; that raw smoke-wrapper diff is not synced back verbatim into this checkout
@@ -847,9 +841,9 @@ Plans:
 **Goal:** Recover repo-backed Ubuntu SSH verification, prove reverse-tunnel retention from tracked assets, and complete authenticated external smoke on the real public path so external readiness no longer depends on unverified Ubuntu state or one-off operator memory.
 **Requirements**: URTS-01, URTS-02, URTS-03, URTS-04
 **Depends on:** Phase 26
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
-**Current status:** Local Waves 1-2 completed on 2026-04-12. Wave 1 added the canonical repo-backed Ubuntu-SSH-recovery wrapper, the GitHub-first deployed-host prompt, and exact docs for Ubuntu SSH plus reverse-tunnel truth. Wave 2 added `GET /internal/post-phase26-ubuntu-ssh-recovery/latest`, the matching `/internal/admin` section, route/admin coverage, and a green runtime rebuild. Wave 3 still needs the deployed Ubuntu plus Windows run to confirm live SSH truth, reverse-tunnel retention, operator-surface parity, and final authenticated external smoke.
+**Current status:** Completed on 2026-04-13 with `hold_rollout`. Phase 27 confirmed the exact live Ubuntu deployment-unit path `/opt/owmcgp-remote-relay/services/control-api`, re-confirmed the canonical `nginx -> 127.0.0.1:4010` public path, refreshed the file-backed latest-state artifact and matching `/internal/admin` section, and proved authenticated public `/healthz` plus `/v1/models`. The phase also narrowed the remaining blocker honestly: external chat is still blocked by the bounded local worker bootstrap/runtime path, not by Ubuntu ingress or the operator surface.
 
 **Success Criteria** (what must be TRUE):
   1. Repo-backed GitHub sync can recover or exactly classify Ubuntu SSH reachability and confirm the exact live Ubuntu checkout path plus commit hash while re-verifying the canonical `80/443/8080 -> 127.0.0.1:4010` topology.
@@ -860,4 +854,200 @@ Plans:
 Plans:
 - [x] `27-01-PLAN.md` - canonical Ubuntu SSH recovery wrapper, GitHub-first deployed-host prompt, and exact docs
 - [x] `27-02-PLAN.md` - file-backed latest Ubuntu SSH recovery route, internal admin visibility, and runtime build parity
-- [ ] `27-03-PLAN.md` - repo-backed Ubuntu plus Windows verification, reverse-tunnel retention proof, authenticated external smoke, and final verdict
+- [x] `27-03-PLAN.md` - repo-backed local Windows plus Ubuntu verification, reverse-tunnel truth, authenticated external smoke, and final verdict
+
+### Phase 28: Local proxy TLS egress and bounded worker bootstrap stabilization for external chat readiness
+
+**Goal:** Stabilize the remaining local blocker for external chat readiness by fixing or exactly classifying proxy TLS egress on the current machine, moving bounded worker `shared-2` from `disconnected` toward a usable bootstrap state, and only then rerunning authenticated external chat on the real public path.
+**Requirements**: PXBT-01, PXBT-02, PXBT-03, PXBT-04
+**Depends on:** Phase 27
+**Plans:** 3/3 plans complete
+**Current status:** Completed on 2026-04-13 with verdict `hold_rollout`. Wave 1 added the canonical local proxy/bootstrap wrapper and preserve-first local-only docs. Wave 2 added `GET /internal/post-phase27-local-proxy-bootstrap/latest`, the matching `/internal/admin` section, route/admin coverage, full-suite proof, and `build` parity. Wave 3 then ran the bounded local `shared-2` proof, wrote the latest-state artifact, and confirmed the operator surface after a local `control-api` restart. The final truth stayed negative: `sing-box` rebuilt and restarted, but proxy TLS to `gstatic` and `chatgpt.com` still reset, both the proxy-backed and bounded no-proxy branches ended as `reachable_but_unusable`, final listener truth kept `4024` plus `9225` down, and the wrapper verdict remained `hold_rollout`. By plan contract, authenticated external chat was not rerun because the local wrapper verdict never reached `ready_for_external_chat_smoke`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project can prove whether local proxy TLS egress on `127.0.0.1:7897` succeeds or still resets, with exact branch-level evidence instead of another vague bootstrap failure.
+  2. One bounded preserve-first local worker flow can move or honestly reclassify `shared-2` from `disconnected` toward `ready` without deleting profiles, clearing cookies, clearing local storage, mass restart, or mass relogin.
+  3. The latest Phase 28 local proxy/bootstrap result is visible through an internal operator surface or durable file-backed artifact before any external chat claim.
+  4. The phase ends with one explicit verdict `externally_ready` or `hold_rollout`, and `externally_ready` is only allowed if the bounded local runtime and authenticated public chat both succeed.
+
+Plans:
+- [x] `28-01-PLAN.md` - canonical local proxy/bootstrap wrapper, bounded `shared-2` contract, and exact local execution docs
+- [x] `28-02-PLAN.md` - file-backed latest local proxy/bootstrap route, internal admin visibility, and runtime build parity
+- [x] `28-03-PLAN.md` - bounded local proof on `shared-2`, operator-surface confirmation, external chat rerun gate, and final verdict
+
+### Phase 29: Local proxy TLS transport repair and bounded shared-2 runtime recovery for external chat completion
+
+**Goal:** Repair or exactly classify local proxy transport, move bounded `shared-2` from raw disconnect noise to an explicit runtime branch outcome, and rerun authenticated public smoke only when the local path becomes honest enough to support it.
+**Requirements**: PXTR-01, PXTR-02, PXTR-03, PXTR-04
+**Depends on:** Phase 28
+**Plans:** 3/3 plans complete
+
+**Current status:** Completed on 2026-04-13 with verdict `hold_rollout`. Wave 1 added a diagnostic proxy interface with pinned single-outbound mode, per-tag outbound proof, and one canonical local wrapper. Wave 2 added `GET /internal/post-phase28-local-proxy-transport/latest`, the matching `/internal/admin` section, route/admin coverage, full-suite proof, and `build` parity. Wave 3 then ran the bounded local proof on `shared-2`, temporarily restored reverse tunnels to Ubuntu for the public rerun, and wrote the final latest-state artifact. The resulting truth is narrower and more useful than before: all proxy outbounds still fail TLS, `proxyBackedRuntime` stays `disconnected`, but `noProxyFallbackRuntime` reaches internal `ready`; temporary Ubuntu listeners `14021..14027` and `14040` appear, authenticated public `/healthz` plus `/v1/models` pass, and `/v1/chat/completions` still fails with `409` on `shared-2`. The final verdict therefore remains `hold_rollout`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project can produce one durable artifact that separates mixed proxy truth from pinned per-outbound truth and distinguishes `all_outbounds_failed`, `single_outbound_failed`, `auto_selection_failed`, and `runtime_unusable_after_transport`.
+  2. One bounded preserve-first local worker flow can record both `proxy_backed` and `no_proxy_fallback` runtime branches for `shared-2` and write one explicit `runtimePathUsed` without touching other workers or destroying local auth state.
+  3. The latest Phase 29 result is visible through an internal operator surface or durable file-backed artifact before any external readiness claim.
+  4. Authenticated public smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun only after one bounded runtime path becomes usable and ends with exactly `externally_ready` or `hold_rollout`.
+
+Plans:
+- [x] `29-01-PLAN.md` - transport diagnostics, single-outbound proxy mode, and canonical bounded wrapper
+- [x] `29-02-PLAN.md` - file-backed latest transport route, internal admin visibility, and runtime build parity
+- [x] `29-03-PLAN.md` - live local proof with bounded `shared-2`, temporary tunnel assist, authenticated public smoke, and final verdict
+
+### Phase 30: Bounded shared-2 external chat 409 root-cause and usability stabilization after transport and tunnel proof
+
+**Goal:** Turn the remaining external chat `409` into one exact, durable root-cause classification for bounded `shared-2`, then either stabilize the usable path or end with one honest `hold_rollout` verdict backed by worker, bootstrap, relay, and public-smoke truth.
+**Requirements**: CHAT409-01, CHAT409-02, CHAT409-03, CHAT409-04
+**Depends on:** Phase 29
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-13 with `hold_rollout`. Wave 1 added the canonical bounded wrapper plus exact relay/public `409` propagation for the remaining shared-2 chat blocker. Wave 2 added `GET /internal/post-phase29-shared-2-chat-409/latest`, the matching `/internal/admin` section, focused coverage, full-suite proof, and build parity. Wave 3 then ran the bounded local proof, confirmed the latest-state/admin surface, brought up temporary reverse tunnels, and reran authenticated public smoke. The final truth stayed negative but much narrower: `/healthz` and `/v1/models` both returned `200`, `/v1/chat/completions` returned `409`, the exact branch is now `chat_bootstrap_failed` with `bootstrap_navigation_failed`, temporary tunnels were good, but bounded `shared-2` still remained `reachable_but_unusable`, so the final verdict remains `hold_rollout`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project can produce one durable artifact that names the exact external chat `409` branch across session, bootstrap, relay, and worker-usability state instead of collapsing the remaining blocker into one vague chat failure.
+  2. One bounded preserve-first local worker flow can move `shared-2` from internally `ready but unusable` toward externally usable chat, or honestly record the exact remaining mismatch without touching other workers or destroying auth state.
+  3. The latest Phase 30 shared-2 `409` result is visible through an internal operator surface or durable file-backed artifact before any external-readiness claim.
+  4. Authenticated public smoke against `77.66.186.75` for `/healthz`, `/v1/models`, and `/v1/chat/completions` is rerun in the same tracked flow and ends with exactly one verdict `externally_ready` or `hold_rollout`.
+
+Plans:
+- [x] `30-01-PLAN.md` - exact `409` classification harness, bounded shared-2 usability diagnostics, and canonical wrapper
+- [x] `30-02-PLAN.md` - file-backed latest shared-2 `409` route, internal admin visibility, and focused coverage
+- [x] `30-03-PLAN.md` - live bounded shared-2 proof, authenticated public chat rerun, and final verdict
+
+### Phase 31: Bounded shared-2 chat_bootstrap_failed bootstrap_navigation_failed root-cause and usability recovery
+
+**Goal:** Narrow the bounded `shared-2` `chat_bootstrap_failed/bootstrap_navigation_failed` branch down to one exact remaining usability defect and either recover externally usable chat or keep one final honest blocker without breaking preserve-first constraints.
+**Requirements**: S2BF-01, S2BF-02, S2BF-03, S2BF-04
+**Depends on:** Phase 30
+**Plans:** 3/3 plans complete
+
+**Current status:** Completed on 2026-04-13 with `hold_rollout`. Wave 1 added the canonical bounded wrapper and exact bootstrap/usability classification path. Wave 2 added `GET /internal/post-phase30-shared-2-bootstrap-recovery/latest`, the matching `/internal/admin` section, focused coverage, and build parity. Wave 3 then ran the bounded local proof and wrote the final artifact. The remaining blocker is now exact and narrower than Phase 30: `shared-2` currently fails as `worker_registry_drift`, where host-controller still reports the worker locally `ready`, the internal worker registry still returns `worker_not_found`, direct browser evidence stays at `cdp_not_listening`, the bounded reconcile/restart branch does not repair the mismatch, and the public rerun is honestly blocked as `runtime_unusable_after_recovery`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project can produce one durable artifact that reduces the bounded `shared-2` `chat_bootstrap_failed/bootstrap_navigation_failed` branch to one exact remaining usability defect instead of another vague browser failure.
+  2. One bounded preserve-first local worker flow can either recover `shared-2` into externally usable chat or honestly record the exact remaining mismatch without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  3. The latest Phase 31 shared-2 bootstrap/usability result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim.
+  4. The phase ends with one tracked final verdict `externally_ready` or `hold_rollout`, and if a public chat rerun is still unsafe, the artifact records the exact blocked reason instead of pretending the run was inconclusive.
+
+Plans:
+- [x] `31-01-PLAN.md` - exact bootstrap-navigation diagnostics, host-controller vs internal-worker truth reconciliation, and canonical bounded wrapper
+- [x] `31-02-PLAN.md` - file-backed latest shared-2 bootstrap-recovery route, internal admin visibility, and focused coverage
+- [x] `31-03-PLAN.md` - live bounded shared-2 usability recovery ladder, gated public rerun, and final verdict
+
+### Phase 31.1: Full local account surface inventory and bounded canary reselection before worker registry drift reconciliation (INSERTED)
+
+**Goal:** Stop treating one suspicious worker surface as ground truth, inspect every current local account/profile surface preserve-first, classify which ones are truly usable versus blocked on manual confirm/login/interstitial screens, and choose the right bounded canary before continuing deeper drift reconciliation.
+**Requirements**: ACINV-01, ACINV-02, ACINV-03, ACINV-04
+**Depends on:** Phase 31
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-14 with verdict `canary_reselected`. The preserve-first inventory inspected all seven current local account surfaces, wrote screenshot-backed classifications for each one, exposed the latest result through the file-backed operator surface, and proved that `shared-2` should not be the next narrow canary because it currently sits on `needs_login`. The honest next bounded canary is now `dad`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project has one durable inventory artifact that records the visible surface status for every current local account/profile instead of assuming one worker reflects the whole pool.
+  2. The inventory flow classifies each profile preserve-first as `ready`, `needs_manual_confirm`, `needs_login`, `broken_surface`, or another explicit blocked state without deleting profiles, clearing cookies/local storage, or broad-starting the whole pool.
+  3. The latest local account-surface inventory result is visible through an internal operator surface or durable file-backed artifact before any more single-worker external-chat claims.
+  4. The phase ends with one explicit bounded-canary decision that says which worker should be used next for narrow runtime/debug proof, or honestly records that no current local worker is safe to treat as the next canary.
+
+Plans:
+- [x] `31.1-01-PLAN.md` - local account-surface inventory wrapper, screenshot capture, and explicit classification contract
+- [x] `31.1-02-PLAN.md` - latest inventory route, internal admin visibility, and focused coverage
+- [x] `31.1-03-PLAN.md` - preserve-first live inventory run, bounded canary reselection, and final verdict
+
+### Phase 32: Bounded shared-2 worker_registry_drift reconciliation and externally usable chat recovery
+
+**Goal:** Use the honest selected canary `dad` to get one preserve-first externally usable chat path if possible, while keeping `shared-2` explicitly deferred as `needs_login` debt instead of treating it as the active blocker.
+**Requirements**: WRDR-01, WRDR-02, WRDR-03, WRDR-04
+**Depends on:** Phase 31.1
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-14 with `hold_rollout`. The live selected-canary proof correctly deferred `shared-2` as `needs_login` debt, proved that `dad` can reach a usable local ChatGPT surface, and confirmed temporary reverse tunnels plus authenticated public `healthz` and `v1/models` in the same tracked flow, but external `chat` still failed on `dad` with `409 chat_bootstrap_failed / bootstrap_auth_required`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project can produce one durable artifact that explains the exact bounded selected-canary (`dad`) runtime truth across host-controller truth, internal worker-registry truth, listener/CDP truth, and direct browser evidence instead of collapsing the blocker into another vague bootstrap failure.
+  2. One bounded preserve-first local worker flow can either reconcile the selected canary (`dad`) into externally usable chat or honestly record the exact remaining mismatch without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  3. The latest Phase 32 selected-canary reconciliation result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim.
+  4. The phase ends with one tracked final verdict `externally_ready` or `hold_rollout`, and if a public chat rerun is still unsafe, the artifact records the exact blocked reason in the same flow instead of pretending the run was inconclusive.
+
+Plans:
+- [x] `32-01-PLAN.md` - selected-canary runtime truth, canonical bounded wrapper, and honest `dad` diagnostics
+- [x] `32-02-PLAN.md` - file-backed latest selected-canary route, internal admin visibility, and focused coverage
+- [x] `32-03-PLAN.md` - live bounded `dad` proof, gated public rerun, and final verdict
+
+### Phase 33: Preserve-first rotating ready-account external chat proof until first real outside success
+
+**Goal:** Try the currently ready local accounts one by one preserve-first until one of them proves a real outside chat success, or until the ready set is exhausted with one honest common blocker.
+**Requirements**: RRAC-01, RRAC-02, RRAC-03, RRAC-04
+**Depends on:** Phase 32
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-14 with `hold_rollout`. The phase correctly stopped looping on one account-specific blocker and instead rotated through the currently ready local profiles in preserve-first order. No candidate succeeded yet, but that outcome is now honest and useful: every attempted worker (`dad`, `wife`, `shared-1`, `shared-3`, `shared-4`, `shared-5`) repeated the same blocker `selected_canary_not_usable`, with local ChatGPT visible yet bounded runtime truth still ending at `listener_only / surface_unusable`.
+
+**Success Criteria** (what must be TRUE):
+  1. The project can produce one durable artifact that records the ordered preserve-first attempts across the current ready local accounts, including per-account local-surface truth, tunnel truth, public smoke truth, and one final stop reason.
+  2. One bounded preserve-first local flow can try the ready local accounts one by one until the first real external chat success or the ready set is exhausted, without deleting profiles, clearing cookies, clearing local storage, blind full-pool restart, or mass relogin.
+  3. The latest Phase 33 rotating ready-account result is visible through an internal operator surface or durable file-backed artifact before any new external-readiness claim.
+  4. The phase ends with one tracked final verdict `externally_ready` or `hold_rollout`, and if no account succeeds, the artifact records the exact repeated/common blocker or exhaustion reason instead of pretending the run was inconclusive.
+
+Plans:
+- [x] `33-01-PLAN.md` - rotating ready-account wrapper, ordered-attempt artifact contract, and exact per-account public probe truth
+- [x] `33-02-PLAN.md` - file-backed latest rotating-proof route, internal admin visibility, and focused coverage
+- [x] `33-03-PLAN.md` - live rotating preserve-first proof, first-success stop rule, and final verdict
+
+### Phase 33.1: Dedicated per-account desktop Chrome roots and isolated account-browser storage before external chat proof (INSERTED)
+
+**Goal:** Materialize one dedicated desktop Chrome root plus one dedicated browser-data root per local account, keep the isolated windows open for operator inspection, and only then resume external chat proof from the isolated architecture.
+**Requirements**: ABIS-01, ABIS-02, ABIS-03, ABIS-04
+**Depends on:** Phase 33
+**Plans:** 3 plans
+
+**Current status:** Completed on 2026-04-14 with `isolated_browser_roots_ready`. This urgent inserted phase retired the old shared browser-root assumption as untrustworthy, created isolated browser roots plus isolated browser-data roots for `dad`, `wife`, `shared-1`, `shared-2`, `shared-3`, `shared-4`, and `shared-5`, and proved through the live artifact that all seven isolated windows opened and stayed available for inspection without cross-account reuse.
+
+**Success Criteria** (what must be TRUE):
+  1. Each current local account gets a unique desktop Chrome root and a unique browser-data root with no accidental cross-account reuse.
+  2. The local helper can open the isolated account windows and keep them open for operator inspection without destructive profile actions.
+  3. The latest Phase 33.1 isolation result is visible through an internal operator surface or durable file-backed artifact before any more external chat claims.
+  4. The phase ends with one explicit verdict `isolated_browser_roots_ready` or `hold_rollout`, and if any account still fails launch or isolation, the artifact names those exact workers.
+
+Plans:
+- [x] `33.1-01-PLAN.md` - isolated browser-root preparation, per-account storage layout, and local open-helper migration
+- [x] `33.1-02-PLAN.md` - file-backed latest isolation route, internal admin visibility, and focused coverage
+- [x] `33.1-03-PLAN.md` - live local isolation proof, operator inspection readiness, and final verdict
+
+### Phase 34: Preserve-first external chat proof on isolated per-account browser roots
+
+**Goal:** Use the new isolated per-account browser roots as the only local proof baseline and get one honest external `chat` success preserve-first, stopping on the first real outside `200` or recording one exact repeated blocker if all isolated accounts still fail.
+**Requirements**: IECP-01, IECP-02, IECP-03, IECP-04
+**Depends on:** Phase 33.1
+**Plans:** 3 plans
+**Current status:** Completed on 2026-04-14 with `externally_ready`. The new isolated browser-root baseline proved to be the right local architecture: all seven preflighted accounts were genuinely ready, the wrapper attached preserve-first to the already-open isolated windows, temporary reverse tunnels plus external `/healthz` and `/v1/models` succeeded in the same tracked flow, `dad` still failed on `409 chat_bootstrap_failed / worker_chat_bootstrap_timeout`, but `wife` produced the first honest outside `/v1/chat/completions = 200` with `assistantReplyText = probe-ok`. This means the local external API proof is now real on isolated per-account browser roots.
+
+**Success Criteria** (what must be TRUE):
+  1. One bounded preserve-first local flow can reuse the isolated account browsers one by one and stop on the first real outside `/v1/chat/completions` success without deleting profiles, clearing cookies or local storage, broad-starting the runtime, or mass relogin.
+  2. The phase records exact per-account preflight surface truth plus external `healthz`, `v1/models`, and `v1/chat/completions` truth in one durable artifact instead of flattening everything into another vague blocker.
+  3. The latest Phase 34 result is visible through a durable latest-state file and internal operator surface before any new external-readiness claim.
+
+Plans:
+- [x] `34-01-PLAN.md` - isolated-root rotating external-chat wrapper, preflight account truth, and durable artifact contract
+- [x] `34-02-PLAN.md` - latest-route, internal admin visibility, and focused operator-surface coverage
+- [x] `34-03-PLAN.md` - live preserve-first external smoke on isolated account roots and final verdict
+
+### Phase 35: Server transfer and revalidation of isolated per-account external chat proof
+
+**Goal:** Transfer the locally proven isolated per-account browser-root model to the server path preserve-first, keep Ubuntu as the public owner, and rerun the real outside-chat proof until the first honest server-side success or one exact blocker.
+**Requirements**: STRV-01, STRV-02, STRV-03, STRV-04
+**Depends on:** Phase 34
+**Plans:** 3 plans
+**Current status:** Executing on 2026-04-14. `35-01` and `35-02` are complete locally: the preserve-first server-transfer helper, canonical revalidation wrapper, GitHub-first host prompt, latest route, and `/internal/admin` surface are all in place and verified. The remaining work is `35-03`: live Windows + Ubuntu sync, canary-first isolated transfer, and one honest server-side outside-chat verdict.
+
+**Success Criteria** (what must be TRUE):
+  1. One repo-backed GitHub-first sync aligns the Windows browser-block host and Ubuntu relay host to the same tracked branch/commit and records the exact repo paths and hashes used in the live run.
+  2. At least one preserved server account can be transferred or reused on the isolated per-account browser-root model preserve-first, with exact per-account transfer and preflight truth recorded and no cross-account root/data reuse.
+  3. The latest Phase 35 server transfer/revalidation result is visible through a durable latest-state file and internal operator surface before any new server external-readiness claim.
+  4. Public `/healthz`, `/v1/models`, and `/v1/chat/completions` are rerun through `http://77.66.186.75` after the server transfer and end with exactly one verdict `externally_ready` or `hold_rollout`.
+
+Plans:
+- [x] `35-01-PLAN.md` - preserve-first server isolation transfer helper, canonical server revalidation wrapper, and GitHub-first host prompt
+- [x] `35-02-PLAN.md` - latest-route, internal admin visibility, and focused operator-surface coverage for server transfer truth
+- [ ] `35-03-PLAN.md` - live Windows + Ubuntu sync, canary-first server revalidation, and final verdict

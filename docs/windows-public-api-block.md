@@ -75,6 +75,23 @@ When files need to move between hosts, use GitHub branch `windows-browser-block-
 - sync from GitHub on Ubuntu and Windows
 - do not rely on local-only archives as the canonical handoff
 
+## Server Transfer Baseline
+
+The server transfer baseline now reuses the same isolated per-account browser model that proved external chat locally.
+
+That means:
+
+- do not go back to the retired shared browser-root layout
+- preserve-first server transfer means one isolated browser root per account
+- and one isolated browser-data root per account
+- revalidation should stop on the first real outside `chat = 200`
+
+Canonical server revalidation wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\revalidate-server-isolated-external-chat-proof.ps1
+```
+
 ## Reverse Tunnel Dependency
 
 Reverse tunnels are rollout-critical because Ubuntu reaches the Windows workers through:

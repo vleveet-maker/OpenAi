@@ -410,6 +410,96 @@ function renderInternalAdminPage(): string {
         </section>
 
         <section>
+          <h2>Latest post-phase27 local proxy/bootstrap stabilization</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase27-local-proxy-bootstrap-copy">Loading latest post-phase27 local proxy/bootstrap stabilization...</p>
+            <div class="counts" id="post-phase27-local-proxy-bootstrap-summary"></div>
+            <ul id="post-phase27-local-proxy-bootstrap-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase28 local proxy transport repair</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase28-local-proxy-transport-copy">Loading latest post-phase28 local proxy transport repair...</p>
+            <div class="counts" id="post-phase28-local-proxy-transport-summary"></div>
+            <ul id="post-phase28-local-proxy-transport-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase29 shared-2 chat 409</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase29-shared-2-chat-409-copy">Loading latest post-phase29 shared-2 chat 409...</p>
+            <div class="counts" id="post-phase29-shared-2-chat-409-summary"></div>
+            <ul id="post-phase29-shared-2-chat-409-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase30 shared-2 bootstrap recovery</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase30-shared-2-bootstrap-recovery-copy">Loading latest post-phase30 shared-2 bootstrap recovery...</p>
+            <div class="counts" id="post-phase30-shared-2-bootstrap-recovery-summary"></div>
+            <ul id="post-phase30-shared-2-bootstrap-recovery-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase31 local account surface inventory</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase31-account-surface-inventory-copy">Loading latest post-phase31 local account surface inventory...</p>
+            <div class="counts" id="post-phase31-account-surface-inventory-summary"></div>
+            <ul id="post-phase31-account-surface-inventory-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase31 selected canary chat recovery</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase31-selected-canary-chat-recovery-copy">Loading latest post-phase31 selected canary chat recovery...</p>
+            <div class="counts" id="post-phase31-selected-canary-chat-recovery-summary"></div>
+            <ul id="post-phase31-selected-canary-chat-recovery-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase32 rotating ready-account chat proof</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase32-rotating-ready-account-chat-proof-copy">Loading latest post-phase32 rotating ready-account chat proof...</p>
+            <div class="counts" id="post-phase32-rotating-ready-account-chat-proof-summary"></div>
+            <ul id="post-phase32-rotating-ready-account-chat-proof-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase33 account browser isolation</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase33-account-browser-isolation-copy">Loading latest post-phase33 account browser isolation...</p>
+            <div class="counts" id="post-phase33-account-browser-isolation-summary"></div>
+            <ul id="post-phase33-account-browser-isolation-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase33 isolated external chat proof</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase33-isolated-external-chat-proof-copy">Loading latest post-phase33 isolated external chat proof...</p>
+            <div class="counts" id="post-phase33-isolated-external-chat-proof-summary"></div>
+            <ul id="post-phase33-isolated-external-chat-proof-details"></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>Latest post-phase34 server isolated external chat proof</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase34-server-isolated-chat-transfer-copy">Loading latest post-phase34 server isolated external chat proof...</p>
+            <div class="counts" id="post-phase34-server-isolated-chat-transfer-summary"></div>
+            <ul id="post-phase34-server-isolated-chat-transfer-details"></ul>
+          </div>
+        </section>
+
+        <section>
           <h2>Worker status summary</h2>
           <div class="counts" id="worker-summary"></div>
           <div class="worker-cards" id="worker-cards"></div>
@@ -1628,6 +1718,704 @@ function renderInternalAdminPage(): string {
         \`).join("");
       }
 
+      function renderPostPhase27LocalProxyBootstrap(latest) {
+        const copy = document.getElementById("post-phase27-local-proxy-bootstrap-copy");
+        const summary = document.getElementById("post-phase27-local-proxy-bootstrap-summary");
+        const details = document.getElementById("post-phase27-local-proxy-bootstrap-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase27 local proxy/bootstrap result captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const proxyTlsStatus = latest.proxyTlsStatus ?? null;
+        const proxyBackedBootstrap = latest.proxyBackedBootstrap ?? null;
+        const noProxyFallback = latest.noProxyFallback ?? null;
+        const finalListenerStatus = latest.finalListenerStatus ?? {};
+        const finalInternalWorkerStatus = latest.finalInternalWorkerStatus?.value ?? null;
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["Worker", String(latest.workerId || "unknown")],
+          ["gstatic TLS", proxyTlsStatus?.gstatic?.ok ? "pass" : "fail"],
+          ["chatgpt TLS", proxyTlsStatus?.chatgpt?.ok ? "pass" : "fail"],
+          ["proxy-backed bootstrap", String(proxyBackedBootstrap?.classification || "unknown")],
+          ["no-proxy fallback", String(noProxyFallback?.classification || "unknown")],
+          ["runtimeStatus", String(finalInternalWorkerStatus?.runtimeStatus || "unknown")],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "proxyAddress: " + String(latest.proxyAddress || "unknown"),
+          "publicBaseUrl: " + String(latest.publicBaseUrl || "unknown"),
+          "share-links path: " + String(latest.shareLinksStatus?.path || "unknown"),
+          "share-links entries: " + String(latest.shareLinksStatus?.entryCount ?? "0"),
+          "gstatic TLS: status=" + String(proxyTlsStatus?.gstatic?.statusCode ?? "n/a") + " ok=" + String(proxyTlsStatus?.gstatic?.ok ?? false) + " errorKind=" + String(proxyTlsStatus?.gstatic?.errorKind || "none"),
+          "chatgpt TLS: status=" + String(proxyTlsStatus?.chatgpt?.statusCode ?? "n/a") + " ok=" + String(proxyTlsStatus?.chatgpt?.ok ?? false) + " errorKind=" + String(proxyTlsStatus?.chatgpt?.errorKind || "none"),
+          "proxyTls allPassed: " + String(proxyTlsStatus?.allPassed ?? false),
+          "proxyBackedBootstrap classification: " + String(proxyBackedBootstrap?.classification || "unknown"),
+          "proxyBackedBootstrap reachedReady: " + String(proxyBackedBootstrap?.reachedReady ?? false),
+          "noProxyFallback requested: " + String(noProxyFallback?.requested ?? false),
+          "noProxyFallback attempted: " + String(noProxyFallback?.attempted ?? false),
+          "noProxyFallback classification: " + String(noProxyFallback?.classification || "unknown"),
+          "4040 listener: " + String(finalListenerStatus["4040"]?.listening ?? false),
+          "8081 listener: " + String(finalListenerStatus["8081"]?.listening ?? false),
+          "4024 listener: " + String(finalListenerStatus["4024"]?.listening ?? false),
+          "9225 listener: " + String(finalListenerStatus["9225"]?.listening ?? false),
+          "runtimeStatus: " + String(finalInternalWorkerStatus?.runtimeStatus || "unknown"),
+          "runtimeCapability: " + String(finalInternalWorkerStatus?.runtimeCapability || "unknown"),
+          "browserContextReady: " + String(finalInternalWorkerStatus?.browserContextReady ?? "unknown"),
+          "proxyServerConfigured: " + String(finalInternalWorkerStatus?.proxyServerConfigured ?? "unknown"),
+          "apiTokenSource: " + String(latest.apiTokenSource || "missing"),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase27 local proxy/bootstrap stabilization loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase28LocalProxyTransport(latest) {
+        const copy = document.getElementById("post-phase28-local-proxy-transport-copy");
+        const summary = document.getElementById("post-phase28-local-proxy-transport-summary");
+        const details = document.getElementById("post-phase28-local-proxy-transport-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase28 local proxy transport result captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const externalSmoke = latest.externalSmoke ?? null;
+        const proxyBackedRuntime = latest.proxyBackedRuntime ?? null;
+        const noProxyFallbackRuntime = latest.noProxyFallbackRuntime ?? null;
+        const outboundDiagnostics = Array.isArray(latest.outboundDiagnostics)
+          ? latest.outboundDiagnostics
+          : [];
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["proxyMixedStatus", String(latest.proxyMixedStatus || "unknown")],
+          ["shareLinksStatus", String(latest.shareLinksStatus?.status || "unknown")],
+          ["outbound diagnostics", String(outboundDiagnostics.length)],
+          ["proxy-backed runtime", String(proxyBackedRuntime?.classification || "unknown")],
+          ["no-proxy fallback", String(noProxyFallbackRuntime?.classification || "unknown")],
+          ["runtimePathUsed", String(latest.runtimePathUsed || "none")],
+          ["external chat", externalSmoke?.chat?.ok ? "pass" : "fail"],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "proxyMixedStatus: " + String(latest.proxyMixedStatus || "unknown"),
+          "shareLinksStatus: " + String(latest.shareLinksStatus?.status || "unknown"),
+          "share-links entries: " + String(latest.shareLinksStatus?.entryCount ?? "0"),
+          "manualShareLinksRefreshPerformed: " + String(latest.manualShareLinksRefreshPerformed ?? false),
+          "proxyMixed baseline gstatic: status=" + String(latest.proxyMixedBaseline?.gstatic?.statusCode ?? "n/a") + " ok=" + String(latest.proxyMixedBaseline?.gstatic?.ok ?? false) + " errorKind=" + String(latest.proxyMixedBaseline?.gstatic?.errorKind || "none"),
+          "proxyMixed baseline chatgpt: status=" + String(latest.proxyMixedBaseline?.chatgpt?.statusCode ?? "n/a") + " ok=" + String(latest.proxyMixedBaseline?.chatgpt?.ok ?? false) + " errorKind=" + String(latest.proxyMixedBaseline?.chatgpt?.errorKind || "none"),
+          "proxyMixed post-repair gstatic: status=" + String(latest.proxyMixedPostRepair?.gstatic?.statusCode ?? "n/a") + " ok=" + String(latest.proxyMixedPostRepair?.gstatic?.ok ?? false) + " errorKind=" + String(latest.proxyMixedPostRepair?.gstatic?.errorKind || "none"),
+          "proxyMixed post-repair chatgpt: status=" + String(latest.proxyMixedPostRepair?.chatgpt?.statusCode ?? "n/a") + " ok=" + String(latest.proxyMixedPostRepair?.chatgpt?.ok ?? false) + " errorKind=" + String(latest.proxyMixedPostRepair?.chatgpt?.errorKind || "none"),
+          "outboundDiagnostics count: " + String(outboundDiagnostics.length),
+          "outbound tags: " + String(outboundDiagnostics.map((entry) => entry.tag).join(", ") || "none"),
+          "proxyBackedRuntime classification: " + String(proxyBackedRuntime?.classification || "unknown"),
+          "proxyBackedRuntime reachedReady: " + String(proxyBackedRuntime?.reachedReady ?? false),
+          "noProxyFallbackRuntime classification: " + String(noProxyFallbackRuntime?.classification || "unknown"),
+          "noProxyFallbackRuntime reachedReady: " + String(noProxyFallbackRuntime?.reachedReady ?? false),
+          "runtimePathUsed: " + String(latest.runtimePathUsed || "none"),
+          "external healthz: " + String(externalSmoke?.healthz?.statusCode ?? "n/a") + " ok=" + String(externalSmoke?.healthz?.ok ?? false),
+          "external models: " + String(externalSmoke?.models?.statusCode ?? "n/a") + " ok=" + String(externalSmoke?.models?.ok ?? false),
+          "external chat: " + String(externalSmoke?.chat?.statusCode ?? "n/a") + " ok=" + String(externalSmoke?.chat?.ok ?? false),
+          "external chat worker: " + String(externalSmoke?.chat?.workerId || "none"),
+          "assistant reply: " + String(externalSmoke?.chat?.assistantReplyText || "none"),
+          "token source: " + String(externalSmoke?.tokenSource || "missing"),
+          "blocked reason: " + String(externalSmoke?.blockedReason || "none"),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase28 local proxy transport repair loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase29Shared2Chat409(latest) {
+        const copy = document.getElementById("post-phase29-shared-2-chat-409-copy");
+        const summary = document.getElementById("post-phase29-shared-2-chat-409-summary");
+        const details = document.getElementById("post-phase29-shared-2-chat-409-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase29 shared-2 chat 409 result captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const externalSmoke = latest.externalSmoke ?? null;
+        const workerRuntime = latest.workerRuntime ?? null;
+        const tunnelStatus = latest.temporaryReverseTunnelStatus ?? null;
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["409 classification", String(latest.exact409Classification || "none")],
+          ["runtimePathUsed", String(latest.runtimePathUsed || "none")],
+          ["worker classification", String(workerRuntime?.classification || "unknown")],
+          ["runtimeCapability", String(workerRuntime?.runtimeCapability || "unknown")],
+          ["tunnels", tunnelStatus?.allListening ? "ready" : "missing"],
+          ["external chat", externalSmoke?.chat?.ok ? "pass" : "fail"],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "exact409Classification: " + String(latest.exact409Classification || "none"),
+          "runtimePathUsed: " + String(latest.runtimePathUsed || "none"),
+          "worker classification: " + String(workerRuntime?.classification || "unknown"),
+          "runtimeStatus: " + String(workerRuntime?.runtimeStatus || "unknown"),
+          "runtimeCapability: " + String(workerRuntime?.runtimeCapability || "unknown"),
+          "stabilityGateStatus: " + String(workerRuntime?.stabilityGateStatus || "unknown"),
+          "browserContextReady: " + String(workerRuntime?.browserContextReady ?? "unknown"),
+          "lastBootstrapFailureCode: " + String(workerRuntime?.lastBootstrapFailureCode || "none"),
+          "lastBootstrapUsability: " + String(workerRuntime?.lastBootstrapUsability || "none"),
+          "lastRelayFailureCode: " + String(workerRuntime?.lastRelayFailureCode || "none"),
+          "lastRelayAt: " + String(workerRuntime?.lastRelayAt || "none"),
+          "temporaryReverseTunnelStatus: " + String(tunnelStatus?.classification || "unknown"),
+          "listener 14024: " + String(tunnelStatus?.listeners?.["14024"]?.listening ?? false),
+          "listener 14040: " + String(tunnelStatus?.listeners?.["14040"]?.listening ?? false),
+          "external healthz: " + String(externalSmoke?.healthz?.statusCode ?? "n/a") + " ok=" + String(externalSmoke?.healthz?.ok ?? false),
+          "external models: " + String(externalSmoke?.models?.statusCode ?? "n/a") + " ok=" + String(externalSmoke?.models?.ok ?? false),
+          "external chat: " + String(externalSmoke?.chat?.statusCode ?? "n/a") + " ok=" + String(externalSmoke?.chat?.ok ?? false),
+          "external chat errorCode: " + String(externalSmoke?.chat?.errorCode || "none"),
+          "external chat errorType: " + String(externalSmoke?.chat?.errorType || "none"),
+          "external chat errorMessage: " + String(externalSmoke?.chat?.errorMessage || "none"),
+          "external chat worker: " + String(externalSmoke?.chat?.workerId || "none"),
+          "assistant reply: " + String(externalSmoke?.chat?.assistantReplyText || "none"),
+          "token source: " + String(externalSmoke?.tokenSource || "missing"),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase29 shared-2 chat 409 loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase30Shared2BootstrapRecovery(latest) {
+        const copy = document.getElementById("post-phase30-shared-2-bootstrap-recovery-copy");
+        const summary = document.getElementById("post-phase30-shared-2-bootstrap-recovery-summary");
+        const details = document.getElementById("post-phase30-shared-2-bootstrap-recovery-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase30 shared-2 bootstrap recovery result captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const directBrowserEvidence = latest.directBrowserEvidence ?? null;
+        const truthReconciliation = latest.truthReconciliation ?? null;
+        const publicRerun = latest.publicRerun ?? null;
+        const hostWorker = latest.hostControllerWorker ?? null;
+        const internalWorker = latest.internalWorker ?? null;
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["Exact branch", String(latest.exactBootstrapClassification || "none")],
+          ["Recovery branch", String(latest.recoveryBranch || "none")],
+          ["worker truth", String(truthReconciliation?.classification || "unknown")],
+          ["public rerun", publicRerun?.chat?.ok ? "pass" : "blocked_or_failed"],
+          ["page title", String(directBrowserEvidence?.pageTitle || "none")],
+          ["page URL", String(directBrowserEvidence?.pageUrl || "none")],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "exactBootstrapClassification: " + String(latest.exactBootstrapClassification || "none"),
+          "recoveryBranch: " + String(latest.recoveryBranch || "none"),
+          "runtimePathUsed: " + String(latest.runtimePathUsed || "none"),
+          "publicRerunBlockedReason: " + String(publicRerun?.blockedReason || "none"),
+          "truth reconciliation: " + String(truthReconciliation?.classification || "unknown"),
+          "hostController worker visible: " + String(truthReconciliation?.hostControllerVisible ?? false),
+          "internal worker found: " + String(truthReconciliation?.internalWorkerFound ?? false),
+          "pageUrl: " + String(directBrowserEvidence?.pageUrl || "none"),
+          "pageTitle: " + String(directBrowserEvidence?.pageTitle || "none"),
+          "dialogSurfaceMarkers: " + String((directBrowserEvidence?.surfaceMarkers || []).join(", ") || "none"),
+          "bootstrapStep: " + String(directBrowserEvidence?.bootstrapStep || internalWorker?.lastBootstrapStep || "none"),
+          "bootstrapFailureCode: " + String(directBrowserEvidence?.bootstrapFailureCode || internalWorker?.lastBootstrapFailureCode || "none"),
+          "host runtimeStatus: " + String(hostWorker?.runtimeStatus || "unknown"),
+          "internal runtimeStatus: " + String(internalWorker?.runtimeStatus || "unknown"),
+          "internal status: " + String(internalWorker?.status || "unknown"),
+          "browserContextReady: " + String(internalWorker?.browserContextReady ?? "unknown"),
+          "public healthz: " + String(publicRerun?.healthz?.statusCode ?? "n/a") + " ok=" + String(publicRerun?.healthz?.ok ?? false),
+          "public models: " + String(publicRerun?.models?.statusCode ?? "n/a") + " ok=" + String(publicRerun?.models?.ok ?? false),
+          "public chat: " + String(publicRerun?.chat?.statusCode ?? "n/a") + " ok=" + String(publicRerun?.chat?.ok ?? false),
+          "public chat errorCode: " + String(publicRerun?.chat?.errorCode || "none"),
+          "public chat errorMessage: " + String(publicRerun?.chat?.errorMessage || "none"),
+          "public chat worker: " + String(publicRerun?.chat?.workerId || "none"),
+          "assistant reply: " + String(publicRerun?.chat?.assistantReplyText || "none"),
+          "token source: " + String(publicRerun?.tokenSource || "missing"),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase30 shared-2 bootstrap recovery loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase31AccountSurfaceInventory(latest) {
+        const copy = document.getElementById("post-phase31-account-surface-inventory-copy");
+        const summary = document.getElementById("post-phase31-account-surface-inventory-summary");
+        const details = document.getElementById("post-phase31-account-surface-inventory-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase31 local account surface inventory captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const counts = latest.counts ?? {};
+        const workers = Array.isArray(latest.workers) ? latest.workers : [];
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["nextCanary", String(latest.nextCanary || "none")],
+          ["manual confirm", String(latest.nextCanaryRequiresManualConfirm ?? false)],
+          ["ready profiles", String(counts.ready ?? 0)],
+          ["needs_manual_confirm", String(counts.needs_manual_confirm ?? 0)],
+          ["needs_login", String(counts.needs_login ?? 0)],
+          ["runtime_blocked", String(counts.runtime_blocked ?? 0)],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "nextCanary: " + String(latest.nextCanary || "none"),
+          "nextCanaryReason: " + String(latest.nextCanaryReason || "none"),
+          "nextCanaryRequiresManualConfirm: " + String(latest.nextCanaryRequiresManualConfirm ?? false),
+          "workerCount: " + String(latest.workerCount ?? workers.length),
+          "ready: " + String(counts.ready ?? 0),
+          "needs_manual_confirm: " + String(counts.needs_manual_confirm ?? 0),
+          "needs_login: " + String(counts.needs_login ?? 0),
+          "broken_surface: " + String(counts.broken_surface ?? 0),
+          "runtime_blocked: " + String(counts.runtime_blocked ?? 0),
+          "unknown: " + String(counts.unknown ?? 0),
+          ...workers.map((worker) =>
+            "worker " +
+            String(worker.workerId || "unknown") +
+            ": classification=" + String(worker.classification || "unknown") +
+            ", acceptableAsNextCanary=" + String(worker.acceptableAsNextCanary ?? false) +
+            ", manualConfirmRequired=" + String(worker.manualConfirmRequired ?? false) +
+            ", screenshotPath=" + String(worker.screenshotPath || "none")
+          ),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase31 local account surface inventory loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase31SelectedCanaryChatRecovery(latest) {
+        const copy = document.getElementById("post-phase31-selected-canary-chat-recovery-copy");
+        const summary = document.getElementById("post-phase31-selected-canary-chat-recovery-summary");
+        const details = document.getElementById("post-phase31-selected-canary-chat-recovery-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase31 selected canary chat recovery captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const externalSmoke = latest.externalSmoke ?? {};
+        const chat = externalSmoke.chat ?? {};
+        const truth = latest.truthReconciliation ?? {};
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["workerId", String(latest.workerId || "unknown")],
+          ["selectedCanaryClassification", String(latest.selectedCanaryClassification || "unknown")],
+          ["runtimeUsability", String(latest.runtimeUsability || "unknown")],
+          ["shared2Deferred", String(latest.shared2Deferred ?? false)],
+          ["chat status", String(chat.statusCode ?? "none")],
+          ["truth reconciliation", String(truth.classification || "unknown")],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "workerId: " + String(latest.workerId || "unknown"),
+          "selectedCanaryDisplayName: " + String(latest.selectedCanaryDisplayName || "unknown"),
+          "selectedCanaryClassification: " + String(latest.selectedCanaryClassification || "unknown"),
+          "runtimeUsability: " + String(latest.runtimeUsability || "unknown"),
+          "runtimePathUsed: " + String(latest.runtimePathUsed || "unknown"),
+          "shared2Deferred: " + String(latest.shared2Deferred ?? false),
+          "shared2DeferredReason: " + String(latest.shared2DeferredReason || "none"),
+          "truth reconciliation: " + String(truth.classification || "unknown"),
+          "hostControllerVisible: " + String(truth.hostControllerVisible ?? false),
+          "internalWorkerFound: " + String(truth.internalWorkerFound ?? false),
+          "cdpVisible: " + String(truth.cdpVisible ?? false),
+          "direct pageUrl: " + String(latest.directBrowserEvidence?.pageUrl || "none"),
+          "dialogSurfaceMarkers: " + String(
+            Array.isArray(latest.directBrowserEvidence?.surfaceMarkers) && latest.directBrowserEvidence.surfaceMarkers.length > 0
+              ? latest.directBrowserEvidence.surfaceMarkers.join(", ")
+              : "none"
+          ),
+          "reverseTunnel classification: " + String(latest.temporaryReverseTunnelStatus?.classification || "unknown"),
+          "selected tunnel listening: " + String(
+            latest.temporaryReverseTunnelStatus?.listeners &&
+            latest.workerInfo?.tunnelPort &&
+            latest.temporaryReverseTunnelStatus.listeners[String(latest.workerInfo.tunnelPort)]?.listening
+          ),
+          "14040 listening: " + String(latest.temporaryReverseTunnelStatus?.listeners?.["14040"]?.listening ?? false),
+          "external blockedReason: " + String(externalSmoke.blockedReason || "none"),
+          "external healthz: " + String(externalSmoke.healthz?.statusCode ?? "none"),
+          "external models: " + String(externalSmoke.models?.statusCode ?? "none"),
+          "external chat: " + String(chat.statusCode ?? "none"),
+          "external chat errorCode: " + String(chat.errorCode || "none"),
+          "assistant reply: " + String(chat.assistantReplyText || "none"),
+          "token source: " + String(externalSmoke.tokenSource || "missing"),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase31 selected canary chat recovery loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase32RotatingReadyAccountChatProof(latest) {
+        const copy = document.getElementById("post-phase32-rotating-ready-account-chat-proof-copy");
+        const summary = document.getElementById("post-phase32-rotating-ready-account-chat-proof-summary");
+        const details = document.getElementById("post-phase32-rotating-ready-account-chat-proof-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase32 rotating ready-account chat proof captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const candidateOrder = Array.isArray(latest.candidateOrder)
+          ? latest.candidateOrder
+          : [];
+        const attemptedWorkers = Array.isArray(latest.attemptedWorkers)
+          ? latest.attemptedWorkers
+          : [];
+        const skippedWorkers = Array.isArray(latest.skippedWorkers)
+          ? latest.skippedWorkers
+          : [];
+        const attempts = Array.isArray(latest.attempts)
+          ? latest.attempts
+          : [];
+        const commonBlocker = latest.commonBlocker ?? {};
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["successfulWorkerId", String(latest.successfulWorkerId || "none")],
+          ["attemptedWorkers", String(attemptedWorkers.length)],
+          ["candidateOrder", String(candidateOrder.length)],
+          ["commonBlocker", String(commonBlocker.key || latest.exhaustionReason || "none")],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "candidateOrder: " + (candidateOrder.length > 0 ? candidateOrder.join(", ") : "none"),
+          "attemptedWorkers: " + (attemptedWorkers.length > 0 ? attemptedWorkers.join(", ") : "none"),
+          "successfulWorkerId: " + String(latest.successfulWorkerId || "none"),
+          "firstSuccessfulAttemptIndex: " + String(latest.firstSuccessfulAttemptIndex ?? "none"),
+          "commonBlocker: " + String(commonBlocker.key || "none"),
+          "commonBlocker blockedReason: " + String(commonBlocker.blockedReason || "none"),
+          "commonBlocker errorCode: " + String(commonBlocker.errorCode || "none"),
+          "commonBlocker errorMessage: " + String(commonBlocker.errorMessage || "none"),
+          "exhaustionReason: " + String(latest.exhaustionReason || "none"),
+          "skippedWorkers: " + (
+            skippedWorkers.length > 0
+              ? skippedWorkers.map((worker) =>
+                  String(worker.workerId || "unknown") + "=" + String(worker.reason || "unknown")
+                ).join(", ")
+              : "none"
+          ),
+          ...attempts.map((attempt) =>
+            "attempt " +
+            String(attempt.attemptIndex ?? "?") +
+            " worker=" + String(attempt.workerId || "unknown") +
+            " classification=" + String(attempt.selectedCanaryClassification || "unknown") +
+            " runtimeUsability=" + String(attempt.runtimeUsability || "unknown") +
+            " chatStatus=" + String(attempt.externalSmoke?.chat?.statusCode ?? "none") +
+            " chatErrorCode=" + String(attempt.externalSmoke?.chat?.errorCode || "none") +
+            " blockedReason=" + String(attempt.externalSmoke?.blockedReason || "none")
+          ),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase32 rotating ready-account chat proof loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase33AccountBrowserIsolation(latest) {
+        const copy = document.getElementById("post-phase33-account-browser-isolation-copy");
+        const summary = document.getElementById("post-phase33-account-browser-isolation-summary");
+        const details = document.getElementById("post-phase33-account-browser-isolation-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase33 account browser isolation captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const accountOrder = Array.isArray(latest.accountOrder)
+          ? latest.accountOrder
+          : [];
+        const workers = Array.isArray(latest.workers)
+          ? latest.workers
+          : [];
+        const duplicateBrowserRoots = Array.isArray(latest.duplicateBrowserRoots)
+          ? latest.duplicateBrowserRoots
+          : [];
+        const duplicateBrowserDataPaths = Array.isArray(latest.duplicateBrowserDataPaths)
+          ? latest.duplicateBrowserDataPaths
+          : [];
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["manualInspectionReady", String(latest.manualInspectionReady ?? false)],
+          ["successfulIsolationCount", String(latest.successfulIsolationCount ?? 0)],
+          ["failedIsolationCount", String(latest.failedIsolationCount ?? 0)],
+          ["duplicate roots", String(duplicateBrowserRoots.length + duplicateBrowserDataPaths.length)],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "accountOrder: " + (accountOrder.length > 0 ? accountOrder.join(", ") : "none"),
+          "browserRootBasePath: " + String(latest.browserRootBasePath || "none"),
+          "sourceInstallPath: " + String(latest.sourceInstallPath || "none"),
+          "duplicateBrowserRoots: " + (duplicateBrowserRoots.length > 0 ? duplicateBrowserRoots.join(", ") : "none"),
+          "duplicateBrowserDataPaths: " + (duplicateBrowserDataPaths.length > 0 ? duplicateBrowserDataPaths.join(", ") : "none"),
+          ...workers.map((worker) =>
+            "worker " +
+            String(worker.workerId || "unknown") +
+            " launchResult=" + String(worker.launchResult || "unknown") +
+            " windowKeptOpen=" + String(worker.windowKeptOpen ?? false) +
+            " crossAccountReuseDetected=" + String(worker.crossAccountReuseDetected ?? false) +
+            " browserRootPath=" + String(worker.browserRootPath || "none") +
+            " browserDataPath=" + String(worker.browserDataPath || "none")
+          ),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase33 account browser isolation loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase33IsolatedExternalChatProof(latest) {
+        const copy = document.getElementById("post-phase33-isolated-external-chat-proof-copy");
+        const summary = document.getElementById("post-phase33-isolated-external-chat-proof-summary");
+        const details = document.getElementById("post-phase33-isolated-external-chat-proof-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase33 isolated external chat proof captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const accountOrder = Array.isArray(latest.accountOrder)
+          ? latest.accountOrder
+          : [];
+        const attempts = Array.isArray(latest.attempts)
+          ? latest.attempts
+          : [];
+        const preflightAccounts = Array.isArray(latest.preflightAccounts)
+          ? latest.preflightAccounts
+          : [];
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["successfulWorkerId", String(latest.successfulWorkerId || "none")],
+          ["token source", String(latest.tokenSource || "unknown")],
+          ["attemptedWorkers", String(attempts.filter((attempt) => !attempt.skipped).length)],
+          ["commonBlocker", String(latest.commonBlocker || "none")],
+          ["Compatibility", String(latest.scriptCompatibilityVersion || "unknown")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "accountOrder: " + (accountOrder.length > 0 ? accountOrder.join(", ") : "none"),
+          "commonBlocker: " + String(latest.commonBlocker || "none"),
+          "exhaustionReason: " + String(latest.exhaustionReason || "none"),
+          "tokenSource: " + String(latest.tokenSource || "unknown"),
+          "preflight ready count: " + String(preflightAccounts.filter((account) => account.classification === "ready").length),
+          ...preflightAccounts.map((account) =>
+            "preflight " +
+            String(account.workerId || "unknown") +
+            " classification=" + String(account.classification || "unknown") +
+            " hasComposer=" + String(account.hasComposer ?? false) +
+            " pageUrl=" + String(account.pageUrl || "none")
+          ),
+          ...attempts.map((attempt) =>
+            "attempt " +
+            String(attempt.workerId || "unknown") +
+            " skipped=" + String(attempt.skipped ?? false) +
+            " attemptVerdict=" + String(attempt.attemptVerdict || "unknown") +
+            " skipReason=" + String(attempt.skipReason || "none") +
+            " chatStatus=" + String(attempt.externalSmoke?.chat?.statusCode ?? "none") +
+            " external chat errorCode=" + String(attempt.externalSmoke?.chat?.errorCode || "none")
+          ),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase33 isolated external chat proof loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
+      function renderPostPhase34ServerIsolatedChatTransfer(latest) {
+        const copy = document.getElementById("post-phase34-server-isolated-chat-transfer-copy");
+        const summary = document.getElementById("post-phase34-server-isolated-chat-transfer-summary");
+        const details = document.getElementById("post-phase34-server-isolated-chat-transfer-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase34 server isolated chat transfer captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const transferResults = Array.isArray(latest.transferResults)
+          ? latest.transferResults
+          : [];
+        const attempts = Array.isArray(latest.attempts)
+          ? latest.attempts
+          : [];
+        const serverAccountInventory = Array.isArray(latest.serverAccountInventory)
+          ? latest.serverAccountInventory
+          : [];
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["successfulWorkerId", String(latest.successfulWorkerId || "none")],
+          ["Windows commit", String(latest.windowsCommit || "unknown")],
+          ["Ubuntu commit", String(latest.ubuntuCommit || "unknown")],
+          ["transferResults", String(transferResults.length)],
+          ["commonBlocker", String(latest.commonBlocker || "none")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "githubBranch: " + String(latest.githubBranch || "unknown"),
+          "windowsRepoPath: " + String(latest.windowsRepoPath || "unknown"),
+          "ubuntuRepoPath: " + String(latest.ubuntuRepoPath || "unknown"),
+          "tokenSource: " + String(latest.tokenSource || "none"),
+          "canonicalPublicUpstream: " + String(latest.canonicalPublicUpstream || "unconfirmed"),
+          "serverAccountInventory count: " + String(serverAccountInventory.length),
+          ...serverAccountInventory.map((account) =>
+            "inventory " +
+            String(account.workerId || "unknown") +
+            " copyResult=" + String(account.copyResult || "unknown") +
+            " crossAccountReuseDetected=" + String(account.crossAccountReuseDetected ?? false)
+          ),
+          ...transferResults.map((transfer) =>
+            "transfer " +
+            String(transfer.workerId || "unknown") +
+            " browserRootPath=" + String(transfer.browserRootPath || "none") +
+            " browserDataPath=" + String(transfer.browserDataPath || "none") +
+            " sourceBrowserDataPath=" + String(transfer.sourceBrowserDataPath || "none") +
+            " copyResult=" + String(transfer.copyResult || "unknown") +
+            " crossAccountReuseDetected=" + String(transfer.crossAccountReuseDetected ?? false)
+          ),
+          ...attempts.map((attempt) =>
+            "attempt " +
+            String(attempt.workerId || "unknown") +
+            " attemptVerdict=" + String(attempt.attemptVerdict || "unknown") +
+            " chatStatus=" + String(attempt.externalSmoke?.chat?.statusCode ?? "none") +
+            " external chat errorCode=" + String(attempt.externalSmoke?.chat?.errorCode || "none")
+          ),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase34 server isolated external chat proof loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
       function renderHostPool(pool) {
         currentHostPool = pool;
 
@@ -1694,7 +2482,7 @@ function renderInternalAdminPage(): string {
       }
 
       async function loadSnapshot() {
-        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse, readinessRecoveryResponse, postRecoveryRegressionResponse, zeroReadyRootCauseResponse, disconnectedBaselineRemediationResponse, postRemediationDegradedSmokeResponse, postStabilizationRuntimeInvestigationResponse, disconnectedRuntimeRemediationResponse, persistentDisconnectedRuntimeFollowupResponse, runtimeParityBackportRemediationResponse, postParityDisconnectedRuntimeRemediationResponse, postPhase21DisconnectedRuntimeFollowupResponse, postPhase22SmokeWrapperParityRemediationResponse, postPhase23ExactSmokeWrapperCompatRemediationResponse, postPhase24ExternalApiReadinessResponse, postPhase25ExternalRestorationResponse, postPhase26UbuntuSshRecoveryResponse] = await Promise.all([
+        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse, readinessRecoveryResponse, postRecoveryRegressionResponse, zeroReadyRootCauseResponse, disconnectedBaselineRemediationResponse, postRemediationDegradedSmokeResponse, postStabilizationRuntimeInvestigationResponse, disconnectedRuntimeRemediationResponse, persistentDisconnectedRuntimeFollowupResponse, runtimeParityBackportRemediationResponse, postParityDisconnectedRuntimeRemediationResponse, postPhase21DisconnectedRuntimeFollowupResponse, postPhase22SmokeWrapperParityRemediationResponse, postPhase23ExactSmokeWrapperCompatRemediationResponse, postPhase24ExternalApiReadinessResponse, postPhase25ExternalRestorationResponse, postPhase26UbuntuSshRecoveryResponse, postPhase27LocalProxyBootstrapResponse, postPhase28LocalProxyTransportResponse, postPhase29Shared2Chat409Response, postPhase30Shared2BootstrapRecoveryResponse, postPhase31AccountSurfaceInventoryResponse, postPhase31SelectedCanaryChatRecoveryResponse, postPhase32RotatingReadyAccountChatProofResponse, postPhase33AccountBrowserIsolationResponse, postPhase33IsolatedExternalChatProofResponse, postPhase34ServerIsolatedChatTransferResponse] = await Promise.all([
           fetch("/internal/host-pool"),
           fetch("/internal/observability/summary"),
           fetch("/internal/observability/events?limit=50"),
@@ -1715,10 +2503,20 @@ function renderInternalAdminPage(): string {
           fetch("/internal/post-phase23-exact-smoke-wrapper-compat-remediation/latest"),
           fetch("/internal/post-phase24-external-api-readiness/latest"),
           fetch("/internal/post-phase25-external-restoration/latest"),
-          fetch("/internal/post-phase26-ubuntu-ssh-recovery/latest")
+          fetch("/internal/post-phase26-ubuntu-ssh-recovery/latest"),
+          fetch("/internal/post-phase27-local-proxy-bootstrap/latest"),
+          fetch("/internal/post-phase28-local-proxy-transport/latest"),
+          fetch("/internal/post-phase29-shared-2-chat-409/latest"),
+          fetch("/internal/post-phase30-shared-2-bootstrap-recovery/latest"),
+          fetch("/internal/post-phase31-account-surface-inventory/latest"),
+          fetch("/internal/post-phase31-selected-canary-chat-recovery/latest"),
+          fetch("/internal/post-phase32-rotating-ready-account-chat-proof/latest"),
+          fetch("/internal/post-phase33-account-browser-isolation/latest"),
+          fetch("/internal/post-phase33-isolated-external-chat-proof/latest"),
+          fetch("/internal/post-phase34-server-isolated-chat-transfer/latest")
         ]);
 
-        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok || !readinessRecoveryResponse.ok || !postRecoveryRegressionResponse.ok || !zeroReadyRootCauseResponse.ok || !disconnectedBaselineRemediationResponse.ok || !postRemediationDegradedSmokeResponse.ok || !postStabilizationRuntimeInvestigationResponse.ok || !disconnectedRuntimeRemediationResponse.ok || !persistentDisconnectedRuntimeFollowupResponse.ok || !runtimeParityBackportRemediationResponse.ok || !postParityDisconnectedRuntimeRemediationResponse.ok || !postPhase21DisconnectedRuntimeFollowupResponse.ok || !postPhase22SmokeWrapperParityRemediationResponse.ok || !postPhase23ExactSmokeWrapperCompatRemediationResponse.ok || !postPhase24ExternalApiReadinessResponse.ok || !postPhase25ExternalRestorationResponse.ok || !postPhase26UbuntuSshRecoveryResponse.ok) {
+        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok || !readinessRecoveryResponse.ok || !postRecoveryRegressionResponse.ok || !zeroReadyRootCauseResponse.ok || !disconnectedBaselineRemediationResponse.ok || !postRemediationDegradedSmokeResponse.ok || !postStabilizationRuntimeInvestigationResponse.ok || !disconnectedRuntimeRemediationResponse.ok || !persistentDisconnectedRuntimeFollowupResponse.ok || !runtimeParityBackportRemediationResponse.ok || !postParityDisconnectedRuntimeRemediationResponse.ok || !postPhase21DisconnectedRuntimeFollowupResponse.ok || !postPhase22SmokeWrapperParityRemediationResponse.ok || !postPhase23ExactSmokeWrapperCompatRemediationResponse.ok || !postPhase24ExternalApiReadinessResponse.ok || !postPhase25ExternalRestorationResponse.ok || !postPhase26UbuntuSshRecoveryResponse.ok || !postPhase27LocalProxyBootstrapResponse.ok || !postPhase28LocalProxyTransportResponse.ok || !postPhase29Shared2Chat409Response.ok || !postPhase30Shared2BootstrapRecoveryResponse.ok || !postPhase31AccountSurfaceInventoryResponse.ok || !postPhase31SelectedCanaryChatRecoveryResponse.ok || !postPhase32RotatingReadyAccountChatProofResponse.ok || !postPhase33AccountBrowserIsolationResponse.ok || !postPhase33IsolatedExternalChatProofResponse.ok || !postPhase34ServerIsolatedChatTransferResponse.ok) {
           throw new Error("Internal observability endpoints are unavailable");
         }
 
@@ -1743,6 +2541,16 @@ function renderInternalAdminPage(): string {
         const postPhase24ExternalApiReadinessPayload = await postPhase24ExternalApiReadinessResponse.json();
         const postPhase25ExternalRestorationPayload = await postPhase25ExternalRestorationResponse.json();
         const postPhase26UbuntuSshRecoveryPayload = await postPhase26UbuntuSshRecoveryResponse.json();
+        const postPhase27LocalProxyBootstrapPayload = await postPhase27LocalProxyBootstrapResponse.json();
+        const postPhase28LocalProxyTransportPayload = await postPhase28LocalProxyTransportResponse.json();
+        const postPhase29Shared2Chat409Payload = await postPhase29Shared2Chat409Response.json();
+        const postPhase30Shared2BootstrapRecoveryPayload = await postPhase30Shared2BootstrapRecoveryResponse.json();
+        const postPhase31AccountSurfaceInventoryPayload = await postPhase31AccountSurfaceInventoryResponse.json();
+        const postPhase31SelectedCanaryChatRecoveryPayload = await postPhase31SelectedCanaryChatRecoveryResponse.json();
+        const postPhase32RotatingReadyAccountChatProofPayload = await postPhase32RotatingReadyAccountChatProofResponse.json();
+        const postPhase33AccountBrowserIsolationPayload = await postPhase33AccountBrowserIsolationResponse.json();
+        const postPhase33IsolatedExternalChatProofPayload = await postPhase33IsolatedExternalChatProofResponse.json();
+        const postPhase34ServerIsolatedChatTransferPayload = await postPhase34ServerIsolatedChatTransferResponse.json();
         const workers = workersPayload.workers ?? [];
         const lifecycleEvents = events.filter((event) => lifecycleEventTypes.has(event.eventType));
         const browserAccessResults = await Promise.all(
@@ -1772,6 +2580,16 @@ function renderInternalAdminPage(): string {
         renderPostPhase24ExternalApiReadiness(postPhase24ExternalApiReadinessPayload.latest ?? null);
         renderPostPhase25ExternalRestoration(postPhase25ExternalRestorationPayload.latest ?? null);
         renderPostPhase26UbuntuSshRecovery(postPhase26UbuntuSshRecoveryPayload.latest ?? null);
+        renderPostPhase27LocalProxyBootstrap(postPhase27LocalProxyBootstrapPayload.latest ?? null);
+        renderPostPhase28LocalProxyTransport(postPhase28LocalProxyTransportPayload.latest ?? null);
+        renderPostPhase29Shared2Chat409(postPhase29Shared2Chat409Payload.latest ?? null);
+        renderPostPhase30Shared2BootstrapRecovery(postPhase30Shared2BootstrapRecoveryPayload.latest ?? null);
+        renderPostPhase31AccountSurfaceInventory(postPhase31AccountSurfaceInventoryPayload.latest ?? null);
+        renderPostPhase31SelectedCanaryChatRecovery(postPhase31SelectedCanaryChatRecoveryPayload.latest ?? null);
+        renderPostPhase32RotatingReadyAccountChatProof(postPhase32RotatingReadyAccountChatProofPayload.latest ?? null);
+        renderPostPhase33AccountBrowserIsolation(postPhase33AccountBrowserIsolationPayload.latest ?? null);
+        renderPostPhase33IsolatedExternalChatProof(postPhase33IsolatedExternalChatProofPayload.latest ?? null);
+        renderPostPhase34ServerIsolatedChatTransfer(postPhase34ServerIsolatedChatTransferPayload.latest ?? null);
         renderWorkerSummary(summary, workers);
         renderEvents(
           "recent-failures",
@@ -1982,6 +2800,26 @@ function renderInternalAdminPage(): string {
             "Unable to load the latest post-phase25 external restoration.";
           document.getElementById("post-phase26-ubuntu-ssh-recovery-copy").textContent =
             "Unable to load the latest post-phase26 Ubuntu SSH recovery.";
+          document.getElementById("post-phase27-local-proxy-bootstrap-copy").textContent =
+            "Unable to load the latest post-phase27 local proxy/bootstrap stabilization.";
+          document.getElementById("post-phase28-local-proxy-transport-copy").textContent =
+            "Unable to load the latest post-phase28 local proxy transport repair.";
+          document.getElementById("post-phase29-shared-2-chat-409-copy").textContent =
+            "Unable to load the latest post-phase29 shared-2 chat 409.";
+          document.getElementById("post-phase30-shared-2-bootstrap-recovery-copy").textContent =
+            "Unable to load the latest post-phase30 shared-2 bootstrap recovery.";
+          document.getElementById("post-phase31-account-surface-inventory-copy").textContent =
+            "Unable to load the latest post-phase31 local account surface inventory.";
+          document.getElementById("post-phase31-selected-canary-chat-recovery-copy").textContent =
+            "Unable to load the latest post-phase31 selected canary chat recovery.";
+          document.getElementById("post-phase32-rotating-ready-account-chat-proof-copy").textContent =
+            "Unable to load the latest post-phase32 rotating ready-account chat proof.";
+          document.getElementById("post-phase33-account-browser-isolation-copy").textContent =
+            "Unable to load the latest post-phase33 account browser isolation.";
+          document.getElementById("post-phase33-isolated-external-chat-proof-copy").textContent =
+            "Unable to load the latest post-phase33 isolated external chat proof.";
+          document.getElementById("post-phase34-server-isolated-chat-transfer-copy").textContent =
+            "Unable to load the latest post-phase34 server isolated external chat proof.";
           document.getElementById("recent-failures").innerHTML =
             '<li class="error">' + escapeHtml(String(error instanceof Error ? error.message : error)) + "</li>";
           document.getElementById("recent-events").innerHTML =
