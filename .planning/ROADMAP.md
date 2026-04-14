@@ -67,6 +67,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 33.1: Dedicated per-account desktop Chrome roots and isolated account-browser storage before external chat proof** - (INSERTED) completed 2026-04-14 with `isolated_browser_roots_ready`; the old shared browser-root model is now retired, and the current machine has one isolated desktop Chrome root plus one browser-data root per account
 - [x] **Phase 34: Preserve-first external chat proof on isolated per-account browser roots** - completed 2026-04-14 with `externally_ready`; the isolated browser-root baseline proved the first honest outside `/v1/chat/completions = 200`, with `wife` returning `probe-ok`
 - [x] **Phase 35: Server transfer and revalidation of isolated per-account external chat proof** - completed 2026-04-14 with `hold_rollout`; the local helper/operator surface stayed green and the live server revalidation reached public `/healthz=200`, but bearer-token discovery was missing, Ubuntu SSH/listener truth was unconfirmed, authenticated models/chat were not proven, and seven server copy attempts reported `robocopy exit code 11`
+- [ ] **Phase 36: Server bearer token and Ubuntu SSH listener recovery before isolated external chat revalidation** - planned 2026-04-14; next step is to execute a bounded recovery for bearer-token discovery plus Ubuntu SSH/listener truth, then rerun the isolated external chat revalidation
 
 ## Phase Details
 
@@ -1051,3 +1052,22 @@ Plans:
 - [x] `35-01-PLAN.md` - preserve-first server isolation transfer helper, canonical server revalidation wrapper, and GitHub-first host prompt
 - [x] `35-02-PLAN.md` - latest-route, internal admin visibility, and focused operator-surface coverage for server transfer truth
 - [x] `35-03-PLAN.md` - live Windows + Ubuntu sync, canary-first server revalidation, and final verdict
+
+### Phase 36: Server bearer token and Ubuntu SSH listener recovery before isolated external chat revalidation
+
+**Goal:** Recover or exactly classify bearer-token discovery, Ubuntu SSH reachability, and Ubuntu listener truth before rerunning the proven isolated external chat revalidation through `http://77.66.186.75`.
+**Requirements**: SBTU-01, SBTU-02, SBTU-03, SBTU-04
+**Depends on:** Phase 35
+**Plans:** 3 plans
+**Current status:** Planned on 2026-04-14. This phase is intentionally narrow: it does not reopen local browser architecture work. It first proves token source, Ubuntu SSH, and Ubuntu-side listeners `14021..14027` plus `14040`, then reruns authenticated external `healthz/models/chat` only if those preconditions are green.
+
+**Success Criteria** (what must be TRUE):
+  1. Bearer-token discovery is recovered or exactly classified, with only redacted source labels written to artifacts and no token values committed or printed.
+  2. Ubuntu SSH and canonical public-owner truth are verified directly, including repo path/hash, nginx upstream, and Ubuntu listener truth for `14021..14027` plus `14040`.
+  3. The latest Phase 36 token/SSH/listener recovery result is visible through a durable latest-state file and internal operator surface.
+  4. Authenticated external `/healthz`, `/v1/models`, and `/v1/chat/completions` are rerun against `http://77.66.186.75` when preconditions are green and end with exactly one verdict `externally_ready` or `hold_rollout`.
+
+Plans:
+- [ ] `36-01-PLAN.md` - bounded bearer-token, Ubuntu SSH, and listener recovery wrapper plus GitHub-first deployed-host prompt
+- [ ] `36-02-PLAN.md` - latest-route, internal admin visibility, and focused coverage for token/SSH/listener truth
+- [ ] `36-03-PLAN.md` - live bounded recovery, authenticated external revalidation, and final verdict
