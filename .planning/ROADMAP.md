@@ -68,6 +68,7 @@ The `v1.2` milestone stays tightly focused on rollout stability. The core househ
 - [x] **Phase 34: Preserve-first external chat proof on isolated per-account browser roots** - completed 2026-04-14 with `externally_ready`; the isolated browser-root baseline proved the first honest outside `/v1/chat/completions = 200`, with `wife` returning `probe-ok`
 - [x] **Phase 35: Server transfer and revalidation of isolated per-account external chat proof** - completed 2026-04-14 with `hold_rollout`; the local helper/operator surface stayed green and the live server revalidation reached public `/healthz=200`, but bearer-token discovery was missing, Ubuntu SSH/listener truth was unconfirmed, authenticated models/chat were not proven, and seven server copy attempts reported `robocopy exit code 11`
 - [x] **Phase 36: Server bearer token and Ubuntu SSH listener recovery before isolated external chat revalidation** - completed 2026-04-15 with `hold_rollout`; direct SSH retry to `77.66.186.75:2222` succeeded, token source was resolved, Ubuntu nginx/public models are green, and the remaining blocker is missing reverse-tunnel listeners `14021..14027` plus `14040`
+- [ ] **Phase 37: Restore Ubuntu reverse SSH tunnel listeners and complete external authenticated chat smoke after token/models proof** - added 2026-04-15; next step is to plan a preserve-first tunnel restoration and then run one authenticated external chat smoke once Ubuntu listeners `14021..14027` plus `14040` are present
 
 ## Phase Details
 
@@ -1071,3 +1072,13 @@ Plans:
 - [x] `36-01-PLAN.md` - bounded bearer-token, Ubuntu SSH, and listener recovery wrapper plus GitHub-first deployed-host prompt
 - [x] `36-02-PLAN.md` - latest-route, internal admin visibility, and focused coverage for token/SSH/listener truth
 - [x] `36-03-PLAN.md` - live bounded recovery, authenticated external revalidation gate, and final `hold_rollout` verdict
+
+### Phase 37: Restore Ubuntu reverse SSH tunnel listeners and complete external authenticated chat smoke after token/models proof
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 36
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 37 to break down)
