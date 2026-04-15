@@ -509,6 +509,15 @@ function renderInternalAdminPage(): string {
         </section>
 
         <section>
+          <h2>Latest post-phase36 reverse tunnel chat smoke</h2>
+          <div class="pool-panel">
+            <p class="empty" id="post-phase36-reverse-tunnel-chat-smoke-copy">Loading latest post-phase36 reverse tunnel chat smoke...</p>
+            <div class="counts" id="post-phase36-reverse-tunnel-chat-smoke-summary"></div>
+            <ul id="post-phase36-reverse-tunnel-chat-smoke-details"></ul>
+          </div>
+        </section>
+
+        <section>
           <h2>Worker status summary</h2>
           <div class="counts" id="worker-summary"></div>
           <div class="worker-cards" id="worker-cards"></div>
@@ -2490,6 +2499,75 @@ function renderInternalAdminPage(): string {
         \`).join("");
       }
 
+      function renderPostPhase36ReverseTunnelChatSmoke(latest) {
+        const copy = document.getElementById("post-phase36-reverse-tunnel-chat-smoke-copy");
+        const summary = document.getElementById("post-phase36-reverse-tunnel-chat-smoke-summary");
+        const details = document.getElementById("post-phase36-reverse-tunnel-chat-smoke-details");
+
+        if (!latest) {
+          copy.textContent = "No post-phase36 reverse tunnel chat smoke captured yet.";
+          summary.innerHTML = "";
+          details.innerHTML = "";
+          return;
+        }
+
+        const sshReachability = Array.isArray(latest.ubuntuSshReachability)
+          ? latest.ubuntuSshReachability
+          : [];
+        const listenerTruth = latest.ubuntuListenerTruth || {};
+        const externalSmoke = latest.externalSmoke || {};
+        const tokenResolution = latest.tokenResolution || {};
+        const tunnelStart = latest.tunnelStart || {};
+        const cards = [
+          ["Verdict", String(latest.verdict || "unknown")],
+          ["Token status", String(tokenResolution.status || "unknown")],
+          ["Tunnel owner", String(tunnelStart.owner || "none")],
+          ["Listeners ready", String(listenerTruth.allRequiredPresent ?? false)],
+          ["External chat", statusDetail(externalSmoke.chatCompletions)],
+          ["Next blocker", String(latest.nextBlocker || "none")]
+        ];
+        const detailItems = [
+          "Captured: " + formatWhen(latest.generatedAt || latest.checkedAt),
+          "secretValueRecorded: " + String(tokenResolution.secretValueRecorded ?? false),
+          "token source: " + String(tokenResolution.source || "missing"),
+          "selectedUbuntuHost: " + String(latest.selectedUbuntuHost || "none"),
+          "ubuntuRepoPath: " + String(latest.ubuntuRepoPath || "unknown"),
+          "ubuntuCommit: " + String(latest.ubuntuCommit || "unknown"),
+          "nginxConfigOk: " + String(latest.ubuntuNginxConfigOk ?? false),
+          "canonicalPublicUpstream: " + String(latest.canonicalPublicUpstream || "unconfirmed"),
+          "tunnel taskStartAttempted: " + String(tunnelStart.taskStartAttempted ?? false),
+          "tunnel directStartAttempted: " + String(tunnelStart.directStartAttempted ?? false),
+          "tunnel owner: " + String(tunnelStart.owner || "none"),
+          "presentPorts: " + String((listenerTruth.presentPorts || []).join ? listenerTruth.presentPorts.join(", ") : "none"),
+          "missingPorts: " + String((listenerTruth.missingPorts || []).join ? listenerTruth.missingPorts.join(", ") : "none"),
+          "external healthz: " + statusDetail(externalSmoke.healthz || latest.externalHealthz),
+          "external models: " + statusDetail(externalSmoke.models),
+          "external chat: " + statusDetail(externalSmoke.chatCompletions),
+          "revalidationAttempted: " + String(latest.revalidationAttempted ?? false),
+          ...sshReachability.map((entry) =>
+            "ssh " +
+            String(entry.host || "unknown") +
+            ":" + String(entry.port || "unknown") +
+            " reachable=" + String(entry.reachable ?? false) +
+            " failureKind=" + String(entry.failureKind || "none")
+          ),
+          "scriptCompatibilityVersion: " + String(latest.scriptCompatibilityVersion || "unknown")
+        ];
+
+        copy.textContent =
+          latest.summary ||
+          "Latest post-phase36 reverse tunnel chat smoke loaded from the internal latest-state artifact.";
+        summary.innerHTML = cards.map(([label, value]) => \`
+          <div class="count-card">
+            <strong>\${escapeHtml(value)}</strong>
+            <span>\${escapeHtml(label)}</span>
+          </div>
+        \`).join("");
+        details.innerHTML = detailItems.map((detail) => \`
+          <li>\${escapeHtml(detail)}</li>
+        \`).join("");
+      }
+
       function renderHostPool(pool) {
         currentHostPool = pool;
 
@@ -2556,7 +2634,7 @@ function renderInternalAdminPage(): string {
       }
 
       async function loadSnapshot() {
-        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse, readinessRecoveryResponse, postRecoveryRegressionResponse, zeroReadyRootCauseResponse, disconnectedBaselineRemediationResponse, postRemediationDegradedSmokeResponse, postStabilizationRuntimeInvestigationResponse, disconnectedRuntimeRemediationResponse, persistentDisconnectedRuntimeFollowupResponse, runtimeParityBackportRemediationResponse, postParityDisconnectedRuntimeRemediationResponse, postPhase21DisconnectedRuntimeFollowupResponse, postPhase22SmokeWrapperParityRemediationResponse, postPhase23ExactSmokeWrapperCompatRemediationResponse, postPhase24ExternalApiReadinessResponse, postPhase25ExternalRestorationResponse, postPhase26UbuntuSshRecoveryResponse, postPhase27LocalProxyBootstrapResponse, postPhase28LocalProxyTransportResponse, postPhase29Shared2Chat409Response, postPhase30Shared2BootstrapRecoveryResponse, postPhase31AccountSurfaceInventoryResponse, postPhase31SelectedCanaryChatRecoveryResponse, postPhase32RotatingReadyAccountChatProofResponse, postPhase33AccountBrowserIsolationResponse, postPhase33IsolatedExternalChatProofResponse, postPhase34ServerIsolatedChatTransferResponse, postPhase35ServerTokenSshListenerRecoveryResponse] = await Promise.all([
+        const [poolResponse, summaryResponse, eventsResponse, workersResponse, rolloutSmokeResponse, readinessRecoveryResponse, postRecoveryRegressionResponse, zeroReadyRootCauseResponse, disconnectedBaselineRemediationResponse, postRemediationDegradedSmokeResponse, postStabilizationRuntimeInvestigationResponse, disconnectedRuntimeRemediationResponse, persistentDisconnectedRuntimeFollowupResponse, runtimeParityBackportRemediationResponse, postParityDisconnectedRuntimeRemediationResponse, postPhase21DisconnectedRuntimeFollowupResponse, postPhase22SmokeWrapperParityRemediationResponse, postPhase23ExactSmokeWrapperCompatRemediationResponse, postPhase24ExternalApiReadinessResponse, postPhase25ExternalRestorationResponse, postPhase26UbuntuSshRecoveryResponse, postPhase27LocalProxyBootstrapResponse, postPhase28LocalProxyTransportResponse, postPhase29Shared2Chat409Response, postPhase30Shared2BootstrapRecoveryResponse, postPhase31AccountSurfaceInventoryResponse, postPhase31SelectedCanaryChatRecoveryResponse, postPhase32RotatingReadyAccountChatProofResponse, postPhase33AccountBrowserIsolationResponse, postPhase33IsolatedExternalChatProofResponse, postPhase34ServerIsolatedChatTransferResponse, postPhase35ServerTokenSshListenerRecoveryResponse, postPhase36ReverseTunnelChatSmokeResponse] = await Promise.all([
           fetch("/internal/host-pool"),
           fetch("/internal/observability/summary"),
           fetch("/internal/observability/events?limit=50"),
@@ -2588,10 +2666,11 @@ function renderInternalAdminPage(): string {
           fetch("/internal/post-phase33-account-browser-isolation/latest"),
           fetch("/internal/post-phase33-isolated-external-chat-proof/latest"),
           fetch("/internal/post-phase34-server-isolated-chat-transfer/latest"),
-          fetch("/internal/post-phase35-server-token-ssh-listener-recovery/latest")
+          fetch("/internal/post-phase35-server-token-ssh-listener-recovery/latest"),
+          fetch("/internal/post-phase36-reverse-tunnel-chat-smoke/latest")
         ]);
 
-        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok || !readinessRecoveryResponse.ok || !postRecoveryRegressionResponse.ok || !zeroReadyRootCauseResponse.ok || !disconnectedBaselineRemediationResponse.ok || !postRemediationDegradedSmokeResponse.ok || !postStabilizationRuntimeInvestigationResponse.ok || !disconnectedRuntimeRemediationResponse.ok || !persistentDisconnectedRuntimeFollowupResponse.ok || !runtimeParityBackportRemediationResponse.ok || !postParityDisconnectedRuntimeRemediationResponse.ok || !postPhase21DisconnectedRuntimeFollowupResponse.ok || !postPhase22SmokeWrapperParityRemediationResponse.ok || !postPhase23ExactSmokeWrapperCompatRemediationResponse.ok || !postPhase24ExternalApiReadinessResponse.ok || !postPhase25ExternalRestorationResponse.ok || !postPhase26UbuntuSshRecoveryResponse.ok || !postPhase27LocalProxyBootstrapResponse.ok || !postPhase28LocalProxyTransportResponse.ok || !postPhase29Shared2Chat409Response.ok || !postPhase30Shared2BootstrapRecoveryResponse.ok || !postPhase31AccountSurfaceInventoryResponse.ok || !postPhase31SelectedCanaryChatRecoveryResponse.ok || !postPhase32RotatingReadyAccountChatProofResponse.ok || !postPhase33AccountBrowserIsolationResponse.ok || !postPhase33IsolatedExternalChatProofResponse.ok || !postPhase34ServerIsolatedChatTransferResponse.ok || !postPhase35ServerTokenSshListenerRecoveryResponse.ok) {
+        if (!poolResponse.ok || !summaryResponse.ok || !eventsResponse.ok || !workersResponse.ok || !rolloutSmokeResponse.ok || !readinessRecoveryResponse.ok || !postRecoveryRegressionResponse.ok || !zeroReadyRootCauseResponse.ok || !disconnectedBaselineRemediationResponse.ok || !postRemediationDegradedSmokeResponse.ok || !postStabilizationRuntimeInvestigationResponse.ok || !disconnectedRuntimeRemediationResponse.ok || !persistentDisconnectedRuntimeFollowupResponse.ok || !runtimeParityBackportRemediationResponse.ok || !postParityDisconnectedRuntimeRemediationResponse.ok || !postPhase21DisconnectedRuntimeFollowupResponse.ok || !postPhase22SmokeWrapperParityRemediationResponse.ok || !postPhase23ExactSmokeWrapperCompatRemediationResponse.ok || !postPhase24ExternalApiReadinessResponse.ok || !postPhase25ExternalRestorationResponse.ok || !postPhase26UbuntuSshRecoveryResponse.ok || !postPhase27LocalProxyBootstrapResponse.ok || !postPhase28LocalProxyTransportResponse.ok || !postPhase29Shared2Chat409Response.ok || !postPhase30Shared2BootstrapRecoveryResponse.ok || !postPhase31AccountSurfaceInventoryResponse.ok || !postPhase31SelectedCanaryChatRecoveryResponse.ok || !postPhase32RotatingReadyAccountChatProofResponse.ok || !postPhase33AccountBrowserIsolationResponse.ok || !postPhase33IsolatedExternalChatProofResponse.ok || !postPhase34ServerIsolatedChatTransferResponse.ok || !postPhase35ServerTokenSshListenerRecoveryResponse.ok || !postPhase36ReverseTunnelChatSmokeResponse.ok) {
           throw new Error("Internal observability endpoints are unavailable");
         }
 
@@ -2627,6 +2706,7 @@ function renderInternalAdminPage(): string {
         const postPhase33IsolatedExternalChatProofPayload = await postPhase33IsolatedExternalChatProofResponse.json();
         const postPhase34ServerIsolatedChatTransferPayload = await postPhase34ServerIsolatedChatTransferResponse.json();
         const postPhase35ServerTokenSshListenerRecoveryPayload = await postPhase35ServerTokenSshListenerRecoveryResponse.json();
+        const postPhase36ReverseTunnelChatSmokePayload = await postPhase36ReverseTunnelChatSmokeResponse.json();
         const workers = workersPayload.workers ?? [];
         const lifecycleEvents = events.filter((event) => lifecycleEventTypes.has(event.eventType));
         const browserAccessResults = await Promise.all(
@@ -2667,6 +2747,7 @@ function renderInternalAdminPage(): string {
         renderPostPhase33IsolatedExternalChatProof(postPhase33IsolatedExternalChatProofPayload.latest ?? null);
         renderPostPhase34ServerIsolatedChatTransfer(postPhase34ServerIsolatedChatTransferPayload.latest ?? null);
         renderPostPhase35ServerTokenSshListenerRecovery(postPhase35ServerTokenSshListenerRecoveryPayload.latest ?? null);
+        renderPostPhase36ReverseTunnelChatSmoke(postPhase36ReverseTunnelChatSmokePayload.latest ?? null);
         renderWorkerSummary(summary, workers);
         renderEvents(
           "recent-failures",
@@ -2897,6 +2978,10 @@ function renderInternalAdminPage(): string {
             "Unable to load the latest post-phase33 isolated external chat proof.";
           document.getElementById("post-phase34-server-isolated-chat-transfer-copy").textContent =
             "Unable to load the latest post-phase34 server isolated external chat proof.";
+          document.getElementById("post-phase35-server-token-ssh-listener-recovery-copy").textContent =
+            "Unable to load the latest post-phase35 server token SSH listener recovery.";
+          document.getElementById("post-phase36-reverse-tunnel-chat-smoke-copy").textContent =
+            "Unable to load the latest post-phase36 reverse tunnel chat smoke.";
           document.getElementById("recent-failures").innerHTML =
             '<li class="error">' + escapeHtml(String(error instanceof Error ? error.message : error)) + "</li>";
           document.getElementById("recent-events").innerHTML =

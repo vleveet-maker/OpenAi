@@ -50,6 +50,7 @@ export interface ControlApiConfig {
   postPhase33IsolatedExternalChatProofStatePath?: string;
   postPhase34ServerIsolatedChatTransferStatePath?: string;
   postPhase35ServerTokenSshListenerRecoveryStatePath?: string;
+  postPhase36ReverseTunnelChatSmokeStatePath?: string;
   postRemediationDegradedSmokeStatePath?: string;
   postStabilizationRuntimeInvestigationStatePath?: string;
   remoteRelayDefaultWorkerId?: string;
@@ -267,6 +268,13 @@ const DEFAULT_POST_PHASE35_SERVER_TOKEN_SSH_LISTENER_RECOVERY_STATE_PATH = resol
   "post-phase35-server-token-ssh-listener-recovery",
   "latest.json"
 );
+const DEFAULT_POST_PHASE36_REVERSE_TUNNEL_CHAT_SMOKE_STATE_PATH = resolve(
+  REPO_ROOT,
+  "infra",
+  "data",
+  "post-phase36-reverse-tunnel-chat-smoke",
+  "latest.json"
+);
 const DEFAULT_POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH = resolve(
   REPO_ROOT,
   "infra",
@@ -444,6 +452,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ControlApiConf
     postPhase35ServerTokenSshListenerRecoveryStatePath:
       env.POST_PHASE35_SERVER_TOKEN_SSH_LISTENER_RECOVERY_STATE_PATH ??
       DEFAULT_POST_PHASE35_SERVER_TOKEN_SSH_LISTENER_RECOVERY_STATE_PATH,
+    postPhase36ReverseTunnelChatSmokeStatePath:
+      env.POST_PHASE36_REVERSE_TUNNEL_CHAT_SMOKE_STATE_PATH ??
+      DEFAULT_POST_PHASE36_REVERSE_TUNNEL_CHAT_SMOKE_STATE_PATH,
     postRemediationDegradedSmokeStatePath:
       env.POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH ??
       DEFAULT_POST_REMEDIATION_DEGRADED_SMOKE_STATE_PATH,

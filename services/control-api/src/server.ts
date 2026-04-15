@@ -101,6 +101,9 @@ import {
   createInternalPostPhase35ServerTokenSshListenerRecoveryRouter
 } from "./routes/internal-post-phase35-server-token-ssh-listener-recovery.js";
 import {
+  createInternalPostPhase36ReverseTunnelChatSmokeRouter
+} from "./routes/internal-post-phase36-reverse-tunnel-chat-smoke.js";
+import {
   createInternalPostRemediationDegradedSmokeRouter
 } from "./routes/internal-post-remediation-degraded-smoke.js";
 import {
@@ -585,6 +588,9 @@ export function createControlApiApp(
       }),
       createInternalPostPhase35ServerTokenSshListenerRecoveryRouter({
         statePath: config.postPhase35ServerTokenSshListenerRecoveryStatePath
+      }),
+      createInternalPostPhase36ReverseTunnelChatSmokeRouter({
+        statePath: config.postPhase36ReverseTunnelChatSmokeStatePath
       }),
       createInternalPostRemediationDegradedSmokeRouter({
         statePath: config.postRemediationDegradedSmokeStatePath
