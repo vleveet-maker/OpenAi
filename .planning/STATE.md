@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planned
+status: executing
 stopped_at: Phase 37 planned; next action is `$gsd-execute-phase 37`
-last_updated: "2026-04-15T00:20:42.225+03:00"
-last_activity: 2026-04-15 -- Phase 37 planned for reverse SSH tunnel listener restoration and final authenticated external chat smoke
+last_updated: "2026-04-15T02:43:31.354Z"
+last_activity: 2026-04-15 -- Phase 37 execution started
 progress:
   total_phases: 51
   completed_phases: 50
   total_plans: 153
-  completed_plans: 150
+  completed_plans: 178
   percent: 98
 ---
 
@@ -21,15 +21,15 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-14)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Phase 37 -- restore Ubuntu reverse SSH tunnel listeners and complete authenticated external chat smoke
+**Current focus:** Phase 37 — restore-ubuntu-reverse-ssh-tunnel-listeners-and-complete-external-authenticated-chat-smoke-after-token-models-proof
 
 ## Current Position
 
-Phase: 37 (restore-ubuntu-reverse-ssh-tunnel-listeners-and-complete-external-authenticated-chat-smoke-after-token-models-proof) -- PLANNED
-Plan: 0 of 3
+Phase: 37 (restore-ubuntu-reverse-ssh-tunnel-listeners-and-complete-external-authenticated-chat-smoke-after-token-models-proof) — EXECUTING
+Plan: 1 of 3
 Milestone: `v1.2 Rollout Stability`
-Status: Ready to execute Phase 37
-Last activity: 2026-04-15 -- Phase 37 planned
+Status: Executing Phase 37
+Last activity: 2026-04-15 -- Phase 37 execution started
 
 Progress: [#########-] 98%
 

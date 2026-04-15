@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase27-ubuntu-ssh-recovery-v1`
+`phase37-reverse-tunnel-chat-smoke-v1`
 
 The Windows browser block is the browser-runtime side of the system. It is not the active public edge.
 
@@ -187,9 +187,35 @@ Public authenticated chat against `http://77.66.186.75` must be rerun only after
 - [revalidate-server-isolated-external-chat-proof.ps1](d:/OpenAi/infra/windows-block/revalidate-server-isolated-external-chat-proof.ps1)
 - [recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1](d:/OpenAi/infra/windows-block/recover-ubuntu-ssh-reverse-tunnels-and-authenticated-smoke.ps1)
 - [recover-server-token-ssh-listeners-and-external-chat.ps1](d:/OpenAi/infra/windows-block/recover-server-token-ssh-listeners-and-external-chat.ps1)
+- [restore-reverse-tunnels-and-complete-external-chat-smoke.ps1](d:/OpenAi/infra/windows-block/restore-reverse-tunnels-and-complete-external-chat-smoke.ps1)
 - [stabilize-local-proxy-tls-and-bounded-worker-bootstrap.ps1](d:/OpenAi/infra/windows-block/stabilize-local-proxy-tls-and-bounded-worker-bootstrap.ps1)
 - [remote-relay-server.md](d:/OpenAi/docs/remote-relay-server.md)
 
 ## Phase 36 Server Gate
 
 Before claiming that the transferred server path is externally ready, run the Phase 36 token/SSH/listener gate. This step checks bearer-token source, Ubuntu SSH, Ubuntu-side listeners `14021..14027` plus `14040`, and only then performs authenticated external smoke. It does not delete profiles, clear cookies/localStorage, restart the full pool, or relogin accounts.
+
+## Phase 37 Tunnel Restoration Gate
+
+Phase 37 is the next direct API-readiness step after Phase 36. It does not debug accounts or proxy TLS. It restores the Windows-to-Ubuntu reverse SSH bridge and then runs exactly one authenticated external chat smoke when the bridge is green.
+
+Canonical wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\restore-reverse-tunnels-and-complete-external-chat-smoke.ps1 `
+  -RemoteHosts 77.66.186.75,95.78.126.163 `
+  -RemotePort 2222 `
+  -RemoteUser mi50 `
+  -PublicBaseUrl http://77.66.186.75 `
+  -WorkerId wife
+```
+
+Preserve-first still applies:
+
+- do not delete profiles
+- do not clear cookies or local storage
+- do not mass restart all browser accounts
+- do not mass relogin accounts
+- do not use local-only archives for cross-host handoff; publish tracked changes through GitHub first
+
+If password auth is needed for the tunnel proof, provide it only through runtime environment such as `OWMCGP_REMOTE_SSH_PASSWORD`, not in a tracked config file or artifact.

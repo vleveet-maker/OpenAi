@@ -10,7 +10,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$scriptCompatibilityVersion = "phase27-ubuntu-ssh-recovery-v1"
+$scriptCompatibilityVersion = "phase37-reverse-tunnel-chat-smoke-v1"
 
 function Resolve-RepoRoot {
   param([string]$Candidate)

@@ -2,7 +2,7 @@
 
 ## Current Live Truth
 
-`phase27-ubuntu-ssh-recovery-v1`
+`phase37-reverse-tunnel-chat-smoke-v1`
 
 The remote relay host is Ubuntu. The relay/API process is local-only and the public edge is owned by Ubuntu `nginx`.
 
@@ -159,3 +159,33 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows-block\recover-server-to
 ```
 
 The wrapper records only redacted token source labels. It must not write bearer-token values or SSH passwords to artifacts. External chat revalidation is attempted only after token source and Ubuntu listener truth are green.
+
+## Phase 37 Reverse Tunnel Listener Restoration
+
+Phase 36 proved the public front door and authenticated `/v1/models`; Phase 37 targets the remaining bridge: Ubuntu must see the reverse-tunnel listeners before chat can work.
+
+Canonical wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows-block\restore-reverse-tunnels-and-complete-external-chat-smoke.ps1 `
+  -RemoteHosts 77.66.186.75,95.78.126.163 `
+  -RemotePort 2222 `
+  -RemoteUser mi50 `
+  -PublicBaseUrl http://77.66.186.75 `
+  -WorkerId wife
+```
+
+Secrets remain execution-time only:
+
+- pass SSH auth by key, or by the process environment `OWMCGP_REMOTE_SSH_PASSWORD`
+- do not place SSH passwords or bearer tokens in tracked files
+- do not place SSH passwords or bearer tokens in artifacts
+- do not print SSH passwords or bearer tokens in handoff prompts
+
+The Phase 37 wrapper records:
+
+- reverse-tunnel task/process truth
+- Ubuntu-side listener truth for `14021..14027` and `14040`
+- redacted token source label
+- authenticated public `/healthz`, `/v1/models`, and `/v1/chat/completions`
+- final verdict `externally_ready` or `hold_rollout`

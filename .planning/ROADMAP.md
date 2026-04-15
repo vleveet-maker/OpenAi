@@ -1084,7 +1084,7 @@ Plans:
   3. The latest Phase 37 result is available through a durable latest artifact and `/internal/admin`.
   4. Authenticated `/healthz`, `/v1/models`, and `/v1/chat/completions` against `http://77.66.186.75` end with exactly one verdict: `externally_ready` or `hold_rollout`.
 **Current status:** Planned on 2026-04-15 after Phase 36 proved token/models green and isolated the remaining blocker to missing Ubuntu reverse-tunnel listeners.
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] `37-01-PLAN.md` - hardened reverse-tunnel startup, listener restoration wrapper, and secret-safe tunnel retention
