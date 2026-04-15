@@ -501,6 +501,26 @@ function Get-LocalListenerTruth {
   }
 }
 
+function Get-WorkerAgentPort {
+  param([string]$CurrentWorkerId)
+
+  $map = @{
+    "dad" = 4021
+    "wife" = 4022
+    "shared-1" = 4023
+    "shared-2" = 4024
+    "shared-3" = 4025
+    "shared-4" = 4026
+    "shared-5" = 4027
+  }
+
+  if ($map.ContainsKey($CurrentWorkerId)) {
+    return [int]$map[$CurrentWorkerId]
+  }
+
+  return $null
+}
+
 function Start-DirectReverseTunnel {
   param([string]$RemoteHostName)
 
@@ -647,6 +667,68 @@ function Invoke-ExternalSmoke {
   }
 }
 
+function Get-ExternalChatFailure {
+  param([object]$ExternalSmoke)
+
+  $chat = Get-ObjectPropertyValue -InputObject $ExternalSmoke -PropertyName "chatCompletions"
+
+  if ($null -eq $chat) {
+    $chat = Get-ObjectPropertyValue -InputObject $ExternalSmoke -PropertyName "chat"
+  }
+
+  if ($null -eq $chat) {
+    return [pscustomobject]@{
+      statusCode = $null
+      code = $null
+      message = $null
+      innerReason = $null
+      blocker = "external_chat_result_missing"
+    }
+  }
+
+  $statusCode = Get-ObjectPropertyValue -InputObject $chat -PropertyName "statusCode"
+  $body = [string](Get-ObjectPropertyValue -InputObject $chat -PropertyName "body" -DefaultValue "")
+  $errorText = [string](Get-ObjectPropertyValue -InputObject $chat -PropertyName "error" -DefaultValue "")
+  $code = $null
+  $message = $null
+  $innerReason = $null
+
+  $bodyPayload = ConvertFrom-JsonSafe -Raw $body
+
+  if ($null -ne $bodyPayload) {
+    $errorPayload = Get-ObjectPropertyValue -InputObject $bodyPayload -PropertyName "error"
+    $code = Get-ObjectPropertyValue -InputObject $errorPayload -PropertyName "code"
+    $message = Get-ObjectPropertyValue -InputObject $errorPayload -PropertyName "message"
+  }
+
+  if ([string]::IsNullOrWhiteSpace($message)) {
+    $message = $errorText
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($message) -and $message -match "(worker_[A-Za-z0-9_]+|bootstrap_[A-Za-z0-9_]+)") {
+    $innerReason = $Matches[1]
+  }
+
+  $blocker =
+    if (-not [string]::IsNullOrWhiteSpace($innerReason)) {
+      $innerReason
+    } elseif (-not [string]::IsNullOrWhiteSpace($code)) {
+      $code
+    } elseif ($null -ne $statusCode) {
+      "external_chat_http_$statusCode"
+    } else {
+      "external_chat_failed"
+    }
+
+  return [pscustomobject]@{
+    statusCode = $statusCode
+    code = $code
+    message = $message
+    innerReason = $innerReason
+    blocker = $blocker
+  }
+}
+
 $repoRoot = Resolve-RepoRoot
 $phaseDir = Join-Path $repoRoot ".planning\phases\37-restore-ubuntu-reverse-ssh-tunnel-listeners-and-complete-external-authenticated-chat-smoke-after-token-models-proof"
 
@@ -680,7 +762,7 @@ $normalizedRemoteHosts = @(
 
 $taskBefore = Get-ReverseTunnelTaskSnapshot
 $processBefore = Get-ReverseTunnelProcessSnapshot
-$localListenerTruth = Get-LocalListenerTruth
+$localListenerTruthBefore = Get-LocalListenerTruth
 $publicHealthz = Invoke-PublicHealthz
 $sshAttempts = New-Object System.Collections.Generic.List[object]
 $selectedHost = ""
@@ -763,6 +845,21 @@ if (-not [string]::IsNullOrWhiteSpace($selectedHost) -and -not [bool]$serverTrut
 
 $taskAfter = Get-ReverseTunnelTaskSnapshot
 $processAfter = Get-ReverseTunnelProcessSnapshot
+$localListenerTruthAfter = Get-LocalListenerTruth
+$workerAgentPort = Get-WorkerAgentPort -CurrentWorkerId $WorkerId
+$requiredLocalPortsForSmoke = @(4040)
+
+if ($null -ne $workerAgentPort) {
+  $requiredLocalPortsForSmoke += $workerAgentPort
+}
+
+$localSmokePortsMissing = @(
+  foreach ($port in $requiredLocalPortsForSmoke) {
+    if (@($localListenerTruthAfter.presentPorts | Where-Object { $_ -eq $port }).Count -eq 0) {
+      $port
+    }
+  }
+)
 $tokenValue = ""
 $tokenSource = "missing"
 
@@ -796,11 +893,28 @@ $revalidationAttempted = $false
 if (
   $tokenResolution.status -eq "resolved" -and
   -not [string]::IsNullOrWhiteSpace($selectedHost) -and
-  [bool]$serverTruth.listenerTruth.allRequiredPresent
+  [bool]$serverTruth.listenerTruth.allRequiredPresent -and
+  $localSmokePortsMissing.Count -eq 0
 ) {
   $revalidationAttempted = $true
   $externalSmoke = Invoke-ExternalSmoke -TokenValue $tokenValue -TokenSource $tokenSource
+} elseif (
+  $tokenResolution.status -eq "resolved" -and
+  -not [string]::IsNullOrWhiteSpace($selectedHost) -and
+  [bool]$serverTruth.listenerTruth.allRequiredPresent -and
+  $localSmokePortsMissing.Count -gt 0
+) {
+  $externalSmoke = [pscustomobject]@{
+    attempted = $false
+    skippedReason = "local_worker_ports_missing"
+    healthz = $publicHealthz
+    models = $null
+    chatCompletions = $null
+    ok = $false
+  }
 }
+
+$externalChatFailure = Get-ExternalChatFailure -ExternalSmoke $externalSmoke
 
 $nextBlocker =
   if ([string]::IsNullOrWhiteSpace($selectedHost)) {
@@ -811,8 +925,10 @@ $nextBlocker =
     "ubuntu_canonical_upstream_unconfirmed"
   } elseif (-not [bool]$serverTruth.listenerTruth.allRequiredPresent) {
     "ubuntu_listeners_missing"
+  } elseif ($localSmokePortsMissing.Count -gt 0) {
+    "local_worker_ports_missing"
   } elseif (-not [bool](Get-ObjectPropertyValue -InputObject $externalSmoke -PropertyName "ok" -DefaultValue $false)) {
-    "external_authenticated_smoke_failed"
+    $externalChatFailure.blocker
   } else {
     "none"
   }
@@ -853,7 +969,13 @@ $result = [pscustomobject][ordered]@{
   canonicalPublicUpstream = $serverTruth.nginx.canonicalPublicUpstream
   canonicalPublicUpstreamPresent = $serverTruth.nginx.canonicalPublicUpstreamPresent
   tokenResolution = $tokenResolution
-  localListenerTruth = $localListenerTruth
+  localListenerTruth = [pscustomobject]@{
+    before = $localListenerTruthBefore
+    after = $localListenerTruthAfter
+    requiredForSmoke = $requiredLocalPortsForSmoke
+    missingForSmoke = $localSmokePortsMissing
+    allRequiredForSmokePresent = $localSmokePortsMissing.Count -eq 0
+  }
   reverseTunnelTask = [pscustomobject]@{
     name = $ReverseTunnelTaskName
     before = $taskBefore
@@ -867,6 +989,7 @@ $result = [pscustomobject][ordered]@{
   ubuntuListenerTruth = $serverTruth.listenerTruth
   externalHealthz = $publicHealthz
   externalSmoke = $externalSmoke
+  externalChatFailure = $externalChatFailure
   revalidationAttempted = $revalidationAttempted
   nextBlocker = $nextBlocker
   preserveFirst = [pscustomobject]@{
@@ -922,6 +1045,9 @@ $markdown = @(
   "- healthz: status=$($result.externalHealthz.statusCode) ok=$($result.externalHealthz.success)",
   "- revalidationAttempted: $($result.revalidationAttempted)",
   "- smokeOk: $(Get-ObjectPropertyValue -InputObject $result.externalSmoke -PropertyName 'ok' -DefaultValue $false)",
+  "- chatFailureStatusCode: $(if ($result.externalChatFailure.statusCode) { $result.externalChatFailure.statusCode } else { 'none' })",
+  "- chatFailureCode: $(if ($result.externalChatFailure.code) { $result.externalChatFailure.code } else { 'none' })",
+  "- chatFailureInnerReason: $(if ($result.externalChatFailure.innerReason) { $result.externalChatFailure.innerReason } else { 'none' })",
   "- nextBlocker: $($result.nextBlocker)",
   "",
   "## Preserve-First",

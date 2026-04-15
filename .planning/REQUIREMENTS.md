@@ -341,10 +341,10 @@
 
 ### Reverse Tunnel Listener Restoration And Authenticated Chat Smoke
 
-- [ ] **RTUN-01**: Reverse-tunnel startup can use key or password auth preserve-first without committing, printing, or storing SSH passwords or bearer tokens, and it retries intermittent SSH banner/session failures before giving up
-- [ ] **RTUN-02**: Ubuntu listener truth for `127.0.0.1:14021..14027` and `127.0.0.1:14040` is verified directly after tunnel startup and is not inferred from Windows task/process state alone
-- [ ] **RTUN-03**: The latest Phase 37 reverse-tunnel/chat-smoke result is visible through a durable latest artifact and an internal operator surface, including tunnel owner, Ubuntu listener truth, token source label, external smoke truth, verdict, and next blocker
-- [ ] **RTUN-04**: One authenticated external `/v1/chat/completions` against `http://77.66.186.75` runs only after token plus Ubuntu listener truth are green, returning exactly one final verdict `externally_ready` or `hold_rollout`
+- [x] **RTUN-01**: Reverse-tunnel startup can use key or password auth preserve-first without committing, printing, or storing SSH passwords or bearer tokens, and it retries intermittent SSH banner/session failures before giving up
+- [x] **RTUN-02**: Ubuntu listener truth for `127.0.0.1:14021..14027` and `127.0.0.1:14040` is verified directly after tunnel startup and is not inferred from Windows task/process state alone
+- [x] **RTUN-03**: The latest Phase 37 reverse-tunnel/chat-smoke result is visible through a durable latest artifact and an internal operator surface, including tunnel owner, Ubuntu listener truth, token source label, external smoke truth, verdict, and next blocker
+- [x] **RTUN-04**: One authenticated external `/v1/chat/completions` against `http://77.66.186.75` runs only after token plus Ubuntu listener truth are green, returning exactly one final verdict `externally_ready` or `hold_rollout`
 
 ## Future Requirements
 
@@ -553,10 +553,10 @@
 | SBTU-02 | Phase 36 | Complete; listener truth is missing ports 14021..14027 plus 14040 |
 | SBTU-03 | Phase 36 | Complete |
 | SBTU-04 | Phase 36 | Blocked until token plus Ubuntu listener truth are green |
-| RTUN-01 | Phase 37 | Pending |
-| RTUN-02 | Phase 37 | Pending |
-| RTUN-03 | Phase 37 | Pending |
-| RTUN-04 | Phase 37 | Pending |
+| RTUN-01 | Phase 37 | Complete |
+| RTUN-02 | Phase 37 | Complete |
+| RTUN-03 | Phase 37 | Complete |
+| RTUN-04 | Phase 37 | Complete |
 
   **Coverage:**
   - v1.2 requirements: 156 total
@@ -565,4 +565,4 @@
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-04-15 while planning Phase 37*
+*Last updated: 2026-04-15 after executing Phase 37*

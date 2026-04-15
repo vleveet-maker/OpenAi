@@ -305,43 +305,7 @@ export function createControlApiRuntime(
     defaultWorkerId: config.remoteRelayDefaultWorkerId,
     sessionService,
     chatRelayService,
-    listFallbackWorkerIds:
-      options.listFallbackWorkerIds ??
-      (async () => {
-        const availableWorkerIds: string[] = [];
-
-        for (const worker of config.workerDefinitions) {
-          if (sessionService.hasActiveSessionForWorker(worker.workerId)) {
-            continue;
-          }
-
-          try {
-            const response = await fetch(new URL("/health", `${worker.agentBaseUrl}/`), {
-              signal: AbortSignal.timeout(config.workerHealthTimeoutMs)
-            });
-
-            if (!response.ok) {
-              continue;
-            }
-
-            const payload = (await response.json()) as {
-              runtimeStatus?: string;
-              browserContextReady?: boolean;
-            };
-
-            if (
-              payload.runtimeStatus === "ready" &&
-              payload.browserContextReady === true
-            ) {
-              availableWorkerIds.push(worker.workerId);
-            }
-          } catch {
-            // Ignore and keep scanning other workers.
-          }
-        }
-
-        return availableWorkerIds;
-      }),
+    listFallbackWorkerIds: options.listFallbackWorkerIds,
     findFallbackWorkerId:
       options.findFallbackWorkerId ??
       (async () => {

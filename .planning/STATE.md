@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 37 planned; next action is `$gsd-execute-phase 37`
-last_updated: "2026-04-15T02:43:31.354Z"
-last_activity: 2026-04-15 -- Phase 37 execution started
+status: hold_rollout
+stopped_at: Phase 37 complete with `hold_rollout`; next action is manual account confirmation/sign-in, then rerun authenticated external chat smoke
+last_updated: "2026-04-15T03:28:00.000Z"
+last_activity: 2026-04-15
 progress:
   total_phases: 51
-  completed_phases: 50
+  completed_phases: 51
   total_plans: 153
-  completed_plans: 178
+  completed_plans: 182
   percent: 98
 ---
 
@@ -21,15 +21,15 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-14)
 
 **Core value:** A family user gets a stable, bounded 60-minute conversation through a managed ChatGPT worker without touching the server browser directly.
-**Current focus:** Phase 37 — restore-ubuntu-reverse-ssh-tunnel-listeners-and-complete-external-authenticated-chat-smoke-after-token-models-proof
+**Current focus:** Manual browser-account confirmation after Phase 37 isolated external chat to `bootstrap_auth_required`
 
 ## Current Position
 
-Phase: 37 (restore-ubuntu-reverse-ssh-tunnel-listeners-and-complete-external-authenticated-chat-smoke-after-token-models-proof) — EXECUTING
-Plan: 1 of 3
+Phase: 37 complete
+Plan: Follow-up needed
 Milestone: `v1.2 Rollout Stability`
-Status: Executing Phase 37
-Last activity: 2026-04-15 -- Phase 37 execution started
+Status: Hold rollout after Phase 37
+Last activity: 2026-04-15 -- Phase 37 completed with infrastructure green and account auth still blocking chat
 
 Progress: [#########-] 98%
 
@@ -69,6 +69,8 @@ Progress: [#########-] 98%
 - Durable reverse-tunnel retention still needs a stable non-manual path; temporary password-backed tunnels can expose the right Ubuntu listeners, but this is still a proof path, not durable retention.
 - The local external chat proof remains green on the isolated browser-root baseline; the remaining rollout work is now server-side token/SSH/listener recovery and revalidation of the same proven shape.
 - Phase 36 is complete with `hold_rollout`: token source and public `/v1/models` are now green through `77.66.186.75`, but Ubuntu listeners `14021..14027` and `14040` are missing, so authenticated external chat was correctly skipped.
+- Phase 37 is complete with `hold_rollout`: Ubuntu SSH, nginx, bearer-token resolution, `/healthz`, authenticated `/v1/models`, and reverse-tunnel listeners `14021..14027/14040` are green; authenticated external chat now reaches the browser path but returns `409 chat_bootstrap_failed / bootstrap_auth_required`.
+- The next blocker is no longer proxy or Ubuntu topology. The next step is manual account confirmation/sign-in in the browser windows, followed by one bounded authenticated external chat smoke rerun.
 - `shared-2` is back in the active isolated ready set after manual activation, but it is no longer the gate for local API readiness because `wife` has already proven the first honest outside chat success.
 - Local proxy TLS egress on `127.0.0.1:7897` still needs repair: `CONNECT` succeeds, but TLS resets on `https://www.gstatic.com/generate_204` and `https://chatgpt.com`.
 - Dedicated per-account browser isolation has now landed and already produced the first real external chat success locally; any next rollout step should preserve that isolated model instead of going back to the retired shared-root layout.
@@ -76,7 +78,7 @@ Progress: [#########-] 98%
 ## Session Continuity
 
 Last session: 2026-04-15
-Stopped at: Phase 37 planned; next action is `$gsd-execute-phase 37`
+Stopped at: Phase 37 complete with `hold_rollout`; next action is manual account confirmation/sign-in, then rerun authenticated external chat smoke
 
 ## Accumulated Context
 
@@ -104,6 +106,7 @@ Stopped at: Phase 37 planned; next action is `$gsd-execute-phase 37`
 - Phase 36 complete: implementation/tests/operator surface passed, direct SSH retry to `77.66.186.75:2222` resolved token source and authenticated public `/v1/models=200`, but Ubuntu listeners `14021..14027` plus `14040` are missing, so the next blocker is `ubuntu_listeners_missing`.
 - Phase 37 added: Restore Ubuntu reverse SSH tunnel listeners and complete external authenticated chat smoke after token/models proof
 - Phase 37 planned: three plans now target hardened reverse-tunnel startup, Ubuntu-side listener proof, operator-surface visibility, and one authenticated external chat smoke after listeners are green.
+- Phase 37 complete: reverse-tunnel listeners are green on Ubuntu, token and models are green externally, and the remaining chat blocker is now exactly `bootstrap_auth_required` across the no-proxy account path.
 
 ### Pending Todos
 

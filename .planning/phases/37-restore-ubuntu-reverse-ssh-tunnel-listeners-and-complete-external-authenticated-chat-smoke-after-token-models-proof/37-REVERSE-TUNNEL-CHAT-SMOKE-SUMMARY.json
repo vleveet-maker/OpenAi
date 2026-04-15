@@ -1,0 +1,285 @@
+﻿{
+    "generatedAt":  "2026-04-15T06:19:25.4939735+03:00",
+    "scriptCompatibilityVersion":  "phase37-reverse-tunnel-chat-smoke-v1",
+    "windowsRepoPath":  "D:\\OpenAi",
+    "windowsCommit":  "cfffdcb",
+    "publicBaseUrl":  "http://77.66.186.75",
+    "workerId":  "dad",
+    "selectedUbuntuHost":  "77.66.186.75",
+    "ubuntuSshReachability":  [
+                                  {
+                                      "host":  "77.66.186.75",
+                                      "port":  2222,
+                                      "user":  "mi50",
+                                      "reachable":  true,
+                                      "failureKind":  "ssh_failed_unknown",
+                                      "error":  null
+                                  },
+                                  {
+                                      "host":  "95.78.126.163",
+                                      "port":  2222,
+                                      "user":  "mi50",
+                                      "reachable":  true,
+                                      "failureKind":  "ssh_failed_unknown",
+                                      "error":  null
+                                  }
+                              ],
+    "ubuntuSsh":  {
+                      "selectedHost":  "77.66.186.75",
+                      "ok":  true
+                  },
+    "ubuntuRepoPath":  "/opt/owmcgp-remote-relay/services/control-api",
+    "ubuntuCommit":  "",
+    "ubuntuBranch":  "",
+    "ubuntuRepoReachable":  true,
+    "ubuntuNginx":  {
+                        "configOk":  true,
+                        "canonicalPublicUpstreamPresent":  true,
+                        "canonicalPublicUpstream":  "Ubuntu nginx -\u003e 127.0.0.1:4010"
+                    },
+    "ubuntuNginxConfigOk":  true,
+    "canonicalPublicUpstream":  "Ubuntu nginx -\u003e 127.0.0.1:4010",
+    "canonicalPublicUpstreamPresent":  true,
+    "tokenResolution":  {
+                            "status":  "resolved",
+                            "source":  "ssh:77.66.186.75:remote_env_file:REMOTE_RELAY_API_TOKEN",
+                            "secretValueRecorded":  false
+                        },
+    "localListenerTruth":  {
+                               "before":  {
+                                              "checkedPorts":  [
+                                                                   4021,
+                                                                   4022,
+                                                                   4023,
+                                                                   4024,
+                                                                   4025,
+                                                                   4026,
+                                                                   4027,
+                                                                   4040,
+                                                                   8081
+                                                               ],
+                                              "presentPorts":  [
+                                                                   4021,
+                                                                   4040
+                                                               ],
+                                              "missingPorts":  [
+                                                                   4022,
+                                                                   4023,
+                                                                   4024,
+                                                                   4025,
+                                                                   4026,
+                                                                   4027,
+                                                                   8081
+                                                               ]
+                                          },
+                               "after":  {
+                                             "checkedPorts":  [
+                                                                  4021,
+                                                                  4022,
+                                                                  4023,
+                                                                  4024,
+                                                                  4025,
+                                                                  4026,
+                                                                  4027,
+                                                                  4040,
+                                                                  8081
+                                                              ],
+                                             "presentPorts":  [
+                                                                  4021,
+                                                                  4040
+                                                              ],
+                                             "missingPorts":  [
+                                                                  4022,
+                                                                  4023,
+                                                                  4024,
+                                                                  4025,
+                                                                  4026,
+                                                                  4027,
+                                                                  8081
+                                                              ]
+                                         },
+                               "requiredForSmoke":  [
+                                                        4040,
+                                                        4021
+                                                    ],
+                               "missingForSmoke":  [
+
+                                                   ],
+                               "allRequiredForSmokePresent":  true
+                           },
+    "reverseTunnelTask":  {
+                              "name":  "OWMCGP Browser Block - Reverse Tunnels",
+                              "before":  {
+                                             "exists":  false,
+                                             "state":  "missing",
+                                             "lastTaskResult":  null,
+                                             "lastRunTime":  null,
+                                             "nextRunTime":  null
+                                         },
+                              "after":  {
+                                            "exists":  false,
+                                            "state":  "missing",
+                                            "lastTaskResult":  null,
+                                            "lastRunTime":  null,
+                                            "nextRunTime":  null
+                                        }
+                          },
+    "reverseTunnelProcess":  {
+                                 "before":  {
+                                                "processId":  8468,
+                                                "name":  "python.exe",
+                                                "commandLineRedacted":  "\"C:\\Users\\Ultra\\AppData\\Local\\Programs\\Python\\Python313\\python.exe\" D:\\OpenAi\\infra\\windows-block\\start-reverse-tunnels.py --remote-host 77.66.186.75 --remote-port 2222 --remote-user mi50 --include-host-controller "
+                                            },
+                                 "after":  {
+                                               "processId":  8468,
+                                               "name":  "python.exe",
+                                               "commandLineRedacted":  "\"C:\\Users\\Ultra\\AppData\\Local\\Programs\\Python\\Python313\\python.exe\" D:\\OpenAi\\infra\\windows-block\\start-reverse-tunnels.py --remote-host 77.66.186.75 --remote-port 2222 --remote-user mi50 --include-host-controller "
+                                           }
+                             },
+    "tunnelStart":  {
+                        "taskStartAttempted":  false,
+                        "taskStartOk":  false,
+                        "directStartAttempted":  false,
+                        "directStartOk":  false,
+                        "owner":  "none",
+                        "errors":  [
+
+                                   ]
+                    },
+    "ubuntuListenerTruth":  {
+                                "reachable":  true,
+                                "requiredPorts":  [
+                                                      14021,
+                                                      14022,
+                                                      14023,
+                                                      14024,
+                                                      14025,
+                                                      14026,
+                                                      14027,
+                                                      14040
+                                                  ],
+                                "presentPorts":  [
+                                                     14021,
+                                                     14022,
+                                                     14023,
+                                                     14024,
+                                                     14025,
+                                                     14026,
+                                                     14027,
+                                                     14040
+                                                 ],
+                                "missingPorts":  [
+
+                                                 ],
+                                "allRequiredPresent":  true,
+                                "error":  null
+                            },
+    "externalHealthz":  {
+                            "success":  true,
+                            "statusCode":  200,
+                            "error":  null
+                        },
+    "externalSmoke":  {
+                          "tokenSource":  "ssh:77.66.186.75:remote_env_file:REMOTE_RELAY_API_TOKEN",
+                          "healthz":  {
+                                          "success":  true,
+                                          "statusCode":  200,
+                                          "body":  "{\"service\":\"owmcgp-remote-relay\",\"status\":\"ok\",\"checkedAt\":\"2026-04-15T03:19:23.427Z\"}",
+                                          "bodyPreview":  "{\"service\":\"owmcgp-remote-relay\",\"status\":\"ok\",\"checkedAt\":\"2026-04-15T03:19:23.427Z\"}",
+                                          "headers":  [
+                                                          "Connection=keep-alive",
+                                                          "Keep-Alive=timeout=60",
+                                                          "Proxy-Connection=keep-alive",
+                                                          "Referrer-Policy=no-referrer",
+                                                          "X-Content-Type-Options=nosniff",
+                                                          "X-Frame-Options=DENY",
+                                                          "Cache-Control=no-store",
+                                                          "Date=Wed, 15 Apr 2026 03:19:23 GMT",
+                                                          "ETag=W/\"56-/0jRoiP97QrCUzgQsJuSj523YWA\"",
+                                                          "Server=nginx/1.18.0, (Ubuntu)",
+                                                          "Content-Length=86",
+                                                          "Content-Type=application/json; charset=utf-8"
+                                                      ],
+                                          "error":  null,
+                                          "errorKind":  null,
+                                          "requestUrl":  "http://77.66.186.75/healthz",
+                                          "requestHostHeader":  null,
+                                          "hopName":  null,
+                                          "serverHeader":  "nginx/1.18.0, (Ubuntu)",
+                                          "viaHeader":  null
+                                      },
+                          "models":  {
+                                         "success":  true,
+                                         "statusCode":  200,
+                                         "body":  "{\"object\":\"list\",\"data\":[{\"id\":\"owmcgp-browser\",\"object\":\"model\",\"created\":1776223163,\"owned_by\":\"owmcgp\"},{\"id\":\"gpt-5.4-thinking\",\"object\":\"model\",\"created\":1776223163,\"owned_by\":\"owmcgp\"},{\"id\":\"chatgpt-browser-gpt-5.4-thinking\",\"object\":\"model\",\"created\":1776223163,\"owned_by\":\"owmcgp\"}]}",
+                                         "bodyPreview":  "{\"object\":\"list\",\"data\":[{\"id\":\"owmcgp-browser\",\"object\":\"model\",\"created\":1776223163,\"owned_by\":\"owmcgp\"},{\"id\":\"gpt-5.4-thinking\",\"object\":\"model\",\"created\":1776223163,\"owned_by\":\"owmcgp\"},{\"id\":\"ch...",
+                                         "headers":  [
+                                                         "Connection=keep-alive",
+                                                         "Keep-Alive=timeout=60",
+                                                         "Proxy-Connection=keep-alive",
+                                                         "Referrer-Policy=no-referrer",
+                                                         "X-Content-Type-Options=nosniff",
+                                                         "X-Frame-Options=DENY",
+                                                         "Cache-Control=no-store",
+                                                         "Date=Wed, 15 Apr 2026 03:19:23 GMT",
+                                                         "ETag=W/\"124-E6p7EFtmuiYuGlmzn3rjzsUjdv4\"",
+                                                         "Server=nginx/1.18.0, (Ubuntu)",
+                                                         "Content-Length=292",
+                                                         "Content-Type=application/json; charset=utf-8"
+                                                     ],
+                                         "error":  null,
+                                         "errorKind":  null,
+                                         "requestUrl":  "http://77.66.186.75/v1/models",
+                                         "requestHostHeader":  null,
+                                         "hopName":  null,
+                                         "serverHeader":  "nginx/1.18.0, (Ubuntu)",
+                                         "viaHeader":  null
+                                     },
+                          "chatCompletions":  {
+                                                  "success":  false,
+                                                  "statusCode":  409,
+                                                  "body":  "{\"error\":{\"message\":\"Fresh chat bootstrap failed: bootstrap_auth_required\",\"type\":\"invalid_request_error\",\"code\":\"chat_bootstrap_failed\"}}",
+                                                  "bodyPreview":  "{\"error\":{\"message\":\"Fresh chat bootstrap failed: bootstrap_auth_required\",\"type\":\"invalid_request_error\",\"code\":\"chat_bootstrap_failed\"}}",
+                                                  "headers":  [
+                                                                  "Connection=keep-alive",
+                                                                  "Keep-Alive=timeout=60",
+                                                                  "Proxy-Connection=keep-alive",
+                                                                  "Referrer-Policy=no-referrer",
+                                                                  "X-Content-Type-Options=nosniff",
+                                                                  "X-Frame-Options=DENY",
+                                                                  "Date=Wed, 15 Apr 2026 03:19:25 GMT",
+                                                                  "ETag=W/\"8a-1DsUtIKUo7omwqNhdfqRpCoJhjE\"",
+                                                                  "Server=nginx/1.18.0, (Ubuntu)",
+                                                                  "Content-Length=138",
+                                                                  "Content-Type=application/json; charset=utf-8"
+                                                              ],
+                                                  "error":  "HTTP 409",
+                                                  "errorKind":  "http_error",
+                                                  "requestUrl":  "http://77.66.186.75/v1/chat/completions",
+                                                  "requestHostHeader":  null,
+                                                  "hopName":  null,
+                                                  "serverHeader":  "nginx/1.18.0, (Ubuntu)",
+                                                  "viaHeader":  null
+                                              },
+                          "attempted":  true,
+                          "ok":  false
+                      },
+    "externalChatFailure":  {
+                                "statusCode":  409,
+                                "code":  "chat_bootstrap_failed",
+                                "message":  "Fresh chat bootstrap failed: bootstrap_auth_required",
+                                "innerReason":  "bootstrap_auth_required",
+                                "blocker":  "bootstrap_auth_required"
+                            },
+    "revalidationAttempted":  true,
+    "nextBlocker":  "bootstrap_auth_required",
+    "preserveFirst":  {
+                          "profilesDeleted":  false,
+                          "cookiesCleared":  false,
+                          "localStorageCleared":  false,
+                          "blindFullPoolRestartPerformed":  false,
+                          "massReloginPerformed":  false
+                      },
+    "verdict":  "hold_rollout",
+    "summary":  "Hold rollout: nextBlocker=bootstrap_auth_required; selectedHost=77.66.186.75; listenersReady=True."
+}
